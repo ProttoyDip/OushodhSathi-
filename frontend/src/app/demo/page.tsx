@@ -1,13 +1,13 @@
 "use client";
 
 import { ArrowLeft, ArrowRight, Camera, Check, Keyboard, Stethoscope } from "lucide-react";
-import { NextIntlClientProvider } from "next-intl";
+import { NextIntlClientProvider, useLocale, useTranslations } from "next-intl";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { type ReactNode, useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import bn from "../../../messages/bn.json";
 import { BPTrend } from "@/components/BPTrend";
 import { Wordmark } from "@/components/BrandMark";
-import { DemoTag } from "@/components/Chrome";
+import { DemoTag, LangToggle, ThemeToggle } from "@/components/Chrome";
 import { DuplicateConnector } from "@/components/DuplicateConnector";
 import { FlagResult } from "@/components/FlagResult";
 import { MedicinePassport } from "@/components/MedicinePassport";
@@ -25,14 +25,14 @@ const PILE = [
 ];
 
 const STEPS = [
-  { ch: "The shelf", chBn: "তাক", who: "Rahima's home, Cumilla", en: "Rahima Begum, 68, collects medicines from three places.", bn: "রহিমা বেগম, ৬৮ — তিন জায়গা থেকে ওষুধ আসে।" },
-  { ch: "Scan", chBn: "ছবি", who: "Family app · phone camera", en: "Her daughter photographs the whole shelf.", bn: "মেয়ে পুরো তাকের ছবি তোলেন।" },
-  { ch: "The list", chBn: "তালিকা", who: "Vision model reads every strip", en: "The list assembles itself.", bn: "তালিকা নিজে থেকেই সাজানো হয়।" },
-  { ch: "Duplicate", chBn: "একই ওষুধ", who: "Rules engine · no AI", en: "Different names, same medicine: paracetamol, twice.", bn: "নাম আলাদা, ওষুধ একই — প্যারাসিটামল, দুইবার।" },
-  { ch: "Review", chBn: "যাচাই", who: "Pharmacist dashboard", en: "A pharmacist confirms the finding, with a note.", bn: "একজন ফার্মাসিস্ট নিশ্চিত করেন, নোটসহ।" },
-  { ch: "Family", chBn: "পরিবার", who: "Her daughter's phone, Toronto", en: "Only now does the family see it, in simple Bangla.", bn: "এরপরই পরিবার দেখতে পায়, সহজ বাংলায়।" },
-  { ch: "Passport", chBn: "পাসপোর্ট", who: "Printed, carried to every visit", en: "A passport for every doctor visit.", bn: "প্রতিবার ডাক্তারের কাছে নেওয়ার পাসপোর্ট।" },
-  { ch: "Report", chBn: "রিপোর্ট", who: "Weekly report", en: "And the weekly report keeps watch.", bn: "সাপ্তাহিক রিপোর্টে রক্তচাপের খোঁজ।" },
+  { ch: "The shelf", chBn: "তাক", who: "Rahima's home, Cumilla", whoBn: "রহিমার বাড়ি, কুমিল্লা", en: "Rahima Begum, 68, collects medicines from three places.", bn: "রহিমা বেগম, ৬৮ — তিন জায়গা থেকে ওষুধ আসে।" },
+  { ch: "Scan", chBn: "ছবি", who: "Family app · phone camera", whoBn: "পরিবারের অ্যাপ · ফোনের ক্যামেরা", en: "Her daughter photographs the whole shelf.", bn: "মেয়ে পুরো তাকের ছবি তোলেন।" },
+  { ch: "The list", chBn: "তালিকা", who: "Vision model reads every strip", whoBn: "ভিশন মডেল প্রতিটি পাতা পড়ে", en: "The list assembles itself.", bn: "তালিকা নিজে থেকেই সাজানো হয়।" },
+  { ch: "Duplicate", chBn: "একই ওষুধ", who: "Rules engine · no AI", whoBn: "নিয়ম-ইঞ্জিন · কোনো এআই নেই", en: "Different names, same medicine: paracetamol, twice.", bn: "নাম আলাদা, ওষুধ একই — প্যারাসিটামল, দুইবার।" },
+  { ch: "Review", chBn: "যাচাই", who: "Pharmacist dashboard", whoBn: "ফার্মাসিস্টের ড্যাশবোর্ড", en: "A pharmacist confirms the finding, with a note.", bn: "একজন ফার্মাসিস্ট নিশ্চিত করেন, নোটসহ।" },
+  { ch: "Family", chBn: "পরিবার", who: "Her daughter's phone, Toronto", whoBn: "মেয়ের ফোন, টরন্টো", en: "Only now does the family see it, in simple Bangla.", bn: "এরপরই পরিবার দেখতে পায়, সহজ বাংলায়।" },
+  { ch: "Passport", chBn: "পাসপোর্ট", who: "Printed, carried to every visit", whoBn: "ছাপানো, প্রতিবার সাথে নেওয়া", en: "A passport for every doctor visit.", bn: "প্রতিবার ডাক্তারের কাছে নেওয়ার পাসপোর্ট।" },
+  { ch: "Report", chBn: "রিপোর্ট", who: "Weekly report", whoBn: "সাপ্তাহিক রিপোর্ট", en: "And the weekly report keeps watch.", bn: "সাপ্তাহিক রিপোর্টে রক্তচাপের খোঁজ।" },
 ];
 
 /** A keyboard-paced walkthrough of the hero flow for recording. → / Space next, ← back. */
@@ -56,12 +56,20 @@ export default function DemoWalkthrough() {
   }, []);
 
   const s = STEPS[step];
+  const t = useTranslations("demo");
+  const isBn = useLocale() === "bn";
+  // the chosen language leads; the other one is the accent line
+  const lead = isBn ? { text: s.bn, lang: "bn", cls: "font-bn-display leading-[1.2]" } : { text: s.en, lang: "en", cls: "font-display leading-[1.04]" };
+  const accent = isBn ? { text: s.en, lang: "en", cls: "font-display italic" } : { text: s.bn, lang: "bn", cls: "font-bn-display" };
   return (
-    <NextIntlClientProvider locale="bn" messages={bn} timeZone="Asia/Dhaka">
       <div className="flex min-h-dvh flex-col overflow-x-hidden">
         <header className="mx-auto flex w-full max-w-[1680px] items-center justify-between gap-4 px-8 py-5 lg:px-16">
           <Wordmark />
-          <DemoTag />
+          <div className="flex items-center gap-2">
+            <DemoTag className="hidden sm:inline-flex" />
+            <ThemeToggle className="h-11 w-11" />
+            <LangToggle className="h-11" />
+          </div>
         </header>
 
         <main className="mx-auto grid w-full max-w-[1680px] flex-1 grid-cols-[minmax(0,1fr)] items-center gap-10 px-8 pb-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-20 lg:px-16">
@@ -75,32 +83,38 @@ export default function DemoWalkthrough() {
             >
               <p className="flex items-baseline gap-3 text-ink-faint">
                 <span className="tabular font-display text-[30px] leading-none text-neel">{String(step + 1).padStart(2, "0")}</span>
-                <span className="text-[15px] font-semibold uppercase tracking-[0.14em]">{s.ch}</span>
-                <span lang="bn" className="font-bn text-[16px]">{s.chBn}</span>
+                {isBn ? (
+                  <span lang="bn" className="font-bn text-[17px] font-semibold">{s.chBn}</span>
+                ) : (
+                  <span className="text-[15px] font-semibold uppercase tracking-[0.14em]">{s.ch}</span>
+                )}
               </p>
-              <h1 lang="en" className="mt-5 font-display text-[clamp(38px,3.9vw,68px)] leading-[1.04] text-ink">{s.en}</h1>
-              <p lang="bn" className="mt-5 font-bn-display text-[clamp(22px,2vw,34px)] leading-snug text-ink-soft">{s.bn}</p>
+              <h1 lang={lead.lang} className={`mt-5 text-[clamp(38px,3.9vw,68px)] text-ink ${lead.cls}`}>{lead.text}</h1>
+              <p lang={accent.lang} className={`mt-5 text-[clamp(22px,2vw,34px)] leading-snug text-ink-soft ${accent.cls}`}>{accent.text}</p>
               <span aria-hidden className="stitch-x mt-8 block w-28" />
               <p className="mt-4 inline-flex items-center gap-2 text-[16px] text-ink-soft">
-                <span aria-hidden className="h-2 w-2 rounded-full bg-neel" /> {s.who}
+                <span aria-hidden className="h-2 w-2 rounded-full bg-neel" /> {isBn ? s.whoBn : s.who}
               </p>
             </motion.div>
           </AnimatePresence>
 
           <div className="relative flex min-h-[520px] min-w-0 items-center justify-center text-[18px]">
-            <LayoutGroup id="demo">
-              <Stage step={step} passportUrl={origin ? `${origin}/passport/1` : undefined} />
-            </LayoutGroup>
+            {/* the phone mock-ups are the family's screens, so they stay in Bangla */}
+            <NextIntlClientProvider locale="bn" messages={bn} timeZone="Asia/Dhaka">
+              <LayoutGroup id="demo">
+                <Stage step={step} passportUrl={origin ? `${origin}/passport/1` : undefined} />
+              </LayoutGroup>
+            </NextIntlClientProvider>
           </div>
         </main>
 
         <footer className="mx-auto flex w-full max-w-[1680px] items-end justify-between gap-6 px-8 pb-6 lg:px-16">
-          <ol className="grid min-w-0 flex-1 grid-cols-8 gap-2" aria-label="Progress">
+          <ol className="grid min-w-0 flex-1 grid-cols-8 gap-2" aria-label={t("progress")}>
             {STEPS.map((st, i) => (
               <li key={i} className="min-w-0">
                 <button
                   type="button"
-                  aria-label={`Step ${i + 1}: ${st.ch}`}
+                  aria-label={t("step", { n: i + 1, name: isBn ? st.chBn : st.ch })}
                   aria-current={i === step ? "step" : undefined}
                   onClick={() => setStep(i)}
                   className="group block w-full pt-2 text-left"
@@ -109,19 +123,18 @@ export default function DemoWalkthrough() {
                     <span className={cx("absolute inset-0 rounded-chip", i < step ? "stitch-x !h-[3px]" : "bg-rule")} />
                     {i === step && <motion.span layoutId="rail-active" className="absolute inset-0 rounded-chip bg-neel" />}
                   </span>
-                  <span className={cx("mt-2 hidden truncate text-[13px] font-medium md:block", i === step ? "text-ink" : "text-ink-faint group-hover:text-ink-soft")}>{st.ch}</span>
+                  <span className={cx("mt-2 hidden truncate text-[13px] font-medium md:block", i === step ? "text-ink" : "text-ink-faint group-hover:text-ink-soft")}>{isBn ? st.chBn : st.ch}</span>
                 </button>
               </li>
             ))}
           </ol>
           <div className="flex shrink-0 items-center gap-3 text-[15px] text-ink-faint">
-            <span className="hidden items-center gap-2 lg:inline-flex"><Keyboard aria-hidden size={18} /> → next · ← back</span>
-            <button type="button" onClick={() => go(-1)} aria-label="Back" className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-rule text-ink"><ArrowLeft aria-hidden size={18} /></button>
-            <button type="button" onClick={() => go(1)} aria-label="Next" className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-neel text-on-neel"><ArrowRight aria-hidden size={18} /></button>
+            <span className="hidden items-center gap-2 lg:inline-flex"><Keyboard aria-hidden size={18} /> {t("keys")}</span>
+            <button type="button" onClick={() => go(-1)} aria-label={t("back")} className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-rule text-ink"><ArrowLeft aria-hidden size={18} /></button>
+            <button type="button" onClick={() => go(1)} aria-label={t("next")} className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-neel text-on-neel"><ArrowRight aria-hidden size={18} /></button>
           </div>
         </footer>
       </div>
-    </NextIntlClientProvider>
   );
 }
 

@@ -1,13 +1,15 @@
 "use client";
 
 import {
-  Check, CircleCheck, ExternalLink, FileText, History, KeyRound, LogOut, NotebookPen, Pill, Stethoscope, Undo2, X,
+  ArrowLeft, Check, CircleCheck, Cpu, ExternalLink, FileText, History, KeyRound, LogOut, NotebookPen, Pill, Stethoscope, Undo2, X,
 } from "lucide-react";
+import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Wordmark } from "@/components/BrandMark";
-import { DemoTag, ThemeToggle } from "@/components/Chrome";
+import { BrandMark, Wordmark } from "@/components/BrandMark";
+import { DemoTag, LangToggle, ThemeToggle } from "@/components/Chrome";
 import { DuplicateConnector } from "@/components/DuplicateConnector";
-import { RULE_NAME, ReviewRow } from "@/components/ReviewRow";
+import { ReviewRow, useRuleName } from "@/components/ReviewRow";
 import { SeverityBadge } from "@/components/SeverityBadge";
 import { StripCard } from "@/components/StripCard";
 import { api, ApiError } from "@/lib/api";
@@ -42,6 +44,7 @@ export default function ReviewPage() {
 
 function Login({ onSignIn }: { onSignIn: (s: Session) => void }) {
   const health = useApi(() => api.health(), []);
+  const t = useTranslations("review");
   const [name, setName] = useState("");
   const [token, setToken] = useState("");
   const [error, setError] = useState<string>();
@@ -50,11 +53,18 @@ function Login({ onSignIn }: { onSignIn: (s: Session) => void }) {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-[420px] flex-col justify-center px-6 py-12">
-      <Wordmark />
-      <h1 className="mt-8 font-display text-[40px] leading-[1.05] text-ink">Clinical review</h1>
-      <p className="mt-2 text-ink-soft">
-        Pharmacists and doctors confirm or dismiss every finding before a family sees it.
-      </p>
+      <div className="mb-6 flex items-center justify-between gap-2">
+        <Link href="/" className="-ml-2 inline-flex h-11 w-fit items-center gap-1.5 rounded-chip px-2 text-[15px] font-medium text-ink-soft hover:text-ink">
+          <ArrowLeft aria-hidden size={18} /> {t("backToSite")}
+        </Link>
+        <div className="flex items-center gap-2">
+          <ThemeToggle className="h-11 w-11" />
+          <LangToggle className="h-11" />
+        </div>
+      </div>
+      <Link href="/" title={t("home")} className="w-fit rounded-md"><Wordmark /></Link>
+      <h1 className="mt-8 font-display text-[40px] leading-[1.1] text-ink">{t("login.title")}</h1>
+      <p className="mt-2 text-ink-soft">{t("login.body")}</p>
       <form
         className="mt-8 grid gap-4"
         onSubmit={async (e) => {
@@ -65,29 +75,29 @@ function Login({ onSignIn }: { onSignIn: (s: Session) => void }) {
             await api.queue(token.trim());
             onSignIn({ token: token.trim(), name: name.trim() });
           } catch (err) {
-            setError(err instanceof ApiError && err.status === 401 ? "That reviewer token is not right." : "Can't reach the review server.");
+            setError(err instanceof ApiError && err.status === 401 ? t("login.badToken") : t("login.offline"));
           } finally {
             setBusy(false);
           }
         }}
       >
         <label className="text-sm font-medium text-ink-soft">
-          Your name (recorded with every decision)
-          <input required value={name} onChange={(e) => setName(e.target.value)} className={field} autoComplete="name" placeholder="e.g. Pharm. S. Akter" />
+          {t("login.name")}
+          <input required value={name} onChange={(e) => setName(e.target.value)} className={field} autoComplete="name" placeholder={t("login.namePh")} />
         </label>
         <label className="text-sm font-medium text-ink-soft">
-          Reviewer token
+          {t("login.token")}
           <input required type="password" value={token} onChange={(e) => setToken(e.target.value)} className={field} autoComplete="current-password" />
         </label>
         {error && <p role="alert" className="rounded-md border border-red-line bg-red-tint px-3 py-2 text-red">{error}</p>}
-        <button type="submit" disabled={busy} className="inline-flex h-11 items-center justify-center gap-2 rounded-card bg-neel px-5 font-semibold text-on-neel transition-colors hover:bg-neel-hover disabled:opacity-60">
+        <button type="submit" disabled={busy} className="press inline-flex h-11 items-center justify-center gap-2 rounded-card bg-neel px-5 font-semibold text-on-neel transition-colors hover:bg-neel-hover disabled:opacity-60">
           <KeyRound aria-hidden size={18} />
-          {busy ? "Checking…" : "Open the queue"}
+          {busy ? t("login.checking") : t("login.open")}
         </button>
       </form>
       {health.data?.reviewer_login === "demo token" && (
         <p className="mt-6 rounded-md border border-dashed border-rule-strong px-3 py-2 text-sm text-ink-soft">
-          Demo server: the reviewer token is <code className="font-mono text-ink">demo-reviewer</code>. Set REVIEWER_TOKEN in backend/.env for real use.
+          {t.rich("login.demo", { code: (c) => <code className="font-mono text-ink">{c}</code> })}
         </p>
       )}
     </main>
@@ -97,10 +107,13 @@ function Login({ onSignIn }: { onSignIn: (s: Session) => void }) {
 /* -------------------------------------------------------------- dashboard */
 
 function Dashboard({ session, onSignOut }: { session: Session; onSignOut: () => void }) {
+  const t = useTranslations("review");
   const queue = useApi<ReviewQueue>(() => api.queue(session.token), [session.token], 20000);
   const [sev, setSev] = useState<"all" | "red" | "amber">("all");
   const [route, setRoute] = useState<"all" | "doctor" | "pharmacist">("all");
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  // below xl only some panels fit: phones show one, laptops show the queue plus one
+  const [view, setView] = useState<"queue" | "evidence" | "patient">("queue");
   const [hidden, setHidden] = useState<Set<number>>(new Set());
   const [note, setNote] = useState("");
   const [noteError, setNoteError] = useState(false);
@@ -204,45 +217,82 @@ function Dashboard({ session, onSignOut }: { session: Session; onSignOut: () => 
   }, [move, decide, undo, toast]);
 
   return (
-    <div className="flex min-h-dvh flex-col">
-      <header className="flex h-16 shrink-0 items-center gap-6 border-b border-rule bg-paper-raised px-6">
-        <Wordmark />
-        <span className="h-6 w-px bg-rule" aria-hidden />
-        <h1 className="text-lg font-semibold text-ink">Review queue</h1>
-        <dl className="flex items-center gap-5 text-sm" aria-label="Pending counts">
-          <Count label="Pending" value={counts?.pending} />
-          <Count label="Red" value={counts?.red} tone="red" />
-          <Count label="Amber" value={counts?.amber} tone="amber" />
-          <span aria-hidden className="h-4 w-px bg-rule" />
-          <Count label="For doctors" value={counts?.doctor} />
-          <Count label="For pharmacists" value={counts?.pharmacist} />
+    // pinned to the window: header stays put, and queue, evidence and patient each scroll on their own
+    <div className="flex h-dvh flex-col overflow-hidden">
+      <header className="flex h-16 shrink-0 items-center gap-3 border-b border-rule bg-paper-raised px-4 sm:px-6 lg:gap-5">
+        <Link href="/" title={t("backToSite")} className="shrink-0 rounded-md">
+          <BrandMark size={30} className="sm:hidden" />
+          <span className="sr-only sm:hidden">{t("home")}</span>
+          <span className="hidden sm:inline-flex"><Wordmark /></span>
+        </Link>
+        <span className="hidden h-6 w-px bg-rule lg:block" aria-hidden />
+        <h1 className="hidden whitespace-nowrap text-lg font-semibold text-ink lg:block">{t("dash.title")}</h1>
+        <dl className="hidden items-center gap-4 text-sm md:flex" aria-label={t("dash.counts")}>
+          <Count label={t("dash.pending")} value={counts?.pending} />
+          <Count label={t("dash.red")} value={counts?.red} tone="red" />
+          <Count label={t("dash.amber")} value={counts?.amber} tone="amber" />
+          <span aria-hidden className="hidden h-4 w-px bg-rule xl:block" />
+          <Count label={t("dash.forDoctors")} value={counts?.doctor} className="hidden xl:flex" />
+          <Count label={t("dash.forPharmacists")} value={counts?.pharmacist} className="hidden xl:flex" />
         </dl>
-        <div className="ml-auto flex items-center gap-3">
-          <span className="text-sm text-ink-soft">Signed in as <strong className="font-semibold text-ink">{session.name}</strong></span>
+        <div className="ml-auto flex items-center gap-2 sm:gap-3">
+          <span className="hidden max-w-[260px] truncate whitespace-nowrap text-sm text-ink-soft 2xl:inline">{t.rich("dash.signedIn", { name: session.name, b: (c) => <strong className="font-semibold text-ink">{c}</strong> })}</span>
+          <Link href="/models" title={t("dash.models")} aria-label={t("dash.models")} className="hidden h-10 sm:inline-flex min-w-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-chip border border-rule px-2.5 text-sm font-medium text-ink-soft hover:text-ink">
+            <Cpu aria-hidden size={16} /> <span className="hidden 2xl:inline">{t("dash.models")}</span>
+          </Link>
           <ThemeToggle className="h-10 w-10" />
-          <button type="button" onClick={onSignOut} className="inline-flex h-10 items-center gap-1.5 rounded-chip border border-rule px-3 text-sm font-medium text-ink-soft hover:text-ink">
-            <LogOut aria-hidden size={16} /> Sign out
+          <LangToggle className="h-10" />
+          <button type="button" onClick={onSignOut} title={session.name} aria-label={t("dash.signOut")} className="inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-chip border border-rule px-3 text-sm font-medium text-ink-soft hover:text-ink">
+            <LogOut aria-hidden size={16} /> <span className="hidden lg:inline">{t("dash.signOut")}</span>
           </button>
         </div>
       </header>
 
-      <div className="grid min-h-0 flex-1 grid-cols-[380px_minmax(0,1fr)_320px]">
+      <div role="tablist" aria-label={t("dash.panels")} className="flex shrink-0 gap-1 border-b border-rule bg-paper-raised px-3 py-2 lg:pl-[352px] xl:hidden">
+        {([
+          ["queue", `${t("dash.queue")}${counts ? ` (${counts.pending})` : ""}`, "lg:hidden"],
+          ["evidence", t("dash.evidence"), ""],
+          ["patient", t("dash.patient"), ""],
+        ] as const).map(([key, text, extra]) => {
+          const active = view === key;
+          return (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setView(key)}
+              className={cx(
+                "h-10 flex-1 rounded-md px-3 text-[15px] font-medium transition-colors",
+                active ? "bg-neel-tint text-ink" : "text-ink-soft hover:text-ink",
+                // laptops always show the queue, so "evidence" is the panel beside it by default
+                key === "evidence" && view === "queue" && "lg:bg-neel-tint lg:text-ink",
+                extra,
+              )}
+            >
+              {text}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[minmax(0,1fr)] lg:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[380px_minmax(0,1fr)_320px]">
         {/* queue */}
-        <section aria-label="Findings waiting for review" className="flex min-h-0 flex-col border-r border-rule">
+        <section aria-label={t("dash.queueLabel")} className={cx("min-h-0 flex-col border-rule lg:flex lg:border-r", view === "queue" ? "flex" : "hidden")}>
           <div className="grid gap-2 border-b border-rule px-4 py-3">
-            <Segmented label="Severity" value={sev} onChange={setSev} options={[["all", "All"], ["red", "Red"], ["amber", "Amber"]]} />
-            <Segmented label="Route" value={route} onChange={setRoute} options={[["all", "Everyone"], ["doctor", "Doctor"], ["pharmacist", "Pharmacist"]]} />
+            <Segmented label={t("dash.severity")} value={sev} onChange={setSev} options={[["all", t("dash.all")], ["red", t("dash.red")], ["amber", t("dash.amber")]]} />
+            <Segmented label={t("dash.route")} value={route} onChange={setRoute} options={[["all", t("dash.everyone")], ["doctor", t("dash.doctor")], ["pharmacist", t("dash.pharmacist")]]} />
           </div>
-          <div role="listbox" aria-label="Queue" className="min-h-0 flex-1 overflow-y-auto p-2">
+          <div role="listbox" aria-label={t("dash.queue")} className="min-h-0 flex-1 overflow-y-auto p-2">
             {queue.error ? (
-              <p className="p-4 text-red">Could not load the queue. {queue.error.message}</p>
+              <p className="p-4 text-red">{t("dash.loadError")} {queue.error.message}</p>
             ) : !queue.data ? (
               <div className="grid gap-2 p-2">{[0, 1, 2, 3].map((i) => <div key={i} className="h-[68px] rounded-card bg-paper-sunk" style={{ animation: "breathe 1.6s ease-in-out infinite" }} />)}</div>
             ) : flags.length === 0 ? (
               <div className="p-6 text-center">
                 <CircleCheck aria-hidden size={36} className="mx-auto text-green" />
-                <p className="mt-2 font-semibold text-ink">Queue clear</p>
-                <p className="text-sm text-ink-soft">No findings are waiting with these filters.</p>
+                <p className="mt-2 font-semibold text-ink">{t("dash.clearTitle")}</p>
+                <p className="text-sm text-ink-soft">{t("dash.clearBody")}</p>
               </div>
             ) : (
               <div className="grid gap-1">
@@ -253,24 +303,31 @@ function Dashboard({ session, onSignOut }: { session: Session; onSignOut: () => 
                     flag={f}
                     now={now}
                     selected={f.id === selected?.id}
-                    onSelect={() => setSelectedId(f.id)}
+                    onSelect={() => { setSelectedId(f.id); setView("evidence"); }}
                   />
                 ))}
               </div>
             )}
           </div>
-          <p className="border-t border-rule px-4 py-2.5 text-[13px] text-ink-faint">
-            <Kbd>J</Kbd>/<Kbd>K</Kbd> move · <Kbd>C</Kbd> confirm · <Kbd>D</Kbd> dismiss · <Kbd>N</Kbd> note
+          <p className="hidden border-t border-rule px-4 py-2.5 text-[13px] text-ink-faint lg:block">
+            <Kbd>J</Kbd>/<Kbd>K</Kbd> {t("dash.kMove")} · <Kbd>C</Kbd> {t("dash.kConfirm")} · <Kbd>D</Kbd> {t("dash.kDismiss")} · <Kbd>N</Kbd> {t("dash.kNote")}
           </p>
         </section>
 
         {/* evidence */}
-        <section aria-label="Evidence" className="min-h-0 overflow-y-auto px-8 py-6">
+        <section
+          aria-label={t("dash.evidence")}
+          className={cx(
+            "min-h-0 overflow-y-auto px-4 py-5 sm:px-8 sm:py-6 xl:block",
+            view === "evidence" ? "block" : "hidden",
+            view === "patient" ? "lg:hidden" : "lg:block",
+          )}
+        >
           {selected ? (
             <Evidence key={selected.id} flag={selected} now={now}>
               <div className="mt-8 rounded-card border border-rule bg-paper-raised p-5">
                 <label htmlFor="note" className="flex items-center gap-2 font-semibold text-ink">
-                  <NotebookPen aria-hidden size={18} /> Note <span className="font-normal text-ink-faint">— shown to the family with a confirmed finding; required to dismiss</span>
+                  <NotebookPen aria-hidden size={18} /> {t("dash.note")} <span className="font-normal text-ink-faint">{t("dash.noteHint")}</span>
                 </label>
                 <textarea
                   id="note"
@@ -284,38 +341,45 @@ function Dashboard({ session, onSignOut }: { session: Session; onSignOut: () => 
                     "mt-2 block w-full resize-y rounded-md border bg-paper px-3 py-2 text-base text-ink",
                     noteError ? "border-red" : "border-rule-strong",
                   )}
-                  placeholder="Plain words. Do not write doses or tell the family to stop or change a medicine."
+                  placeholder={t("dash.notePh")}
                 />
-                {noteError && <p id="note-err" className="mt-1.5 text-sm font-medium text-red">Add a short note to dismiss this finding.</p>}
-                <div className="mt-4 flex items-center gap-3">
-                  <button type="button" onClick={() => decide("confirmed")} className="inline-flex h-11 items-center gap-2 rounded-card bg-neel px-5 font-semibold text-on-neel transition-colors hover:bg-neel-hover">
-                    <Check aria-hidden size={18} strokeWidth={2.5} /> Confirm <Kbd tone="onTeal">C</Kbd>
+                {noteError && <p id="note-err" className="mt-1.5 text-sm font-medium text-red">{t("dash.noteError")}</p>}
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <button type="button" onClick={() => decide("confirmed")} className="press inline-flex h-11 items-center gap-2 rounded-card bg-neel px-5 font-semibold text-on-neel transition-colors hover:bg-neel-hover">
+                    <Check aria-hidden size={18} strokeWidth={2.5} /> {t("dash.confirm")} <Kbd tone="onTeal">C</Kbd>
                   </button>
-                  <button type="button" onClick={() => decide("dismissed")} className="inline-flex h-11 items-center gap-2 rounded-card border border-rule-strong bg-paper-raised px-5 font-semibold text-ink hover:border-ink-faint">
-                    <X aria-hidden size={18} strokeWidth={2.5} /> Dismiss <Kbd>D</Kbd>
+                  <button type="button" onClick={() => decide("dismissed")} className="press inline-flex h-11 items-center gap-2 rounded-card border border-rule-strong bg-paper-raised px-5 font-semibold text-ink hover:border-ink-faint">
+                    <X aria-hidden size={18} strokeWidth={2.5} /> {t("dash.dismiss")} <Kbd>D</Kbd>
                   </button>
-                  <span className="ml-auto text-[13px] text-ink-faint"><Kbd>Ctrl</Kbd>+<Kbd>Enter</Kbd> confirms from the note</span>
+                  <span className="ml-auto hidden text-[13px] text-ink-faint lg:inline"><Kbd>Ctrl</Kbd>+<Kbd>Enter</Kbd> {t("dash.ctrlEnter")}</span>
                 </div>
               </div>
             </Evidence>
           ) : (
-            <div className="grid h-full place-items-center text-ink-faint">Select a finding.</div>
+            <div className="grid h-full place-items-center text-ink-faint">{t("dash.select")}</div>
           )}
         </section>
 
         {/* patient */}
-        <aside aria-label="Patient" className="min-h-0 overflow-y-auto border-l border-rule bg-paper-raised/60 px-5 py-6">
+        <aside
+          aria-label={t("dash.patient")}
+          tabIndex={0}
+          className={cx(
+            "min-h-0 overflow-y-auto border-rule bg-paper-raised/60 px-5 py-6 xl:block xl:border-l",
+            view === "patient" ? "block" : "hidden",
+          )}
+        >
           {selected?.patient ? <PatientPanel token={session.token} patientId={selected.patient.id} key={selected.patient.id} /> : null}
         </aside>
       </div>
 
       {toast && (
-        <div role="status" className="fixed bottom-6 left-1/2 z-20 flex -translate-x-1/2 items-center gap-4 rounded-card border border-rule bg-ink px-5 py-3 text-paper shadow-soft" style={{ animation: "assemble 200ms var(--ease-out-quint) both" }}>
+        <div role="status" className="fixed bottom-6 left-1/2 z-20 flex w-max max-w-[calc(100vw-2rem)] -translate-x-1/2 flex-wrap items-center gap-x-4 gap-y-2 rounded-card border border-rule bg-ink px-5 py-3 text-paper shadow-soft" style={{ animation: "assemble 200ms var(--ease-out-quint) both" }}>
           <span>
-            {toast.status === "confirmed" ? "Confirmed" : "Dismissed"}: <strong>{toast.flag.items.map((i) => i.brand).join(" + ")}</strong>
+            {toast.status === "confirmed" ? t("dash.toastConfirmed") : t("dash.toastDismissed")}: <strong>{toast.flag.items.map((i) => i.brand).join(" + ")}</strong>
           </span>
           <button type="button" onClick={undo} className="inline-flex h-9 items-center gap-1.5 rounded-chip border border-paper/40 px-3 text-sm font-semibold hover:bg-paper/10">
-            <Undo2 aria-hidden size={16} /> Undo (U)
+            <Undo2 aria-hidden size={16} /> {t("dash.undo")}
           </button>
           <UndoTimer until={toast.until} />
         </div>
@@ -325,30 +389,45 @@ function Dashboard({ session, onSignOut }: { session: Session; onSignOut: () => 
 }
 
 function Evidence({ flag, now, children }: { flag: Flag; now: number; children: React.ReactNode }) {
+  const t = useTranslations("review");
+  const locale = useLocale();
+  const ruleName = useRuleName();
   const generic = (flag.meta.generic as string | undefined) ?? flag.items[0]?.generic ?? "";
+  const level = String(flag.meta.interaction_severity ?? "");
+  const route = t(`routes.${flag.routed_to}`);
   const label =
     flag.code === "DUPLICATE_GENERIC"
-      ? `${flag.items.length > 2 ? "All are" : "Both are"} ${genericName(generic, "en").toLowerCase()}`
+      ? t(flag.items.length > 2 ? "ev.all" : "ev.both", { generic: genericName(generic, locale) })
       : flag.code === "INTERACTION"
-        ? `${String(flag.meta.interaction_severity ?? "")} interaction`.trim()
-        : RULE_NAME[flag.code];
+        ? t("ev.interaction", { level: level === "major" || level === "moderate" ? t(`ev.${level}`) : level })
+        : ruleName(flag.code);
   const web = flag.items.filter((i) => i.match_method === "web_unverified");
   return (
     <article style={{ animation: "assemble 200ms var(--ease-out-quint) both" }}>
       <header className="flex flex-wrap items-center gap-3">
-        <SeverityBadge severity={flag.severity} label={`${flag.severity === "red" ? "Red" : "Amber"} · for the ${flag.routed_to}`} />
-        <h2 className="font-display text-[34px] leading-none text-ink">{RULE_NAME[flag.code]}</h2>
+        <SeverityBadge severity={flag.severity} label={t("ev.badge", { sev: flag.severity === "red" ? t("dash.red") : t("dash.amber"), route })} />
+        <h2 className="font-display text-[26px] leading-[1.15] text-ink sm:text-[34px]">{ruleName(flag.code)}</h2>
       </header>
       <p className="mt-2 text-sm text-ink-soft">
-        {flag.patient && <>{flag.patient.name}, {flag.patient.age} · </>}waiting {since(flag.created_at, now)} · routed to {flag.routed_to}
-        {flag.patient?.is_demo && <DemoTag className="ml-3 align-middle" label="Demo household — invented data" />}
+        {flag.patient && <>{flag.patient.name}, {flag.patient.age} · </>}{t("ev.meta", { time: since(flag.created_at, now), route })}
+        {flag.patient?.is_demo && <DemoTag className="ml-3 align-middle" />}
       </p>
 
       <div className="mt-6">
         {flag.items.length >= 2 ? (
-          <DuplicateConnector orientation="horizontal" tone={flag.severity} label={label} delay={60}>
-            {flag.items.map((it) => <StripCard key={it.id} item={it} density="compact" highlight={flag.severity} />)}
-          </DuplicateConnector>
+          <>
+            {/* side by side needs room; phones stack the strips instead */}
+            <div className="hidden sm:block">
+              <DuplicateConnector orientation="horizontal" tone={flag.severity} label={label} delay={60}>
+                {flag.items.map((it) => <StripCard key={it.id} item={it} density="compact" highlight={flag.severity} />)}
+              </DuplicateConnector>
+            </div>
+            <div className="sm:hidden">
+              <DuplicateConnector tone={flag.severity} label={label} delay={60}>
+                {flag.items.map((it) => <StripCard key={it.id} item={it} density="compact" highlight={flag.severity} />)}
+              </DuplicateConnector>
+            </div>
+          </>
         ) : (
           <div className="max-w-[440px]">
             {flag.items.map((it) => <StripCard key={it.id} item={it} density="compact" highlight={flag.severity} />)}
@@ -356,18 +435,18 @@ function Evidence({ flag, now, children }: { flag: Flag; now: number; children: 
         )}
       </div>
 
-      <section className="mt-6 grid grid-cols-[160px_1fr] gap-x-6 gap-y-3 border-t border-rule pt-5 text-[15px]">
-        <h3 className="font-semibold text-ink-soft">Rule that fired</h3>
-        <p className="text-ink">{flag.evidence}</p>
-        <h3 className="font-semibold text-ink-soft">Data source</h3>
+      <section className="mt-6 grid grid-cols-1 gap-x-6 gap-y-1 border-t border-rule pt-5 text-[15px] sm:grid-cols-[160px_minmax(0,1fr)] sm:gap-y-3 [&>h3:not(:first-child)]:mt-3 sm:[&>h3:not(:first-child)]:mt-0">
+        <h3 className="font-semibold text-ink-soft">{t("ev.ruleFired")}</h3>
+        <p lang="en" className="text-ink">{flag.evidence}{locale === "bn" && <span className="mt-1 block text-[13px] text-ink-faint">{t("ev.clinicalNote")}</span>}</p>
+        <h3 className="font-semibold text-ink-soft">{t("ev.dataSource")}</h3>
         <p className="text-ink">{flag.data_source}</p>
         {web.length > 0 && (
           <>
-            <h3 className="font-semibold text-amber">Web match</h3>
+            <h3 className="font-semibold text-amber">{t("ev.webMatch")}</h3>
             <ul className="grid gap-1">
               {web.map((i) => (
                 <li key={i.id} className="text-ink">
-                  {i.brand} → {i.generic} <span className="font-semibold text-amber">unverified</span>{" "}
+                  {i.brand} → {i.generic} <span className="font-semibold text-amber">{t("ev.unverified")}</span>{" "}
                   {i.match_source && (
                     <a href={i.match_source} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 underline">
                       {i.match_source} <ExternalLink aria-hidden size={13} />
@@ -378,10 +457,11 @@ function Evidence({ flag, now, children }: { flag: Flag; now: number; children: 
             </ul>
           </>
         )}
-        <h3 className="font-semibold text-ink-soft">Brand matching</h3>
-        <table className="w-full text-left text-[13px]">
+        <h3 className="font-semibold text-ink-soft">{t("ev.brandMatching")}</h3>
+        <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={t("ev.brandMatching")}>
+        <table className="w-full min-w-[480px] text-left text-[13px]">
           <thead className="text-ink-faint">
-            <tr><th className="py-1 font-medium">Brand</th><th className="font-medium">Generic · class</th><th className="font-medium">Match</th><th className="font-medium">Read by</th></tr>
+            <tr><th className="py-1 font-medium">{t("ev.thBrand")}</th><th className="font-medium">{t("ev.thGeneric")}</th><th className="font-medium">{t("ev.thMatch")}</th><th className="font-medium">{t("ev.thReadBy")}</th></tr>
           </thead>
           <tbody className="tabular text-ink-soft">
             {flag.items.map((i) => (
@@ -394,6 +474,7 @@ function Evidence({ flag, now, children }: { flag: Flag; now: number; children: 
             ))}
           </tbody>
         </table>
+        </div>
       </section>
       {children}
     </article>
@@ -404,6 +485,10 @@ function PatientPanel({ token, patientId }: { token: string; patientId: number }
   const patient = useApi(() => api.patient(patientId), [patientId]);
   const items = useApi(() => api.items(patientId), [patientId]);
   const audit = useApi<AuditEntry[]>(() => api.audit(token, patientId), [patientId], 15000);
+  const t = useTranslations("review");
+  const tc = useTranslations("passport.conditions");
+  const locale = useLocale();
+  const ruleName = useRuleName();
   const p = patient.data;
   const confirmed = (items.data ?? []).filter((i) => i.confirmed);
   const prescribers = Array.from(new Set(confirmed.map((i) => i.prescriber).filter(Boolean))) as string[];
@@ -413,39 +498,39 @@ function PatientPanel({ token, patientId }: { token: string; patientId: number }
       <section>
         <p lang="bn" className="font-bn-display text-[24px] leading-tight text-ink">{p.name_bn}</p>
         <p className="font-semibold text-ink">{p.name}</p>
-        <p className="tabular text-sm text-ink-soft">{p.age} years · {p.district}</p>
-        <p className="mt-1 text-sm text-ink-soft">{p.conditions.join(" · ")}</p>
+        <p className="tabular text-sm text-ink-soft">{t("panel.years", { age: p.age })} · {p.district}</p>
+        <p className="mt-1 text-sm text-ink-soft">{p.conditions.map((c) => (tc.has(c) ? tc(c) : c)).join(" · ")}</p>
       </section>
       <section>
-        <h3 className="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-[0.06em] text-ink-faint"><Pill aria-hidden size={14} /> Confirmed medicines ({confirmed.length})</h3>
+        <h3 className="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-[0.06em] text-ink-faint"><Pill aria-hidden size={14} /> {t("panel.confirmedMeds", { n: confirmed.length })}</h3>
         <ul className="mt-2 grid gap-1.5 text-sm">
           {confirmed.map((i: MedicineItem) => (
             <li key={i.id} className="flex items-baseline justify-between gap-2">
               <span className="font-medium text-ink">{i.brand} <span className="tabular font-normal text-ink-soft">{i.strength}</span></span>
-              <span className="truncate text-ink-soft">{i.generic ?? "unknown"}</span>
+              <span className="truncate text-ink-soft">{i.generic ? genericName(i.generic, locale) : t("panel.unknown")}</span>
             </li>
           ))}
         </ul>
       </section>
       <section>
-        <h3 className="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-[0.06em] text-ink-faint"><Stethoscope aria-hidden size={14} /> Prescribers</h3>
+        <h3 className="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-[0.06em] text-ink-faint"><Stethoscope aria-hidden size={14} /> {t("panel.prescribers")}</h3>
         <ul className="mt-2 grid gap-1 text-sm text-ink">{prescribers.map((x) => <li key={x}>{x}</li>)}</ul>
       </section>
       <section>
-        <h3 className="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-[0.06em] text-ink-faint"><History aria-hidden size={14} /> Decisions (audit trail)</h3>
+        <h3 className="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-[0.06em] text-ink-faint"><History aria-hidden size={14} /> {t("panel.audit")}</h3>
         {audit.data?.length ? (
           <ol className="mt-2 grid gap-2.5 text-sm">
             {audit.data.slice(0, 12).map((a) => (
               <li key={a.id} className="border-l border-rule pl-3">
-                <span className={cx("font-semibold", a.status === "confirmed" ? "text-neel" : a.status === "dismissed" ? "text-ink" : "text-ink-faint")}>{a.status}</span>{" "}
-                <span className="text-ink-soft">{RULE_NAME[a.code]}</span>
-                <span className="block text-[13px] text-ink-faint">{a.reviewer} · {date(a.created_at, "en", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+                <span className={cx("font-semibold", a.status === "confirmed" ? "text-neel" : a.status === "dismissed" ? "text-ink" : "text-ink-faint")}>{t(`panel.status.${a.status}`)}</span>{" "}
+                <span className="text-ink-soft">{ruleName(a.code)}</span>
+                <span className="block text-[13px] text-ink-faint">{a.reviewer} · {date(a.created_at, locale, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
                 {a.note && <span className="mt-0.5 flex gap-1 text-[13px] text-ink-soft"><FileText aria-hidden size={12} className="mt-1 shrink-0" />{a.note}</span>}
               </li>
             ))}
           </ol>
         ) : (
-          <p className="mt-2 text-sm text-ink-faint">No decisions yet.</p>
+          <p className="mt-2 text-sm text-ink-faint">{t("panel.noDecisions")}</p>
         )}
       </section>
     </div>
@@ -476,10 +561,10 @@ function Segmented<T extends string>({ label, value, onChange, options }: {
   );
 }
 
-function Count({ label, value, tone }: { label: string; value?: number; tone?: "red" | "amber" }) {
+function Count({ label, value, tone, className = "flex" }: { label: string; value?: number; tone?: "red" | "amber"; className?: string }) {
   return (
-    <div className="flex items-baseline gap-1.5">
-      <dt className="text-ink-soft">{label}</dt>
+    <div className={cx("items-baseline gap-1.5", className)}>
+      <dt className="whitespace-nowrap text-ink-soft">{label}</dt>
       <dd className={cx("tabular text-lg font-semibold", tone === "red" ? "text-red" : tone === "amber" ? "text-amber" : "text-ink")}>
         {value ?? "–"}
       </dd>

@@ -38,9 +38,10 @@ export function MedicinePassport({ passport, url }: { passport: Passport; url?: 
   const conditions = p.conditions.map((c) => (t.has(`conditions.${c}`) ? t(`conditions.${c}`) : c)).join(" · ");
 
   return (
-    <article className="passport-card relative mx-auto w-full max-w-[148mm] overflow-hidden rounded-card border border-rule-strong bg-paper-raised text-ink shadow-soft print:max-w-none print:rounded-none print:border-0 print:shadow-none">
+    <article className="passport-card @container relative mx-auto w-full max-w-[148mm] overflow-hidden rounded-card border border-rule-strong bg-paper-raised text-ink shadow-soft print:max-w-none print:rounded-none print:border-0 print:shadow-none">
       {/* header */}
-      <header className="flex items-start justify-between gap-4 border-b-2 border-ink px-6 pb-4 pt-6">
+      {/* narrow card (phone): patient details stack under the title; wide card (desktop, A5 print): side by side */}
+      <header className="flex flex-col gap-3 border-b-2 border-ink px-6 pb-4 pt-6 @md:flex-row @md:items-start @md:justify-between @md:gap-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-ink-soft">
             <BrandMark size={22} />
@@ -49,7 +50,7 @@ export function MedicinePassport({ passport, url }: { passport: Passport; url?: 
           <h1 lang="bn" className="mt-2 font-bn-display text-[34px] leading-[1.15]">ওষুধের পাসপোর্ট</h1>
           <p lang="en" className="font-display text-[22px] italic leading-tight text-ink-soft">Medicine passport</p>
         </div>
-        <div className="shrink-0 text-right">
+        <div className="min-w-0 break-words border-t border-rule pt-3 @md:max-w-[50%] @md:border-t-0 @md:pt-0 @md:text-right">
           {p.name_bn && <p lang="bn" className="font-bn-display text-[22px] leading-tight">{p.name_bn}</p>}
           <p lang="en" className="text-base font-semibold">{p.name}</p>
           <p className="tabular text-[15px] text-ink-soft">

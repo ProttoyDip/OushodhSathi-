@@ -1,10 +1,11 @@
 "use client";
 
-import { Check, CircleCheck, FlaskConical, Pencil, Plus, Send, Trash2 } from "lucide-react";
+import { Check, CircleCheck, Cpu, FlaskConical, Pencil, Plus, Send, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Suspense, useEffect, useState } from "react";
-import { buttonStyles, FamilyHeader } from "@/components/Chrome";
+import { buttonStyles, FamilyHeader, familyWidth } from "@/components/Chrome";
 import { ErrorState, Skeleton } from "@/components/States";
 import { StripCard } from "@/components/StripCard";
 import { api } from "@/lib/api";
@@ -29,6 +30,7 @@ function Confirm() {
   const t = useTranslations("confirm");
   const ts = useTranslations("scan");
   const tc = useTranslations("common");
+  const tm = useTranslations("models");
   const patient = useApi(() => api.patient(pid), [pid]);
   const items = useApi(() => api.items(pid), [pid]);
   const [thumbs, setThumbs] = useState<Record<number, string>>({});
@@ -40,6 +42,8 @@ function Confirm() {
 
   const list = items.data ?? [];
   const open = list.filter((i) => !i.confirmed);
+  // which AI model actually read these photos (demo items carry no model)
+  const readBy = Array.from(new Set(open.map((i) => i.model_id).filter((m): m is string => !!m && !m.startsWith("demo"))));
   const done = list.filter((i) => i.confirmed);
 
   function replace(updated: MedicineItem) {
@@ -71,13 +75,20 @@ function Confirm() {
   return (
     <>
       <FamilyHeader back={`/p/${pid}`} demo={patient.data?.is_demo} />
-      <main className="mx-auto w-full max-w-[480px] px-4 pb-44 pt-4">
-        <h1 className="font-bn-display text-[32px] leading-[1.2]">{t("title")}</h1>
-        <p className="mt-2 text-ink-soft">{t("intro")}</p>
+      <main className={`mx-auto w-full px-4 pb-44 pt-4 lg:pb-36 lg:pt-8 ${familyWidth}`}>
+        <h1 className="font-bn-display text-[32px] leading-[1.2] lg:text-[40px]">{t("title")}</h1>
+        <p className="mt-2 max-w-[65ch] text-ink-soft">{t("intro")}</p>
         {demo && (
-          <p className="mt-4 flex items-start gap-2 rounded-card border border-dashed border-rule-strong p-4 text-base text-ink-soft">
+          <p className="mt-4 flex items-start gap-2 rounded-card border border-dashed border-rule-strong p-4 text-base text-ink-soft lg:max-w-[720px]">
             <FlaskConical aria-hidden size={18} className="mt-1 shrink-0" />
             {ts("demoNote")}
+          </p>
+        )}
+        {readBy.length > 0 && (
+          <p className="mt-3 flex flex-wrap items-center gap-2 text-base text-ink-soft">
+            <Cpu aria-hidden size={18} className="shrink-0 text-neel" />
+            {t("readBy", { model: readBy.join(", ") })}
+            <Link href="/models" className="text-[15px] font-medium text-neel underline">{tm("title")}</Link>
           </p>
         )}
 
@@ -88,7 +99,7 @@ function Confirm() {
         ) : list.length === 0 ? (
           <p className="mt-8 rounded-card border border-rule bg-paper-raised p-5 text-ink-soft">{t("empty")}</p>
         ) : (
-          <ul className="mt-6 grid gap-4">
+          <ul className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {open.map((item, i) => (
               <li key={item.id} style={{ animation: `assemble 240ms var(--ease-out-quint) ${i * 110}ms both` }}>
                 <StripCard item={{ ...item, thumbnail: thumbs[item.id] }}>
@@ -123,7 +134,7 @@ function Confirm() {
               <CircleCheck aria-hidden size={20} className="text-green" />
               {t("alreadyConfirmed")}
             </h2>
-            <ul className="mt-3 grid gap-3">
+            <ul className="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
               {done.map((item) => (
                 <li key={item.id} style={{ animation: "settle 220ms var(--ease-out-quint) both" }}>
                   <StripCard item={{ ...item, thumbnail: thumbs[item.id] }} density="compact" />
@@ -139,9 +150,9 @@ function Confirm() {
 
       {list.length > 0 && (
         <div className="no-print fixed inset-x-0 bottom-0 border-t border-rule bg-paper/95 px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-3 backdrop-blur-sm">
-          <div className="mx-auto max-w-[480px]">
-            <p className="mb-2 text-center text-base text-ink-soft" aria-live="polite">{t("remaining", { count: open.length })}</p>
-            <button type="button" disabled={open.length > 0 || sending} onClick={send} className={buttonStyles.primary}>
+          <div className={`mx-auto lg:flex lg:items-center lg:justify-end lg:gap-6 ${familyWidth}`}>
+            <p className="mb-2 text-center text-base text-ink-soft lg:mb-0" aria-live="polite">{t("remaining", { count: open.length })}</p>
+            <button type="button" disabled={open.length > 0 || sending} onClick={send} className={`${buttonStyles.primary} lg:w-auto lg:min-w-[320px]`}>
               <Send aria-hidden size={22} />
               {sending ? t("sending") : t("send")}
             </button>
@@ -207,7 +218,7 @@ function AddManual({ pid, onAdded }: { pid: number; onAdded: (i: MedicineItem) =
   const [strength, setStrength] = useState("");
   const field = "block h-12 w-full rounded-md border border-rule-strong bg-paper-raised px-3 text-lg text-ink";
   return (
-    <details className="group mt-10 rounded-card border border-rule">
+    <details className="group mt-10 rounded-card border border-rule lg:max-w-[560px]">
       <summary className="flex min-h-14 cursor-pointer list-none items-center gap-2 px-4 font-semibold text-ink">
         <Plus aria-hidden size={20} className="transition-transform group-open:rotate-45" />
         {t("addManual")}

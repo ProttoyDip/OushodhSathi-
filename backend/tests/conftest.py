@@ -15,6 +15,10 @@ def _isolated_env(monkeypatch):
     for k in _BLANK:
         monkeypatch.setenv(k, "")
     monkeypatch.setenv("OLLAMA_DISABLED", "1")
+    # no live free-model discovery in tests: the chain is exactly what each test configures
+    from app import llm_router
+    monkeypatch.setattr(llm_router, "_auto_models", {"vision": [], "text": []})
+    monkeypatch.setattr(llm_router, "_preferred", {})
     monkeypatch.setenv("REVIEWER_TOKEN", "test-token")
     monkeypatch.setenv("DEMO_MODE", "true")
 

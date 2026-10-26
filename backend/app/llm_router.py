@@ -11,6 +11,7 @@ import hashlib
 import json
 import logging
 import os
+import time
 from dataclasses import dataclass
 from typing import Literal
 
@@ -48,20 +49,46 @@ def _env(name: str) -> str:
     return os.getenv(name, "").split("#", 1)[0].strip()
 
 
-_auto_models: dict[str, str] = {}
+_auto_models: dict[str, list[str]] = {}
+OPENROUTER_FALLBACK = "openrouter/free"  # OpenRouter's own router across whatever is free today
+AUTO_LIMIT = 3
+
+# The user's chosen model per task ("vision" | "text"), as (provider, model). Loaded from the
+# store by the API at startup and whenever it changes; moves that model to the front.
+_preferred: dict[str, tuple[str, str]] = {}
+# What actually answered last, per task: shown in the app so the model in use is visible.
+last_used: dict[str, dict] = {}
 
 
-def pick_free_openrouter_model(kind: Literal["vision", "text"], client: httpx.Client | None = None) -> str | None:
-    """Call OpenRouter's model list once and pick a free model (prompt and completion
-    price 0) with the right input modality, preferring the largest context window."""
-    if kind in _auto_models:
-        return _auto_models[kind]
+def set_preferred(kind: str, provider: str | None, model: str | None) -> None:
+    if provider and model:
+        _preferred[kind] = (provider, model)
+    else:
+        _preferred.pop(kind, None)
+
+
+def preferred(kind: str) -> tuple[str, str] | None:
+    return _preferred.get(kind)
+
+
+def _probe(model: str, key: str, client: httpx.Client) -> bool:
+    """One-token call: free models come and go (some are agent-app only), so test before trusting."""
+    try:
+        r = client.post(f"{OPENROUTER_BASE}/chat/completions", headers={"Authorization": f"Bearer {key}"},
+                        json={"model": model, "max_tokens": 1, "messages": [{"role": "user", "content": "hi"}]})
+        return r.status_code == 200
+    except httpx.HTTPError:
+        return False
+
+
+def free_openrouter_candidates(kind: Literal["vision", "text"], client: httpx.Client | None = None) -> list[str]:
+    """Free OpenRouter chat models (price 0) with the right input, largest context first. Not probed."""
     try:
         c = client or httpx.Client(timeout=20)
         data = c.get(f"{OPENROUTER_BASE}/models").json().get("data", [])
     except (httpx.HTTPError, ValueError) as e:
         log.warning("OpenRouter model list failed: %s", type(e).__name__)
-        return None
+        return []
 
     def free(m: dict) -> bool:
         p = m.get("pricing") or {}
@@ -71,26 +98,50 @@ def pick_free_openrouter_model(kind: Literal["vision", "text"], client: httpx.Cl
             return False
 
     want = "image" if kind == "vision" else "text"
+    arch = lambda m: m.get("architecture") or {}  # noqa: E731
     candidates = [
         m for m in data
-        if free(m) and want in ((m.get("architecture") or {}).get("input_modalities") or [])
-        and "text" in ((m.get("architecture") or {}).get("output_modalities") or ["text"])
+        if free(m) and want in (arch(m).get("input_modalities") or [])
+        and (arch(m).get("output_modalities") or ["text"]) == ["text"]
     ]
-    if not candidates:
-        return None
-    best = max(candidates, key=lambda m: m.get("context_length") or 0)["id"]
-    _auto_models[kind] = best
-    log.info("auto-picked free OpenRouter %s model: %s", kind, best)
-    return best
+    return [m["id"] for m in sorted(candidates, key=lambda m: -(m.get("context_length") or 0))]
+
+
+def pick_free_openrouter_models(kind: Literal["vision", "text"], key: str = "",
+                                client: httpx.Client | None = None) -> list[str]:
+    """Up to AUTO_LIMIT free models that actually answer, then openrouter/free as the last resort.
+    Probed once per process and cached."""
+    if kind in _auto_models:
+        return _auto_models[kind]
+    c = client or httpx.Client(timeout=20)
+    working: list[str] = []
+    for model in free_openrouter_candidates(kind, c):
+        if model == OPENROUTER_FALLBACK:
+            continue
+        if not key or _probe(model, key, c):
+            working.append(model)
+        if len(working) >= AUTO_LIMIT:
+            break
+    picked = working + [OPENROUTER_FALLBACK]
+    _auto_models[kind] = picked
+    log.info("free OpenRouter %s models (probed): %s", kind, ", ".join(picked))
+    return picked
+
+
+def pick_free_openrouter_model(kind: Literal["vision", "text"], client: httpx.Client | None = None) -> str | None:
+    """Back-compat: the first auto-picked model."""
+    models = pick_free_openrouter_models(kind, "", client)
+    return models[0] if models else None
 
 
 def configured_providers(task: Task, client: httpx.Client | None = None) -> list[Provider]:
+    kind = "vision" if task == "vision" else "text"
     out: list[Provider] = []
     if key := _env("OPENROUTER_API_KEY"):
-        env_model = _env("OPENROUTER_VISION_MODEL" if task == "vision" else "OPENROUTER_TEXT_MODEL")
-        model = env_model or pick_free_openrouter_model("vision" if task == "vision" else "text", client)
-        if model:
-            out.append(Provider("openrouter", OPENROUTER_BASE, key, model))
+        env_model = _env("OPENROUTER_VISION_MODEL" if kind == "vision" else "OPENROUTER_TEXT_MODEL")
+        models = ([env_model] if env_model else []) + pick_free_openrouter_models(kind, key, client)
+        for m in dict.fromkeys(models):  # keep order, drop repeats
+            out.append(Provider("openrouter", OPENROUTER_BASE, key, m))
     for prefix in ("NARAROUTER", "EXPLAB", "AGENTROUTER"):
         base, key, model = _env(f"{prefix}_BASE_URL"), _env(f"{prefix}_API_KEY"), _env(f"{prefix}_MODEL")
         if base and key and model:
@@ -102,6 +153,10 @@ def configured_providers(task: Task, client: httpx.Client | None = None) -> list
             out.insert(0, ollama)  # private and local first for Bangla explanations
         else:
             out.append(ollama)
+    # the user's chosen model goes first; the rest of the chain stays as the fallback
+    if (pref := _preferred.get(kind)) and task != "explain_bn":
+        chosen = [p for p in out if (p.name, p.model) == pref]
+        out = chosen + [p for p in out if (p.name, p.model) != pref]
     return out
 
 
@@ -137,6 +192,7 @@ class Router:
             key = cache_key(task, p.model, messages)
             if self.store is not None and (hit := self.store.cache_get(key)) is not None:
                 log.info("task=%s cache hit (%s/%s)", task, p.name, p.model)
+                last_used[task] = {"provider": p.name, "model": p.model, "at": time.time(), "cached": True}
                 return RouterResult(hit, p.name, p.model, cached=True)
             body: dict = {"model": p.model, "messages": messages, "temperature": temperature}
             if json_mode and p.name != "ollama":
@@ -162,6 +218,7 @@ class Router:
                 errors.append(f"{p.name}: malformed response")
                 continue
             log.info("task=%s answered by provider=%s model=%s", task, p.name, p.model)
+            last_used[task] = {"provider": p.name, "model": p.model, "at": time.time()}
             if self.store is not None:
                 self.store.cache_set(key, text)
             return RouterResult(text, p.name, p.model)

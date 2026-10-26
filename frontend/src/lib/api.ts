@@ -1,5 +1,5 @@
 import type {
-  AuditEntry, EvalResult, FamilyStatus, Flag, Health, MedicineItem, Passport, Patient, PilotStats, Report, ReviewQueue,
+  AuditEntry, EvalResult, FamilyStatus, Flag, Health, MedicineItem, ModelsInfo, Passport, Patient, PilotStats, Report, ReviewQueue,
 } from "./types";
 
 export const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
@@ -42,6 +42,9 @@ export const api = {
   health: () => request<Health>("/health"),
   evalResults: () => request<EvalResult[]>("/eval/results"),
   pilotStats: () => request<PilotStats>("/pilot/stats"),
+  models: () => request<ModelsInfo>("/models"),
+  setModel: (kind: "vision" | "text", choice: { provider: string; model: string } | null) =>
+    request<ModelsInfo>("/models/preference", { method: "PUT", body: json({ kind, ...(choice ?? {}) }) }),
 
   patients: () => request<Patient[]>("/patients"),
   patient: (id: number) => request<Patient>(`/patients/${id}`),

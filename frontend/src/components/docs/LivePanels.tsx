@@ -1,9 +1,14 @@
 "use client";
 
-import { CircleCheck, CircleDashed, CircleX } from "lucide-react";
+import { CircleCheck, CircleDashed, CircleX, Cpu } from "lucide-react";
+import Link from "next/link";
+import { useTranslations } from "next-intl";
+import type { ReactNode } from "react";
 import { api } from "@/lib/api";
 import { cx } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
+
+const code = (chunks: ReactNode) => <code className="font-mono text-[14px]">{chunks}</code>;
 
 function Dot({ ok, idle }: { ok: boolean; idle?: boolean }) {
   const Icon = idle ? CircleDashed : ok ? CircleCheck : CircleX;
@@ -11,28 +16,31 @@ function Dot({ ok, idle }: { ok: boolean; idle?: boolean }) {
 }
 
 export function LiveStatus() {
+  const t = useTranslations("docs.live");
+  const tm = useTranslations("models");
   const health = useApi(() => api.health(), [], 30000);
   const h = health.data;
   if (health.error)
     return (
       <p className="rounded-card border border-red-line bg-red-tint p-4 text-red">
-        The API is not reachable from this page right now ({health.error.status === 0 ? "offline" : `HTTP ${health.error.status}`}).
+        {t("unreachable", { reason: health.error.status === 0 ? t("offline") : `HTTP ${health.error.status}` })}
       </p>
     );
   if (!h) return <div className="h-48 rounded-card bg-paper-sunk" style={{ animation: "breathe 1.6s ease-in-out infinite" }} />;
-  const rows: [string, React.ReactNode, boolean, boolean?][] = [
-    ["API", h.status, h.status === "ok"],
-    ["Mode", h.demo_mode ? "Demo mode (works without keys)" : "Live", true],
-    ["Vision providers", h.providers.vision.join(" → ") || "none configured", h.providers.vision.length > 0, h.providers.vision.length === 0],
-    ["Text providers", h.providers.text.join(" → ") || "none configured", h.providers.text.length > 0, h.providers.text.length === 0],
-    ["Bangla explanations", h.providers.explain_bn.join(" → ") || "fixed templates", true],
-    ["Vision model", h.models.vision, true],
-    ["Text model", h.models.text, true],
-    ["Local model (Ollama)", h.models.explain_bn_local ? `${h.models.explain_bn_local} · ${h.ollama_reachable ? "reachable" : "not reachable"}` : "not set", h.ollama_reachable, !h.ollama_reachable],
-    ["Web lookup", [h.web_lookup.tavily && "Tavily", h.web_lookup.perplexity && "Perplexity"].filter(Boolean).join(" + ") || "not configured", h.web_lookup.tavily || h.web_lookup.perplexity, !(h.web_lookup.tavily || h.web_lookup.perplexity)],
-    ["Prompts in use", Object.values(h.prompts).join(", "), true],
-    ["Reviewer login", h.reviewer_login, h.reviewer_login !== "missing"],
-    ["Test functions", String(h.test_count), true],
+  const web = [h.web_lookup.tavily && "Tavily", h.web_lookup.perplexity && "Perplexity"].filter(Boolean).join(" + ");
+  const rows: [string, ReactNode, boolean, boolean?][] = [
+    [t("api"), h.status, h.status === "ok"],
+    [t("mode"), h.demo_mode ? t("modeDemo") : t("modeLive"), true],
+    [t("vision"), h.providers.vision.join(" → ") || t("noneConfigured"), h.providers.vision.length > 0, h.providers.vision.length === 0],
+    [t("text"), h.providers.text.join(" → ") || t("noneConfigured"), h.providers.text.length > 0, h.providers.text.length === 0],
+    [t("explain"), h.providers.explain_bn.join(" → ") || t("templates"), true],
+    [t("visionModel"), h.models.vision, true],
+    [t("textModel"), h.models.text, true],
+    [t("local"), h.models.explain_bn_local ? `${h.models.explain_bn_local} · ${h.ollama_reachable ? t("reachable") : t("notReachable")}` : t("notSet"), h.ollama_reachable, !h.ollama_reachable],
+    [t("web"), web || t("notConfigured"), !!web, !web],
+    [t("prompts"), Object.values(h.prompts).join(", "), true],
+    [t("reviewer"), h.reviewer_login, h.reviewer_login !== "missing"],
+    [t("tests"), String(h.test_count), true],
   ];
   return (
     <div>
@@ -48,19 +56,23 @@ export function LiveStatus() {
           ))}
         </tbody>
       </table>
-      <p className="mt-3 text-[13px] text-ink-faint">Read live from GET /health every 30 seconds. Provider names only; keys never leave the server.</p>
+      <p className="mt-3 text-[13px] text-ink-faint">{t("footnote")}</p>
+      <Link href="/models" className="mt-3 inline-flex h-11 items-center gap-2 rounded-chip border border-rule px-4 text-[15px] font-medium text-ink hover:border-rule-strong">
+        <Cpu aria-hidden size={16} /> {tm("title")}
+      </Link>
     </div>
   );
 }
 
 const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
 
-function Ci({ ci }: { ci?: [number, number] }) {
+function Ci({ ci, label }: { ci?: [number, number]; label: string }) {
   if (!ci) return null;
-  return <span className="block text-[13px] text-ink-faint">95% CI {pct(ci[0])}–{pct(ci[1])}</span>;
+  return <span className="block text-[13px] text-ink-faint">{label} {pct(ci[0])}–{pct(ci[1])}</span>;
 }
 
 export function PilotPanel() {
+  const t = useTranslations("docs.live");
   const stats = useApi(() => api.pilotStats(), []);
   if (stats.error || !stats.data)
     return <div className="h-24 rounded-card bg-paper-sunk" style={{ animation: "breathe 1.6s ease-in-out infinite" }} />;
@@ -68,11 +80,8 @@ export function PilotPanel() {
   if (s.households === 0)
     return (
       <div className="rounded-card border border-dashed border-rule-strong p-5">
-        <p className="!mt-0 text-lg font-semibold text-ink">No pilot results yet.</p>
-        <p className="mt-1 text-ink-soft">
-          Each consenting household we visit becomes one row in <code className="font-mono text-[14px]">eval/pilot.csv</code>.
-          Proportions and their 95% Wilson confidence intervals appear here from that file only. Demo data is never counted.
-        </p>
+        <p className="!mt-0 text-lg font-semibold text-ink">{t("noPilotTitle")}</p>
+        <p className="mt-1 text-ink-soft">{t.rich("noPilotBody", { code })}</p>
       </div>
     );
   return (
@@ -80,8 +89,8 @@ export function PilotPanel() {
       <table className="w-full border-collapse text-left text-[15px]">
         <thead className="text-ink-faint">
           <tr className="border-b border-rule-strong">
-            <th className="py-2 font-medium">Measure</th><th className="font-medium">Count</th>
-            <th className="font-medium">Proportion</th><th className="font-medium">95% Wilson CI</th>
+            <th className="py-2 font-medium">{t("measure")}</th><th className="font-medium">{t("count")}</th>
+            <th className="font-medium">{t("proportion")}</th><th className="font-medium">{t("wilson")}</th>
           </tr>
         </thead>
         <tbody className="tabular">
@@ -95,31 +104,29 @@ export function PilotPanel() {
           ))}
         </tbody>
       </table>
-      <p className="mt-3 text-[13px] text-ink-faint">{s.households} households, {s.medicines} medicines. Read live from GET /pilot/stats.</p>
+      <p className="mt-3 text-[13px] text-ink-faint">{t("pilotFoot", { households: s.households, medicines: s.medicines ?? 0 })}</p>
     </div>
   );
 }
 
 export function EvalPanel() {
+  const t = useTranslations("docs.live");
   const results = useApi(() => api.evalResults(), []);
   if (results.error || !results.data)
     return <div className="h-24 rounded-card bg-paper-sunk" style={{ animation: "breathe 1.6s ease-in-out infinite" }} />;
   if (results.data.length === 0)
     return (
       <div className="rounded-card border border-dashed border-rule-strong p-5">
-        <p className="!mt-0 text-lg font-semibold text-ink">Evaluation in progress.</p>
-        <p className="mt-1 text-ink-soft">
-          No labelled real-photo results have been recorded yet. When <code className="font-mono text-[14px]">eval/run_eval.py</code> runs
-          on our photo set it writes <code className="font-mono text-[14px]">eval/results_&lt;prompt&gt;.json</code>, and the numbers appear here automatically.
-        </p>
+        <p className="!mt-0 text-lg font-semibold text-ink">{t("evalTitle")}</p>
+        <p className="mt-1 text-ink-soft">{t.rich("evalBody", { code })}</p>
       </div>
     );
   return (
     <table className="w-full border-collapse text-left text-[15px]">
       <thead className="text-ink-faint">
         <tr className="border-b border-rule-strong">
-          <th className="py-2 font-medium">Prompt</th><th className="font-medium">Model</th><th className="font-medium">Photos / items</th>
-          <th className="font-medium">Brand</th><th className="font-medium">Strength</th><th className="font-medium">Avg conf.</th>
+          <th className="py-2 font-medium">{t("prompt")}</th><th className="font-medium">{t("model")}</th><th className="font-medium">{t("photos")}</th>
+          <th className="font-medium">{t("brand")}</th><th className="font-medium">{t("strength")}</th><th className="font-medium">{t("conf")}</th>
         </tr>
       </thead>
       <tbody className="tabular">
@@ -128,8 +135,8 @@ export function EvalPanel() {
             <td className="py-2.5 font-medium">{r.prompt_version}</td>
             <td className="break-all text-ink-soft">{r.model_id ?? "—"}</td>
             <td>{r.images} / {r.labelled_items}</td>
-            <td>{pct(r.brand_accuracy)}<Ci ci={r.brand_accuracy_ci} /></td>
-            <td>{pct(r.strength_accuracy)}<Ci ci={r.strength_accuracy_ci} /></td>
+            <td>{pct(r.brand_accuracy)}<Ci ci={r.brand_accuracy_ci} label={t("ci")} /></td>
+            <td>{pct(r.strength_accuracy)}<Ci ci={r.strength_accuracy_ci} label={t("ci")} /></td>
             <td>{r.avg_confidence ?? "—"}</td>
           </tr>
         ))}

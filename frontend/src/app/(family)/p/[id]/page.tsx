@@ -1,15 +1,16 @@
 "use client";
 
-import { BookUser, Camera, ChevronRight, CircleCheck, Clock, LineChart, ScanLine } from "lucide-react";
+import { BookUser, Camera, ChevronRight, CircleCheck, Clock, Cpu, LineChart, ScanLine } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { buttonStyles, FamilyHeader } from "@/components/Chrome";
+import { buttonStyles, FamilyHeader, familyWidth } from "@/components/Chrome";
 import { SeverityBadge } from "@/components/SeverityBadge";
 import { ErrorState, Skeleton } from "@/components/States";
 import { api } from "@/lib/api";
 import { date, num } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
+import { reveal } from "@/lib/reveal";
 
 export default function FamilyHome() {
   const { id } = useParams<{ id: string }>();
@@ -28,13 +29,14 @@ export default function FamilyHome() {
   return (
     <>
       <FamilyHeader demo={p?.is_demo} />
-      <main className="mx-auto w-full max-w-[480px] px-4 pb-12 pt-4">
+      <main className={`mx-auto w-full px-4 pb-12 pt-4 lg:pt-8 ${familyWidth}`}>
         {patient.error ? (
           <ErrorState error={patient.error} onRetry={patient.reload} />
         ) : !p ? (
           <Skeleton lines={3} />
         ) : (
-          <>
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-x-10">
+            <div {...reveal(0)} className="lg:col-start-1 lg:row-start-1">
             {/* the patient, written like the head of a prescription */}
             <section aria-labelledby="patient-name" className="rounded-card border border-rule bg-paper-raised px-5 pb-4 pt-5 shadow-soft">
               <h1 id="patient-name" className="font-bn-display text-[34px] leading-[1.15] text-ink">
@@ -61,9 +63,10 @@ export default function FamilyHome() {
               </Link>
               <p className="mt-2 px-1 text-base text-ink-soft">{t("scanHint")}</p>
             </div>
+            </div>
 
             {/* confirmed results only */}
-            <section aria-labelledby="results-h" className="mt-8">
+            <section {...reveal(90)} aria-labelledby="results-h" className="lg:col-start-2 lg:row-span-2 lg:row-start-1">
               <h2 id="results-h" className="font-bn-display text-[24px] leading-tight">{t("resultsTitle")}</h2>
               <div className="mt-3 rounded-card border border-rule bg-paper-raised p-5">
                 {!s ? (
@@ -111,11 +114,12 @@ export default function FamilyHome() {
             </section>
 
             {/* secondary destinations */}
-            <nav aria-label={t("passport")} className="mt-8 divide-y divide-rule overflow-hidden rounded-card border border-rule bg-paper-raised">
+            <nav {...reveal(180)} aria-label={t("passport")} className="divide-y lg:col-start-1 lg:row-start-2 divide-rule overflow-hidden rounded-card border border-rule bg-paper-raised">
               <RowLink href={`/passport/${pid}`} Icon={BookUser} title={t("passport")} hint={t("passportHint")} />
               <RowLink href={`/p/${pid}/report`} Icon={LineChart} title={t("report")} hint={t("reportHint")} />
+              <RowLink href="/models" Icon={Cpu} title={t("models")} hint={t("modelsHint")} />
             </nav>
-          </>
+          </div>
         )}
       </main>
     </>

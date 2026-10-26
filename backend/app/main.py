@@ -14,6 +14,7 @@ import httpx
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, File, Header, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
@@ -21,6 +22,7 @@ from . import prompts  # noqa: E402
 from .agent import read_shelf, resolve_brand  # noqa: E402
 from .demo import DEMO_ITEMS, DEMO_LABEL  # noqa: E402
 from .explain import explain_flag  # noqa: E402
+from . import llm_router  # noqa: E402
 from .llm_router import NoProviderAvailable, Router, _env, configured_providers, provider_names  # noqa: E402
 from .models import (  # noqa: E402
     MedicineItem, MedicineItemIn, MedicineItemPatch, Patient, PatientIn, ReviewIn, RuleItem, StoredFlag,
@@ -52,7 +54,9 @@ MAX_PHOTO_BYTES = 12 * 1024 * 1024
 
 @lru_cache(maxsize=1)
 def get_store() -> Store:
-    return Store()
+    store = Store()
+    _load_model_preferences(store)  # the user's chosen AI models survive restarts
+    return store
 
 
 def demo_mode() -> bool:
@@ -489,3 +493,55 @@ def eval_results() -> list[dict]:
 def pilot() -> dict:
     """Pilot proportions with 95% Wilson intervals, from eval/pilot.csv (real households only)."""
     return pilot_stats(EVAL_DIR / "pilot.csv")
+
+
+# ---- AI models: visible, and the user may choose one ----------------------------------
+
+MODEL_KINDS = ("vision", "text")
+
+
+def _load_model_preferences(store: Store) -> None:
+    import json
+
+    for kind in MODEL_KINDS:
+        raw = store.cache_get(f"pref:model:{kind}")
+        pref = json.loads(raw) if raw else {}
+        llm_router.set_preferred(kind, pref.get("provider"), pref.get("model"))
+
+
+class ModelPreference(BaseModel):
+    kind: Literal["vision", "text"]
+    provider: str | None = None  # None/None = back to automatic
+    model: str | None = None
+
+
+@app.get("/models")
+def models() -> dict:
+    """The model chain per task (first answers, the rest are fallbacks), the user's choice,
+    and what actually answered last. Names only; never keys."""
+    out = {}
+    for task in ("vision", "text", "explain_bn"):
+        kind = "vision" if task == "vision" else "text"
+        pref = llm_router.preferred(kind)
+        out[task] = {
+            "chain": [{"provider": p.name, "model": p.model} for p in configured_providers(task)],
+            "preferred": {"provider": pref[0], "model": pref[1]} if pref and task != "explain_bn" else None,
+            "last_used": llm_router.last_used.get(task),
+            "choosable": task != "explain_bn",
+        }
+    return {"tasks": out, "demo_mode": demo_mode()}
+
+
+@app.put("/models/preference")
+def set_model_preference(body: ModelPreference, store: Store = Depends(get_store)) -> dict:
+    import json
+
+    if body.provider and body.model:
+        available = {(p.name, p.model) for p in configured_providers(body.kind)}
+        if (body.provider, body.model) not in available:
+            raise HTTPException(422, "That model is not available on this server")
+        store.cache_set(f"pref:model:{body.kind}", json.dumps({"provider": body.provider, "model": body.model}))
+    else:
+        store.cache_set(f"pref:model:{body.kind}", "{}")
+    llm_router.set_preferred(body.kind, body.provider, body.model)
+    return models()

@@ -346,7 +346,60 @@ a[class*="rounded"]:active {
   50% { opacity: 1; }
 }
 
+/* ---------- page + scroll motion ----------
+   Page change: opacity only (a transform here would re-anchor the fixed bottom bars).
+   Scroll reveal: blocks rise 24px and settle as they enter the viewport. Content is
+   visible by default; the head script arms reveals only when JS + IntersectionObserver
+   run and motion is allowed, and a fallback shows everything if the controller never starts. */
+@keyframes page-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.page-in {
+  animation: page-in 260ms var(--ease-out-quint) backwards;
+}
+[data-reveal] {
+  transition:
+    opacity 480ms var(--ease-out-quint) var(--reveal-delay, 0ms),
+    transform 620ms var(--ease-out-quint) var(--reveal-delay, 0ms);
+}
+html.reveal-armed [data-reveal]:not([data-shown]) {
+  opacity: 0;
+  transform: translateY(24px);
+}
+@keyframes reveal-fallback {
+  to { opacity: 1; transform: none; }
+}
+html.reveal-armed:not(.reveal-live) [data-reveal]:not([data-shown]) {
+  animation: reveal-fallback 1ms linear 2.5s forwards;
+}
+
+/* Buttons answer a press; linked cards lift 2px on hover (DESIGN.md › Motion). */
+.press {
+  transition-property: transform, background-color, border-color, color, box-shadow;
+  transition-duration: 140ms;
+  transition-timing-function: var(--ease-out-quint);
+}
+.press:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.lift {
+  transition: transform 200ms var(--ease-out-quint), box-shadow 200ms var(--ease-out-quint), border-color 150ms;
+}
+.lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft);
+}
+
 @media (prefers-reduced-motion: reduce) {
+  html.reveal-armed [data-reveal]:not([data-shown]) {
+    opacity: 1;
+    transform: none;
+  }
+  .press:active:not(:disabled),
+  .lift:hover {
+    transform: none;
+  }
   *,
   *::before,
   *::after {
@@ -366,6 +419,14 @@ a[class*="rounded"]:active {
     --ink-soft: #222222;
     --ink-faint: #444444;
     --rule: #999999;
+  }
+  [data-reveal],
+  html.reveal-armed [data-reveal]:not([data-shown]) {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .page-in {
+    animation: none;
   }
   .no-print {
     display: none !important;

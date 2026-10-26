@@ -167,3 +167,20 @@ export interface PilotStats {
   medicines?: number;
   proportions: Proportion[];
 }
+
+export interface ModelRef {
+  provider: string;
+  model: string;
+}
+
+export interface ModelTask {
+  chain: ModelRef[];
+  preferred: ModelRef | null;
+  last_used: (ModelRef & { at: number; cached?: boolean }) | null;
+  choosable: boolean;
+}
+
+export interface ModelsInfo {
+  tasks: Record<"vision" | "text" | "explain_bn", ModelTask>;
+  demo_mode: boolean;
+}

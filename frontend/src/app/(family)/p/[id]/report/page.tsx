@@ -4,11 +4,12 @@ import { FlaskConical, PackageOpen } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { BPTrend } from "@/components/BPTrend";
-import { FamilyHeader } from "@/components/Chrome";
+import { FamilyHeader, familyWidth } from "@/components/Chrome";
 import { ErrorState, Skeleton } from "@/components/States";
 import { api } from "@/lib/api";
 import { genericName, num } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
+import { reveal } from "@/lib/reveal";
 
 export default function ReportPage() {
   const { id } = useParams<{ id: string }>();
@@ -21,23 +22,23 @@ export default function ReportPage() {
   return (
     <>
       <FamilyHeader back={`/p/${pid}`} demo={!!r?.demo_label} />
-      <main className="mx-auto w-full max-w-[480px] px-4 pb-12 pt-4">
-        <h1 className="font-bn-display text-[32px] leading-[1.2]">{t("title")}</h1>
+      <main className={`mx-auto w-full px-4 pb-12 pt-4 lg:pt-8 ${familyWidth}`}>
+        <h1 className="font-bn-display text-[32px] leading-[1.2] lg:text-[40px]">{t("title")}</h1>
 
         {report.error ? (
           <div className="mt-6"><ErrorState error={report.error} onRetry={report.reload} /></div>
         ) : !r ? (
           <Skeleton lines={4} className="mt-6" />
         ) : (
-          <div className="mt-6 grid gap-5">
-            <section aria-labelledby="bp-h" className="rounded-card border border-rule bg-paper-raised p-5">
+          <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:items-start">
+            <section {...reveal(0)} aria-labelledby="bp-h" className="rounded-card border border-rule bg-paper-raised p-5 lg:p-7">
               <h2 id="bp-h" className="font-semibold">{t("bpTitle")}</h2>
               <div className="mt-3">
                 {r.bp.readings.length ? <BPTrend readings={r.bp.readings} target={r.bp.target} /> : <p className="text-ink-soft">{t("bpNone")}</p>}
               </div>
             </section>
 
-            <section aria-labelledby="refill-h" className="rounded-card border border-rule bg-paper-raised p-5">
+            <section {...reveal(90)} aria-labelledby="refill-h" className="rounded-card border border-rule bg-paper-raised p-5">
               <h2 id="refill-h" className="font-semibold">{t("refillsTitle")}</h2>
               {r.refills_due.length === 0 ? (
                 <p className="mt-2 text-ink-soft">{t("refillsNone")}</p>
@@ -59,7 +60,7 @@ export default function ReportPage() {
               )}
             </section>
 
-            <section aria-labelledby="flags-h" className="rounded-card border border-rule bg-paper-raised p-5">
+            <section {...reveal(140)} aria-labelledby="flags-h" className="rounded-card border border-rule bg-paper-raised p-5">
               <h2 id="flags-h" className="font-semibold">{t("flagsTitle")}</h2>
               <dl className="mt-3 divide-y divide-rule">
                 {[
@@ -75,7 +76,7 @@ export default function ReportPage() {
               </dl>
             </section>
 
-            <section aria-labelledby="doses-h" className="rounded-card border border-dashed border-rule-strong p-5">
+            <section {...reveal(200)} aria-labelledby="doses-h" className="rounded-card border border-dashed border-rule-strong p-5">
               <h2 id="doses-h" className="font-semibold">{t("dosesTitle")}</h2>
               {r.doses ? (
                 <>

@@ -1,28 +1,27 @@
 # Render Blueprint for the OushodhSathi API.
 # New → Blueprint → pick this repo. Secrets marked `sync: false` are entered in the
-# Render dashboard, never committed. SQLite lives on a persistent disk so the demo
-# household, reviews and audit trail survive restarts and deploys.
+# Render dashboard, never committed.
+#
+# Free plan: no persistent disk and no pre-deploy step, so SQLite is a local file that
+# resets when the instance restarts, and the invented demo household is re-seeded on
+# start. To keep reviews and the audit trail across restarts, switch to `plan: starter`,
+# add the `disk` block below and set OUSHODH_DB=/var/data/oushodh.db:
+#   disk: { name: oushodh-data, mountPath: /var/data, sizeGB: 1 }
 services:
   - type: web
     name: oushodhsathi-api
     runtime: python
     rootDir: backend
-    plan: starter            # persistent disks need a paid instance
+    plan: free
     region: singapore        # closest Render region to Bangladesh
     buildCommand: pip install -r requirements.txt
-    preDeployCommand: python scripts/seed_demo.py --if-empty
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    # seed the demo household when the database is empty, then serve
+    startCommand: python scripts/seed_demo.py --if-empty && uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     autoDeploy: true
-    disk:
-      name: oushodh-data
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.7
-      - key: OUSHODH_DB
-        value: /var/data/oushodh.db
       - key: DEMO_MODE
         value: "true"
       - key: OLLAMA_DISABLED     # no Ollama on Render; Bangla explanations use the cloud fallback
@@ -42,6 +41,24 @@ services:
       - key: TAVILY_API_KEY
         sync: false
       - key: PERPLEXITY_API_KEY
+        sync: false
+      - key: NARAROUTER_BASE_URL
+        sync: false
+      - key: NARAROUTER_API_KEY
+        sync: false
+      - key: NARAROUTER_MODEL
+        sync: false
+      - key: EXPLAB_BASE_URL
+        sync: false
+      - key: EXPLAB_API_KEY
+        sync: false
+      - key: EXPLAB_MODEL
+        sync: false
+      - key: AGENTROUTER_BASE_URL
+        sync: false
+      - key: AGENTROUTER_API_KEY
+        sync: false
+      - key: AGENTROUTER_MODEL
         sync: false
       - key: N8N_ALERT_WEBHOOK
         sync: false

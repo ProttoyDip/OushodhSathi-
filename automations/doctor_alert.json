@@ -1,0 +1,101 @@
+{
+  "name": "OushodhSathi — doctor alert (red flag)",
+  "active": false,
+  "settings": {
+    "timezone": "Asia/Dhaka"
+  },
+  "nodes": [
+    {
+      "id": "c129eff9-9264-5f79-9408-67ad4ac44433",
+      "name": "Red flag webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "oushodh-red-flag",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "webhookId": "df591ca2-2175-5749-9245-a04aa0426fd0"
+    },
+    {
+      "id": "3a5b887b-b68e-5966-a38e-8ce9e85892e8",
+      "name": "Format alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// The backend sends ids and rule codes only — no patient names, no medicine details.\nconst body = $input.first().json.body ?? $input.first().json;\nconst lines = body.flags.map(f => `- flag #${f.id}: ${f.code} (${f.severity}, for the ${f.routed_to})`).join('\n');\nreturn [{ json: { text: `New red finding(s) waiting for review — patient #${body.patient_id}\n${lines}\n\nOpen the review queue to confirm or dismiss.` } }];"
+      }
+    },
+    {
+      "id": "41ad7bab-43f1-529c-9396-ed6dbcb15ca6",
+      "name": "Telegram the reviewer",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        480,
+        -100
+      ],
+      "parameters": {
+        "chatId": "={{ $env.OUSHODH_REVIEWER_TELEGRAM_CHAT }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {}
+      }
+    },
+    {
+      "id": "e57f9918-1f13-5b13-8028-ba143b0b5fcc",
+      "name": "Email the reviewer",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        480,
+        100
+      ],
+      "parameters": {
+        "fromEmail": "={{ $env.OUSHODH_FROM_EMAIL }}",
+        "toEmail": "={{ $env.OUSHODH_REVIEWER_EMAIL }}",
+        "subject": "OushodhSathi: red finding waiting for review",
+        "emailFormat": "text",
+        "text": "={{ $json.text }}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Red flag webhook": {
+      "main": [
+        [
+          {
+            "node": "Format alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format alert": {
+      "main": [
+        [
+          {
+            "node": "Telegram the reviewer",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Email the reviewer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

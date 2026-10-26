@@ -101,11 +101,11 @@ function Confirm() {
                     />
                   ) : (
                     <div className="flex gap-2">
-                      <button type="button" onClick={() => confirm(item)} className={cx(buttonStyles.secondary, "flex-1 border-teal text-teal")}>
+                      <button type="button" onClick={() => confirm(item)} className={cx(buttonStyles.secondary, "flex-1 whitespace-nowrap border-teal px-3 text-teal")}>
                         <Check aria-hidden size={20} strokeWidth={2.5} />
                         {t("correct")}
                       </button>
-                      <button type="button" onClick={() => setEditing(item.id)} className={buttonStyles.quiet}>
+                      <button type="button" onClick={() => setEditing(item.id)} className={cx(buttonStyles.quiet, "whitespace-nowrap px-3")}>
                         <Pencil aria-hidden size={18} />
                         {t("edit")}
                       </button>

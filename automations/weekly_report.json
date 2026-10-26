@@ -1,0 +1,114 @@
+{
+  "name": "OushodhSathi — weekly report",
+  "active": false,
+  "settings": {
+    "timezone": "Asia/Dhaka"
+  },
+  "nodes": [
+    {
+      "id": "11f09fb7-2788-5717-a37f-384db9538e3a",
+      "name": "Every Friday 18:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                5
+              ],
+              "triggerAtHour": 18,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "7e4cc147-ba65-5444-a4a1-74485dcd5d87",
+      "name": "Get weekly report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ ($env.OUSHODH_API_URL || 'http://localhost:8000') + '/patients/' + ($env.OUSHODH_PATIENT_ID || 1) + '/report' }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "4066e17b-8fe2-51e9-ac91-dea758c75c0e",
+      "name": "Format email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Deterministic formatting only. No AI in this workflow.\nconst r = $input.first().json;\nconst bp = r.bp.readings;\nconst latest = bp.length ? `${bp[bp.length - 1].systolic}/${bp[bp.length - 1].diastolic}` : 'no readings';\nconst refills = r.refills_due.map(x => `- ${x.brand}: about ${x.days_left} days left`).join('\n') || '- nothing runs out this week';\nconst demo = r.demo_label ? `\n(${r.demo_label})` : '';\nreturn [{ json: {\n  subject: `OushodhSathi weekly report — ${r.patient.name}`,\n  text: `Latest blood pressure: ${latest} (target 140/90)\n` +\n        `Confirmed findings still open: ${r.flags.confirmed_open}\n` +\n        `Resolved: ${r.flags.resolved}\n\nRunning out soon:\n${refills}\n\n` +\n        `ডাক্তারের সাথে কথা না বলে কোনো ওষুধ বন্ধ বা পরিবর্তন করবেন না।${demo}`,\n} }];"
+      }
+    },
+    {
+      "id": "396e791e-a92c-55f5-8888-564b442efc52",
+      "name": "Email the family",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        720,
+        0
+      ],
+      "parameters": {
+        "fromEmail": "={{ $env.OUSHODH_FROM_EMAIL }}",
+        "toEmail": "={{ $env.OUSHODH_FAMILY_EMAIL }}",
+        "subject": "={{ $json.subject }}",
+        "emailFormat": "text",
+        "text": "={{ $json.text }}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Every Friday 18:00": {
+      "main": [
+        [
+          {
+            "node": "Get weekly report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get weekly report": {
+      "main": [
+        [
+          {
+            "node": "Format email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format email": {
+      "main": [
+        [
+          {
+            "node": "Email the family",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

@@ -108,7 +108,7 @@ flowchart TB
     MCP -.->|calls the same modules| BM & RE
 ```
 
-SQLite is enough for the prototype and lives on a persistent disk when deployed ([`render.yaml`](render.yaml)).
+SQLite is enough for the prototype. On Render's Free plan it lives on the instance and the demo household is re-seeded on start; [`render.yaml`](render.yaml) explains how to add a persistent disk.
 
 ## AI approach
 
@@ -137,7 +137,7 @@ Prompts are versioned files: [`extract_strip.v1`](backend/app/prompts/extract_st
 | Automation | n8n workflows (JSON in [`automations/`](automations)) |
 | Agent interface | MCP server on the official `mcp` Python SDK |
 | Testing and CI | pytest, ESLint, GitHub Actions |
-| Hosting | Render (API, persistent disk) and Vercel (frontend), see [`docs/DEPLOY.md`](docs/DEPLOY.md) |
+| Hosting | Render (API, Free plan) and Vercel (frontend), see [`docs/DEPLOY.md`](docs/DEPLOY.md) |
 
 ## Quick start
 

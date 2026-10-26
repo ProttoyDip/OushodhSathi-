@@ -4,6 +4,7 @@ Usage:
   python scripts/seed_demo.py              # items confirmed, rules run, flags pending review
   python scripts/seed_demo.py --reviewed   # also confirms every flag with demo clinician notes
   python scripts/seed_demo.py --reset      # delete the database first
+  python scripts/seed_demo.py --if-empty   # only seed when there are no patients (used on deploy)
 """
 from __future__ import annotations
 
@@ -47,8 +48,12 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--reviewed", action="store_true")
     ap.add_argument("--reset", action="store_true")
+    ap.add_argument("--if-empty", action="store_true")
     args = ap.parse_args()
     store = Store()
+    if args.if_empty and store.list_patients():
+        print("Database already has patients; not seeding.")
+        sys.exit(0)
     if args.reset:
         store.db.close()
         Path(store.path).unlink(missing_ok=True)

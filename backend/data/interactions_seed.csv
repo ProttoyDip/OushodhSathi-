@@ -1,0 +1,4 @@
+a,b,severity,effect,source,effect_bn
+class:NSAID,class:ARB,moderate,"Weaker blood-pressure control and higher risk of kidney injury, especially in older adults.",curated seed - replace with DDInter 2.0 export,"রক্তচাপ নিয়ন্ত্রণ দুর্বল হতে পারে এবং কিডনির ক্ষতির ঝুঁকি বাড়তে পারে।"
+class:NSAID,aspirin,major,"Higher risk of stomach and gut bleeding; may reduce aspirin's heart protection.",curated seed - replace with DDInter 2.0 export,"পেট বা অন্ত্রে রক্তক্ষরণের ঝুঁকি বাড়তে পারে।"
+class:benzodiazepine,class:TCA,major,"Added drowsiness, confusion and higher risk of falls.",curated seed - replace with DDInter 2.0 export,"বেশি ঘুম ঘুম ভাব, বিভ্রান্তি এবং পড়ে যাওয়ার ঝুঁকি বাড়তে পারে।"

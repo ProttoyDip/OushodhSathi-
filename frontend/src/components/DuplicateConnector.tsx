@@ -43,6 +43,7 @@ export function DuplicateConnector({
           className="absolute inset-x-[12%] top-3 h-6 w-[76%] overflow-visible"
           viewBox="0 0 100 20"
           preserveAspectRatio="none"
+          style={anim("reveal-x", 320, 200)}
         >
           <path
             d="M1 20 V6 H99 V20"
@@ -51,9 +52,6 @@ export function DuplicateConnector({
             strokeWidth={2.5}
             strokeLinejoin="round"
             vectorEffect="non-scaling-stroke"
-            pathLength={100}
-            strokeDasharray={100}
-            style={animate ? ({ "--len": 100, animation: `draw 320ms var(--ease-out-quint) ${delay + 200}ms both` } as CSSProperties) : undefined}
           />
         </svg>
         <span
@@ -84,9 +82,10 @@ export function DuplicateConnector({
     <div className={cx("relative min-w-0 pl-6", className)} role="group" aria-label={label}>
       <svg
         aria-hidden
-        className="absolute bottom-10 left-0 top-10 w-5 overflow-visible"
+        className="absolute left-0 top-10 h-[calc(100%-5rem)] w-5 overflow-visible"
         viewBox="0 0 20 100"
         preserveAspectRatio="none"
+        style={anim("reveal-y", 320, 200)}
       >
         <path
           d="M20 1 H5 V99 H20"
@@ -95,9 +94,6 @@ export function DuplicateConnector({
           strokeWidth={2.5}
           strokeLinejoin="round"
           vectorEffect="non-scaling-stroke"
-          pathLength={100}
-          strokeDasharray={100}
-          style={animate ? ({ "--len": 100, animation: `draw 320ms var(--ease-out-quint) ${delay + 200}ms both` } as CSSProperties) : undefined}
         />
       </svg>
       <div className="flex min-w-0 flex-col gap-3">

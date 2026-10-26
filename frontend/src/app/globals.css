@@ -239,9 +239,14 @@ a {
   from { transform: translateX(28px); }
   to { transform: none; }
 }
-@keyframes draw {
-  from { stroke-dashoffset: var(--len, 400); }
-  to { stroke-dashoffset: 0; }
+/* Brackets reveal from the middle outwards; the resting state is always the full path. */
+@keyframes reveal-x {
+  from { clip-path: inset(0 50% 0 50%); }
+  to { clip-path: inset(0 0 0 0); }
+}
+@keyframes reveal-y {
+  from { clip-path: inset(50% 0 50% 0); }
+  to { clip-path: inset(0 0 0 0); }
 }
 @keyframes label-in-x {
   from { opacity: 0; transform: translateX(-50%) scale(0.9); }
@@ -280,4 +285,19 @@ a {
   .no-print {
     display: none !important;
   }
+}
+
+/* /demo: tall stages (phone, passport) scale down on short laptop screens so the
+   progress rail stays on screen. */
+@media (min-width: 1024px) and (max-height: 1120px) {
+  .demo-fit { zoom: 0.86; }
+}
+@media (min-width: 1024px) and (max-height: 940px) {
+  .demo-fit { zoom: 0.74; }
+}
+@media (min-width: 1024px) and (max-height: 800px) {
+  .demo-fit { zoom: 0.64; }
+}
+@media (min-width: 1024px) and (max-height: 800px) {
+  .demo-fit-sm { zoom: 0.86; }
 }

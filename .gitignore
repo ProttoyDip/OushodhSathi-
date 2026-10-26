@@ -9,3 +9,6 @@ __pycache__
 out
 *.log
 .DS_Store
+
+# local design-QA captures
+.impeccable/review/

@@ -455,3 +455,24 @@ async def scan(pid: int, photos: list[UploadFile] = File(...), store: Store = De
         saved.append({**item.model_dump(), "thumbnail": s.thumbnail})
     return {"items": saved, "mode": "live", "model_id": outcome.model_id,
             "needs_review": outcome.needs_review, "warnings": outcome.warnings}
+
+
+# ---- evaluation results (read by the /docs page) -------------------------------------
+
+EVAL_DIR = Path(__file__).resolve().parent.parent.parent / "eval"
+
+
+@app.get("/eval/results")
+def eval_results() -> list[dict]:
+    """Summaries of eval/results_*.json. Empty list means evaluation is in progress."""
+    import json
+
+    out = []
+    for f in sorted(EVAL_DIR.glob("results_*.json")):
+        try:
+            data = json.loads(f.read_text(encoding="utf-8"))
+        except ValueError:
+            continue
+        out.append({k: data.get(k) for k in ("prompt_version", "model_id", "run_at", "images", "labelled_items",
+                                              "brand_accuracy", "strength_accuracy", "avg_confidence")})
+    return out

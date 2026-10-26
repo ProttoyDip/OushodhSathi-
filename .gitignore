@@ -1,0 +1,14 @@
+.env
+*.db
+*.db-journal
+node_modules
+.venv
+__pycache__
+.pytest_cache
+.next
+out
+*.log
+.DS_Store
+
+# local design-QA captures
+.impeccable/review/

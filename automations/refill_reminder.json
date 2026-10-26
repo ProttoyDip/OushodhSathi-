@@ -1,0 +1,108 @@
+{
+  "name": "OushodhSathi — refill reminder",
+  "active": false,
+  "settings": {
+    "timezone": "Asia/Dhaka"
+  },
+  "nodes": [
+    {
+      "id": "92d08186-cf32-5f18-ad32-333e7a346ec4",
+      "name": "Every day 09:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 9,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "f2b19a04-751b-5aac-9f58-e99bd77009f2",
+      "name": "Get report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ ($env.OUSHODH_API_URL || 'http://localhost:8000') + '/patients/' + ($env.OUSHODH_PATIENT_ID || 1) + '/report' }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "72dba1fc-41f7-58b5-af14-ce58607ebaae",
+      "name": "Running out in 5 days?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Keep medicines with 5 days or fewer left. No AI.\nconst r = $input.first().json;\nconst soon = r.refills_due.filter(x => x.days_left <= 5);\nif (!soon.length) return [];\nconst list = soon.map(x => `• ${x.brand} — আর প্রায় ${x.days_left} দিনের ওষুধ আছে`).join('\n');\nreturn [{ json: { text: `ওষুধসাথী: শিগগির শেষ হবে\n${list}\n\nনতুন ওষুধ আনার আগে প্রেসক্রিপশন দেখে নিন।` } }];"
+      }
+    },
+    {
+      "id": "6b27c906-2690-583c-80e9-8ac760cd192c",
+      "name": "Message the family",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        720,
+        0
+      ],
+      "parameters": {
+        "chatId": "={{ $env.OUSHODH_FAMILY_TELEGRAM_CHAT }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {}
+      }
+    }
+  ],
+  "connections": {
+    "Every day 09:00": {
+      "main": [
+        [
+          {
+            "node": "Get report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get report": {
+      "main": [
+        [
+          {
+            "node": "Running out in 5 days?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Running out in 5 days?": {
+      "main": [
+        [
+          {
+            "node": "Message the family",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

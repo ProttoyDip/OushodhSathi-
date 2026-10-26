@@ -1,0 +1,283 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------
+   OushodhSathi tokens — "the pharmacist's ledger" (see DESIGN.md)
+   Prescription paper + medicine-strip foil. Light and dark.
+   ------------------------------------------------------------------ */
+
+:root {
+  color-scheme: light;
+  --paper: #f6f2e9;
+  --paper-raised: #fcfaf5;
+  --paper-sunk: #ede6d6;
+  --ink: #12343b;
+  --ink-soft: #34535a;
+  --ink-faint: #5a7176;
+  --rule: #ddd4c1;
+  --rule-strong: #c5baa3;
+
+  --foil: #c9ced3;
+  --foil-hi: #eef0f2;
+  --foil-lo: #a3abb3;
+  --foil-ink: #5f6b74;
+
+  --teal: #0f6b6b;
+  --teal-hover: #0b5858;
+  --teal-tint: #dcebe8;
+  --on-teal: #ffffff;
+
+  --red: #b42318;
+  --red-tint: #f9e5e2;
+  --red-line: #e6b3ad;
+  --amber: #b54708;
+  --amber-tint: #fcecd9;
+  --amber-line: #ecc49b;
+  --green: #067647;
+  --green-tint: #e0f1e7;
+  --green-line: #a6d4b9;
+
+  --shadow-soft: 0 1px 2px rgb(18 52 59 / 0.06), 0 8px 20px -10px rgb(18 52 59 / 0.22);
+  --radius-card: 8px;
+  --radius-chip: 999px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #0f1e22;
+    --paper-raised: #15292e;
+    --paper-sunk: #0a1619;
+    --ink: #e8efec;
+    --ink-soft: #b9c8c5;
+    --ink-faint: #8ea2a1;
+    --rule: #22383d;
+    --rule-strong: #34505a;
+    --foil: #6c777e;
+    --foil-hi: #8d979d;
+    --foil-lo: #454f55;
+    --foil-ink: #c3cbd0;
+    --teal: #4fb7ab;
+    --teal-hover: #6cc8bd;
+    --teal-tint: #143a3a;
+    --on-teal: #071416;
+    --red: #f2877c;
+    --red-tint: #3a1916;
+    --red-line: #6e2c25;
+    --amber: #f3a560;
+    --amber-tint: #382412;
+    --amber-line: #6b4218;
+    --green: #67c897;
+    --green-tint: #11301f;
+    --green-line: #22573b;
+    --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 24px -12px rgb(0 0 0 / 0.6);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #0f1e22;
+  --paper-raised: #15292e;
+  --paper-sunk: #0a1619;
+  --ink: #e8efec;
+  --ink-soft: #b9c8c5;
+  --ink-faint: #8ea2a1;
+  --rule: #22383d;
+  --rule-strong: #34505a;
+  --foil: #6c777e;
+  --foil-hi: #8d979d;
+  --foil-lo: #454f55;
+  --foil-ink: #c3cbd0;
+  --teal: #4fb7ab;
+  --teal-hover: #6cc8bd;
+  --teal-tint: #143a3a;
+  --on-teal: #071416;
+  --red: #f2877c;
+  --red-tint: #3a1916;
+  --red-line: #6e2c25;
+  --amber: #f3a560;
+  --amber-tint: #382412;
+  --amber-line: #6b4218;
+  --green: #67c897;
+  --green-tint: #11301f;
+  --green-line: #22573b;
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 24px -12px rgb(0 0 0 / 0.6);
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-paper-sunk: var(--paper-sunk);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-foil: var(--foil);
+  --color-foil-hi: var(--foil-hi);
+  --color-foil-lo: var(--foil-lo);
+  --color-foil-ink: var(--foil-ink);
+  --color-teal: var(--teal);
+  --color-teal-hover: var(--teal-hover);
+  --color-teal-tint: var(--teal-tint);
+  --color-on-teal: var(--on-teal);
+  --color-red: var(--red);
+  --color-red-tint: var(--red-tint);
+  --color-red-line: var(--red-line);
+  --color-amber: var(--amber);
+  --color-amber-tint: var(--amber-tint);
+  --color-amber-line: var(--amber-line);
+  --color-green: var(--green);
+  --color-green-tint: var(--green-tint);
+  --color-green-line: var(--green-line);
+
+  --radius-card: var(--radius-card);
+  --radius-chip: var(--radius-chip);
+  --shadow-soft: var(--shadow-soft);
+
+  /* Latin glyphs come from the first face, Bangla glyphs fall through to the second */
+  --font-sans: var(--font-instrument-sans), var(--font-hind-siliguri), "Noto Sans Bengali", system-ui, sans-serif;
+  --font-display: var(--font-instrument-serif), var(--font-tiro-bangla), "Noto Serif Bengali", Georgia, serif;
+  --font-bn: var(--font-hind-siliguri), "Noto Sans Bengali", var(--font-instrument-sans), sans-serif;
+  --font-bn-display: var(--font-tiro-bangla), "Noto Serif Bengali", var(--font-instrument-serif), serif;
+
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-assemble: assemble 240ms var(--ease-out-quint) both;
+  --animate-settle: settle 220ms var(--ease-out-quint) both;
+}
+
+/* spacing scale: Tailwind's 4px base (1 = 4px) is the scale; no ad-hoc values */
+
+html {
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "kern" 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
+}
+
+:lang(bn) {
+  line-height: 1.6;
+}
+
+/* Browser surfaces carry the design too */
+::selection {
+  background: var(--teal-tint);
+  color: var(--ink);
+}
+:focus-visible {
+  outline: 3px solid var(--teal);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+input,
+textarea,
+select {
+  caret-color: var(--teal);
+}
+a {
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+}
+* {
+  scrollbar-color: var(--rule-strong) transparent;
+  scrollbar-width: thin;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* ---------- foil material (strip cards, dividers) ---------- */
+.foil {
+  background-color: var(--foil);
+  background-image:
+    linear-gradient(115deg, transparent 0 30%, rgb(255 255 255 / 0.35) 45%, transparent 60%),
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.10) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, var(--foil-hi), var(--foil) 45%, var(--foil-lo));
+}
+.foil-rule {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--foil) 12%, var(--foil) 88%, transparent);
+}
+
+/* Perforated right edge of a strip piece: a column of punched holes */
+.perforated {
+  -webkit-mask: radial-gradient(circle 3.5px at right 0 50%, transparent 98%, #000 100%) right / 100% 14px repeat-y;
+  mask: radial-gradient(circle 3.5px at right 0 50%, transparent 98%, #000 100%) right / 100% 14px repeat-y;
+}
+
+/* ---------- motion: assemble, snap, settle — nothing else moves ---------- */
+@keyframes assemble {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes settle {
+  0% { transform: translateY(-6px); box-shadow: 0 14px 28px -12px rgb(18 52 59 / 0.35); }
+  100% { transform: none; }
+}
+@keyframes snap-top {
+  from { transform: translateY(-22px); }
+  to { transform: none; }
+}
+@keyframes snap-bottom {
+  from { transform: translateY(22px); }
+  to { transform: none; }
+}
+@keyframes snap-left {
+  from { transform: translateX(-28px); }
+  to { transform: none; }
+}
+@keyframes snap-right {
+  from { transform: translateX(28px); }
+  to { transform: none; }
+}
+@keyframes draw {
+  from { stroke-dashoffset: var(--len, 400); }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes label-in-x {
+  from { opacity: 0; transform: translateX(-50%) scale(0.9); }
+  to { opacity: 1; transform: translateX(-50%) scale(1); }
+}
+@keyframes label-in-seam {
+  from { opacity: 0; transform: translateY(-50%) scale(0.9); }
+  to { opacity: 1; transform: translateY(-50%) scale(1); }
+}
+@keyframes breathe {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+/* ---------- print ---------- */
+@media print {
+  :root,
+  :root[data-theme="dark"] {
+    --paper: #ffffff;
+    --paper-raised: #ffffff;
+    --ink: #000000;
+    --ink-soft: #222222;
+    --ink-faint: #444444;
+    --rule: #999999;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

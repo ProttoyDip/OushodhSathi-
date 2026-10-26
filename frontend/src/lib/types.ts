@@ -149,4 +149,21 @@ export interface EvalResult {
   brand_accuracy: number;
   strength_accuracy: number;
   avg_confidence: number | null;
+  brand_accuracy_ci?: [number, number];
+  strength_accuracy_ci?: [number, number];
+}
+
+export interface Proportion {
+  label: string;
+  k: number;
+  n: number;
+  p: number;
+  ci_low: number;
+  ci_high: number;
+}
+
+export interface PilotStats {
+  households: number;
+  medicines?: number;
+  proportions: Proportion[];
 }

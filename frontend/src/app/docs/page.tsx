@@ -2,7 +2,7 @@ import { ExternalLink } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Wordmark } from "@/components/BrandMark";
-import { EvalPanel, LiveStatus } from "@/components/docs/LivePanels";
+import { EvalPanel, LiveStatus, PilotPanel } from "@/components/docs/LivePanels";
 
 export const metadata: Metadata = { title: "Docs — pitch, whitepaper, system status" };
 
@@ -120,6 +120,9 @@ export default function Docs() {
           <p>Extraction accuracy on our own labelled photos of real Bangladeshi strips (cut strips, Bangla text, blur):</p>
           <div className="mt-5"><EvalPanel /></div>
           <p>The rules engine, API safety gate, router fallback and explanation guard are covered by the pytest suite; the live count is in the status table below.</p>
+          <h3>Pilot</h3>
+          <p>What we find in real homes, reported as proportions with 95% Wilson score intervals, which stay honest at small sample sizes:</p>
+          <div className="mt-5"><PilotPanel /></div>
 
           <h2 id="status">Live system status</h2>
           <div className="mt-5"><LiveStatus /></div>

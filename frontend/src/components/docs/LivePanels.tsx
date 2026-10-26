@@ -53,6 +53,53 @@ export function LiveStatus() {
   );
 }
 
+const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
+
+function Ci({ ci }: { ci?: [number, number] }) {
+  if (!ci) return null;
+  return <span className="block text-[13px] text-ink-faint">95% CI {pct(ci[0])}–{pct(ci[1])}</span>;
+}
+
+export function PilotPanel() {
+  const stats = useApi(() => api.pilotStats(), []);
+  if (stats.error || !stats.data)
+    return <div className="h-24 rounded-card bg-paper-sunk" style={{ animation: "breathe 1.6s ease-in-out infinite" }} />;
+  const s = stats.data;
+  if (s.households === 0)
+    return (
+      <div className="rounded-card border border-dashed border-rule-strong p-5">
+        <p className="!mt-0 text-lg font-semibold text-ink">No pilot results yet.</p>
+        <p className="mt-1 text-ink-soft">
+          Each consenting household we visit becomes one row in <code className="font-mono text-[14px]">eval/pilot.csv</code>.
+          Proportions and their 95% Wilson confidence intervals appear here from that file only. Demo data is never counted.
+        </p>
+      </div>
+    );
+  return (
+    <div>
+      <table className="w-full border-collapse text-left text-[15px]">
+        <thead className="text-ink-faint">
+          <tr className="border-b border-rule-strong">
+            <th className="py-2 font-medium">Measure</th><th className="font-medium">Count</th>
+            <th className="font-medium">Proportion</th><th className="font-medium">95% Wilson CI</th>
+          </tr>
+        </thead>
+        <tbody className="tabular">
+          {s.proportions.map((p) => (
+            <tr key={p.label} className="border-b border-rule">
+              <td className="py-2.5 pr-4 font-medium">{p.label}</td>
+              <td>{p.k} / {p.n}</td>
+              <td>{pct(p.p)}</td>
+              <td className="text-ink-soft">{pct(p.ci_low)}–{pct(p.ci_high)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="mt-3 text-[13px] text-ink-faint">{s.households} households, {s.medicines} medicines. Read live from GET /pilot/stats.</p>
+    </div>
+  );
+}
+
 export function EvalPanel() {
   const results = useApi(() => api.evalResults(), []);
   if (results.error || !results.data)
@@ -60,7 +107,7 @@ export function EvalPanel() {
   if (results.data.length === 0)
     return (
       <div className="rounded-card border border-dashed border-rule-strong p-5">
-        <p className="text-lg font-semibold text-ink">Evaluation in progress.</p>
+        <p className="!mt-0 text-lg font-semibold text-ink">Evaluation in progress.</p>
         <p className="mt-1 text-ink-soft">
           No labelled real-photo results have been recorded yet. When <code className="font-mono text-[14px]">eval/run_eval.py</code> runs
           on our photo set it writes <code className="font-mono text-[14px]">eval/results_&lt;prompt&gt;.json</code>, and the numbers appear here automatically.
@@ -81,8 +128,8 @@ export function EvalPanel() {
             <td className="py-2.5 font-medium">{r.prompt_version}</td>
             <td className="break-all text-ink-soft">{r.model_id ?? "—"}</td>
             <td>{r.images} / {r.labelled_items}</td>
-            <td>{(r.brand_accuracy * 100).toFixed(1)}%</td>
-            <td>{(r.strength_accuracy * 100).toFixed(1)}%</td>
+            <td>{pct(r.brand_accuracy)}<Ci ci={r.brand_accuracy_ci} /></td>
+            <td>{pct(r.strength_accuracy)}<Ci ci={r.strength_accuracy_ci} /></td>
             <td>{r.avg_confidence ?? "—"}</td>
           </tr>
         ))}

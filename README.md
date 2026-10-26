@@ -30,7 +30,7 @@ An elderly patient often collects medicines from a hospital outpatient doctor, a
 ## How it works
 
 ```mermaid
-flowchart LR
+flowchart TD
     A["Family photographs<br/>every strip, box<br/>and prescription"] --> B["Vision model reads<br/>brand, strength,<br/>expiry, confidence"]
     B --> C{"Brand known?"}
     C -- "yes" --> D["Brand → generic<br/>(exact, then strict fuzzy)"]

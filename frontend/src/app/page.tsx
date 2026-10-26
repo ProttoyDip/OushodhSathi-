@@ -60,8 +60,8 @@ export default function Landing() {
         {/* first viewport: the mechanism itself */}
         <header className="mx-auto grid max-w-[1200px] grid-cols-[minmax(0,1fr)] items-center gap-12 px-5 pb-16 pt-8 sm:px-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:pb-24 lg:pt-14">
           <div className="min-w-0">
-            <h1 className="font-display text-[clamp(44px,6.4vw,84px)] leading-[0.98] tracking-[-0.015em] text-ink">
-              Napa and Ace are the same&nbsp;medicine.
+            <h1 className="font-display text-[clamp(42px,5.6vw,76px)] leading-[1.0] text-ink">
+              Napa and Ace are <br className="hidden sm:block" />the same&nbsp;medicine.
             </h1>
             <p lang="bn" className="mt-4 font-bn-display text-[clamp(22px,2.4vw,28px)] leading-snug text-ink-soft">
               নাম আলাদা, ওষুধ একই — প্যারাসিটামল, দুইবার।
@@ -73,7 +73,7 @@ export default function Landing() {
               before the family sees it, in simple Bangla.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link href="/p/1" className="inline-flex min-h-14 items-center gap-2.5 rounded-card bg-teal px-7 text-lg font-semibold text-on-teal shadow-soft transition-colors hover:bg-teal-hover">
+              <Link href="/p/1" className="inline-flex min-h-14 items-center gap-2.5 rounded-card bg-neel px-7 text-lg font-semibold text-on-neel shadow-soft transition-colors hover:bg-neel-hover">
                 See the demo <ArrowRight aria-hidden size={20} />
               </Link>
               <Link href="/review" className="inline-flex min-h-14 items-center gap-2 rounded-card border border-rule-strong bg-paper-raised px-6 text-lg font-semibold text-ink hover:border-ink-faint">
@@ -82,7 +82,9 @@ export default function Landing() {
             </div>
             <p className="mt-4 text-[15px] text-ink-faint">The demo opens the invented household of Rahima Begum, 68, Cumilla.</p>
           </div>
-          <HeroDemo />
+          <div className="dyed-cloth px-5 pb-6 pt-8 sm:px-8 sm:pb-8 sm:pt-10">
+            <HeroDemo />
+          </div>
         </header>
 
         {/* how it works */}
@@ -90,6 +92,7 @@ export default function Landing() {
           <div className="mx-auto max-w-[1200px] px-5 py-20 sm:px-8">
             <h2 id="how-h" className="font-display text-[clamp(36px,4.4vw,56px)] leading-none">How it works</h2>
             <p lang="bn" className="mt-2 font-bn-display text-[22px] text-ink-soft">ছবি থেকে নিশ্চিত তালিকা</p>
+            <span aria-hidden className="stitch-x mt-6 block w-24" />
             <p className="mt-5 max-w-[62ch] text-lg text-ink-soft">
               A family member photographs every strip, box and prescription. Six steps later the family has one
               clinician-checked list and a passport to carry to every doctor visit.
@@ -106,6 +109,7 @@ export default function Landing() {
                 AI for perception. Rules and humans for judgement.
               </h2>
               <p lang="bn" className="mt-3 font-bn-display text-[22px] text-ink-soft">এআই পড়ে, নিয়ম আর মানুষ বিচার করে।</p>
+              <span aria-hidden className="stitch-x mt-6 block w-24" />
               <p className="mt-6 max-w-[48ch] text-lg text-ink-soft">
                 A vision model is good at reading a cut strip under a tube light. It is not who should decide that a
                 68-year-old is taking paracetamol twice. So it doesn&rsquo;t.
@@ -114,7 +118,7 @@ export default function Landing() {
             <ol className="grid gap-0 border-t border-rule">
               {SAFETY.map(([title, body]) => (
                 <li key={title} className="grid grid-cols-[28px_1fr] gap-4 border-b border-rule py-5">
-                  <ShieldCheck aria-hidden size={22} className="mt-0.5 text-teal" />
+                  <ShieldCheck aria-hidden size={22} className="mt-0.5 text-neel" />
                   <div>
                     <p className="text-lg font-semibold text-ink">{title}</p>
                     <p className="mt-1 text-ink-soft">{body}</p>

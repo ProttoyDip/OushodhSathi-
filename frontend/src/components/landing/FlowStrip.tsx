@@ -15,7 +15,7 @@ const ACTOR: Record<Actor, { label: string; dome: string }> = {
   family: { label: "Family", dome: "bg-paper-raised border-2 border-ink" },
   ai: { label: "AI (perception)", dome: "border border-foil-lo" },
   rules: { label: "Rules (deterministic)", dome: "bg-ink border border-ink" },
-  human: { label: "Clinician (judgement)", dome: "bg-teal border border-teal" },
+  human: { label: "Clinician (judgement)", dome: "bg-neel border border-neel" },
 };
 
 const foilDome = { background: "radial-gradient(circle at 34% 30%, var(--foil-hi), var(--foil) 58%, var(--foil-lo))" };

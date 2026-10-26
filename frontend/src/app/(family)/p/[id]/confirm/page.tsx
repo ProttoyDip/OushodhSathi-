@@ -101,7 +101,7 @@ function Confirm() {
                     />
                   ) : (
                     <div className="flex gap-2">
-                      <button type="button" onClick={() => confirm(item)} className={cx(buttonStyles.secondary, "flex-1 whitespace-nowrap border-teal px-3 text-teal")}>
+                      <button type="button" onClick={() => confirm(item)} className={cx(buttonStyles.secondary, "flex-1 whitespace-nowrap border-neel px-3 text-neel")}>
                         <Check aria-hidden size={20} strokeWidth={2.5} />
                         {t("correct")}
                       </button>
@@ -185,7 +185,7 @@ function EditForm({ item, onCancel, onSaved, onRemoved }: {
         <input value={strength} onChange={(e) => setStrength(e.target.value)} className={`${field} tabular`} autoComplete="off" />
       </label>
       <div className="flex flex-wrap gap-2">
-        <button type="submit" disabled={busy || !brand.trim()} className={cx(buttonStyles.secondary, "flex-1 border-teal text-teal")}>
+        <button type="submit" disabled={busy || !brand.trim()} className={cx(buttonStyles.secondary, "flex-1 border-neel text-neel")}>
           <Check aria-hidden size={20} />{t("save")}
         </button>
         <button type="button" onClick={onCancel} className={buttonStyles.quiet}>{t("cancel")}</button>

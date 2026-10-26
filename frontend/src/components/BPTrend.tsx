@@ -76,13 +76,13 @@ export function BPTrend({
               formatter={(v, name) => [num(Number(v), locale), name === "systolic" ? t("systolic") : t("diastolic")]}
             />
             <Line type="monotone" dataKey="systolic" stroke="var(--ink)" strokeWidth={2.5} dot={{ r: 3.5, fill: "var(--ink)" }} isAnimationActive={false} />
-            <Line type="monotone" dataKey="diastolic" stroke="var(--teal)" strokeWidth={2.5} dot={{ r: 3.5, fill: "var(--teal)" }} isAnimationActive={false} />
+            <Line type="monotone" dataKey="diastolic" stroke="var(--neel)" strokeWidth={2.5} dot={{ r: 3.5, fill: "var(--neel)" }} isAnimationActive={false} />
           </LineChart>
         </ResponsiveContainer>
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink-soft">
         <span className="inline-flex items-center gap-1.5"><i className="block h-0.5 w-5 bg-ink" />{t("systolic")}</span>
-        <span className="inline-flex items-center gap-1.5"><i className="block h-0.5 w-5 bg-teal" />{t("diastolic")}</span>
+        <span className="inline-flex items-center gap-1.5"><i className="block h-0.5 w-5 bg-neel" />{t("diastolic")}</span>
         <span className="inline-flex items-center gap-1.5 text-red">
           <i className="block h-0 w-5 border-t-[1.5px] border-dashed border-red" />
           {t("bpTarget")}

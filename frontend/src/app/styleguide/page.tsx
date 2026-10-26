@@ -17,7 +17,7 @@ const DEMO_NOW = Date.parse("2026-10-26T09:00:00+00:00");
 const COLORS: [string, string][] = [
   ["paper", "Page ground"], ["paper-raised", "Cards"], ["paper-sunk", "Insets"], ["ink", "Text"],
   ["ink-soft", "Secondary text"], ["ink-faint", "Captions"], ["rule", "Dividers"], ["foil", "Strip foil"],
-  ["teal", "Primary action"], ["teal-tint", "Selection, chips"], ["red", "Doctor review"], ["red-tint", "Red surface"],
+  ["neel", "Primary action (indigo dye)"], ["neel-tint", "Selection, chips"], ["dye", "Hero cloth panel"], ["stitch", "Kantha stitch"], ["red", "Doctor review"], ["red-tint", "Red surface"],
   ["amber", "Pharmacist review"], ["amber-tint", "Amber surface"], ["green", "No problem found"], ["green-tint", "Green surface"],
 ];
 
@@ -28,9 +28,9 @@ export default function Styleguide() {
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-rule pb-6">
         <div>
           <div className="flex flex-wrap items-center gap-3"><Wordmark /><DemoTag label="Examples use the demo household — invented data" /></div>
-          <h1 className="mt-4 font-display text-[56px] leading-none">The pharmacist&rsquo;s ledger</h1>
+          <h1 className="mt-4 font-display text-[56px] leading-none">Neel — indigo and foil</h1>
           <p className="mt-2 max-w-[60ch] text-lg text-ink-soft">
-            Design system for OushodhSathi: prescription paper, medicine-strip foil, and severity that is always colour, icon and word.
+            Design system for OushodhSathi: Bengal indigo, medicine-strip foil, the kantha running stitch, and severity that is always colour, icon and word.
           </p>
         </div>
         <div className="flex items-center gap-2"><ThemeToggle /><LangToggle /></div>
@@ -51,7 +51,7 @@ export default function Styleguide() {
         <div className="mt-4 h-12 rounded-card foil" aria-label="Foil material" />
       </Section>
 
-      <Section title="Type" note="Bangla: Tiro Bangla display, Hind Siliguri body (line-height 1.6). Latin: Instrument Serif display, Instrument Sans body. Numbers are tabular.">
+      <Section title="Type" note="Bangla: Anek Bangla display, Hind Siliguri body (line-height 1.6). Latin: Schibsted Grotesk display, Instrument Sans body. Numbers are tabular.">
         <div className="grid gap-6 sm:grid-cols-2">
           <div>
             <p lang="bn" className="font-bn-display text-[44px] leading-[1.15]">ওষুধের পাসপোর্ট</p>

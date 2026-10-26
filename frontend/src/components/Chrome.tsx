@@ -119,7 +119,7 @@ export function FamilyHeader({ back, demo }: { back?: string; demo?: boolean }) 
 
 export const buttonStyles = {
   primary:
-    "inline-flex min-h-14 w-full items-center justify-center gap-2.5 rounded-card bg-teal px-6 text-lg font-semibold text-on-teal shadow-soft transition-colors duration-150 hover:bg-teal-hover disabled:cursor-not-allowed disabled:opacity-50",
+    "inline-flex min-h-14 w-full items-center justify-center gap-2.5 rounded-card bg-neel px-6 text-lg font-semibold text-on-neel shadow-soft transition-colors duration-150 hover:bg-neel-hover disabled:cursor-not-allowed disabled:opacity-50",
   secondary:
     "inline-flex min-h-12 items-center justify-center gap-2 rounded-card border border-rule-strong bg-paper-raised px-5 text-base font-semibold text-ink transition-colors duration-150 hover:border-ink-faint disabled:opacity-50",
   quiet:

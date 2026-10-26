@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Hind_Siliguri, Instrument_Sans, Instrument_Serif, Tiro_Bangla } from "next/font/google";
+import { Anek_Bangla, Hind_Siliguri, Instrument_Sans, Schibsted_Grotesk } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
+import { MotionProvider } from "@/components/Motion";
 import "./globals.css";
 
 const hind = Hind_Siliguri({
@@ -10,11 +11,9 @@ const hind = Hind_Siliguri({
   variable: "--font-hind-siliguri",
   display: "swap",
 });
-const tiro = Tiro_Bangla({
+const anek = Anek_Bangla({
   subsets: ["bengali", "latin"],
-  weight: "400",
-  style: ["normal", "italic"],
-  variable: "--font-tiro-bangla",
+  variable: "--font-anek-bangla",
   display: "swap",
 });
 const instrumentSans = Instrument_Sans({
@@ -22,11 +21,10 @@ const instrumentSans = Instrument_Sans({
   variable: "--font-instrument-sans",
   display: "swap",
 });
-const instrumentSerif = Instrument_Serif({
+const schibsted = Schibsted_Grotesk({
   subsets: ["latin"],
-  weight: "400",
   style: ["normal", "italic"],
-  variable: "--font-instrument-serif",
+  variable: "--font-schibsted",
   display: "swap",
 });
 
@@ -40,8 +38,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f6f2e9" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f1e22" },
+    { media: "(prefers-color-scheme: light)", color: "#f3f5f9" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0e1c" },
   ],
 };
 
@@ -55,14 +53,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html
       lang={locale}
       suppressHydrationWarning
-      className={`${hind.variable} ${tiro.variable} ${instrumentSans.variable} ${instrumentSerif.variable}`}
+      className={`${hind.variable} ${anek.variable} ${instrumentSans.variable} ${schibsted.variable}`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>
         <NextIntlClientProvider locale={locale} messages={messages}>
-          {children}
+          <MotionProvider>{children}</MotionProvider>
         </NextIntlClientProvider>
       </body>
     </html>

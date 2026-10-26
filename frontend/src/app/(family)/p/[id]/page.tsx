@@ -73,7 +73,7 @@ export default function FamilyHome() {
                 ) : s.review_state === "in_review" && s.confirmed_flags === 0 ? (
                   <>
                     <p className="flex items-start gap-3">
-                      <ScanLine aria-hidden size={24} className="mt-0.5 shrink-0 text-teal" />
+                      <ScanLine aria-hidden size={24} className="mt-0.5 shrink-0 text-neel" />
                       <span>{t("stateInReview")}</span>
                     </p>
                     <Link href={`/p/${pid}/status`} className={`${buttonStyles.secondary} mt-4 w-full`}>{t("seeStatus")}</Link>
@@ -125,7 +125,7 @@ export default function FamilyHome() {
 function RowLink({ href, Icon, title, hint }: { href: string; Icon: typeof BookUser; title: string; hint: string }) {
   return (
     <Link href={href} className="flex min-h-[72px] items-center gap-4 px-5 py-3 transition-colors hover:bg-paper-sunk/60">
-      <Icon aria-hidden size={26} className="shrink-0 text-teal" />
+      <Icon aria-hidden size={26} className="shrink-0 text-neel" />
       <span className="min-w-0 flex-1">
         <span className="block font-semibold text-ink">{title}</span>
         <span className="block text-base text-ink-soft">{hint}</span>

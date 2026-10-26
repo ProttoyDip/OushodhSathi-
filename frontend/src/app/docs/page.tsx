@@ -149,11 +149,11 @@ export default function Docs() {
   );
 }
 
-function Box({ title, sub, tone = "plain" }: { title: string; sub?: string; tone?: "plain" | "ink" | "teal" | "foil" }) {
+function Box({ title, sub, tone = "plain" }: { title: string; sub?: string; tone?: "plain" | "ink" | "neel" | "foil" }) {
   const cls = {
     plain: "border-rule-strong bg-paper-raised text-ink",
     ink: "border-ink bg-ink text-paper",
-    teal: "border-teal bg-teal text-on-teal",
+    neel: "border-neel bg-neel text-on-neel",
     foil: "foil border-foil-lo text-ink",
   }[tone];
   return (
@@ -197,7 +197,7 @@ function ArchitectureDiagram() {
           <div className="grid content-start">
             <Box title="SQLite" sub="items, flags, reviews, cache" />
             <Down label="pending flags" />
-            <Box tone="teal" title="Clinician review gate" sub="confirm / dismiss + note" />
+            <Box tone="neel" title="Clinician review gate" sub="confirm / dismiss + note" />
             <Down label="confirmed only" />
             <Box title="Family view + passport" sub="Bangla explanation, QR" />
           </div>

@@ -1,27 +1,38 @@
 # OushodhSathi — DESIGN.md
 
-> Source of truth for every UI change. Copied from the DESIGN BRIEF in BUILD_PLAN.md.
+> Source of truth for every UI change. Started from the DESIGN BRIEF in BUILD_PLAN.md;
+> the visual identity was revised to "Neel" (indigo) in October 2026.
 
 
 ## The idea behind the look
-**"The pharmacist's ledger."** Calm, warm, trustworthy, unmistakably Bangladeshi, and
-built for a 68-year-old's daughter reading on a cheap Android phone. It must look like a
-real health product a hospital would trust, not a hackathon AI demo.
+**"Neel" (নীল) — Bengal indigo, medicine foil and the kantha stitch.** Calm, clinical,
+trustworthy and unmistakably Bangladeshi, built for a 68-year-old's daughter reading on a
+cheap Android phone. It must look like a real health product a hospital would trust, not a
+hackathon AI demo and not a generic SaaS template.
 
-Visual metaphor: **prescription paper and medicine-strip foil.**
-- Background: warm paper `#F6F2E9` (light) / deep ink `#0F1E22` (dark).
-- Primary ink: deep teal-ink `#12343B`. Primary action: teal `#0F6B6B`.
-- Foil accent: cool silver `#C9CED3` for strip cards and dividers (subtle, never shiny).
-- Severity — always colour **+ icon + word**, never colour alone:
+Why indigo: Bengal's indigo dye (নীল) is local heritage, and blue is the one hue that never
+competes with the red / amber / green severity colours. Warm beige paper and editorial serifs
+are deliberately avoided.
+
+Materials:
+- Canvas: cool porcelain `#F3F5F9` (light) / indigo night `#0A0E1C` (dark). Cards are white / `#11172C`.
+- Ink: deep indigo-black `#0E1530`. Primary action: indigo dye `#2A3B91` (dark: `#98A8F6`).
+- Foil accent: cool silver `#C8CDD6` for strip cards and the flow strip (subtle, never shiny).
+- **Kantha stitch** (`--stitch`): the dashed running stitch of Bengali quilts. Used sparingly:
+  section underlines, the scan frame, completed progress, the stitched hem of the one
+  indigo-dyed cloth panel (`.dyed-cloth`) that holds a page's hero object.
+- Severity — always colour **+ icon + word**, never colour alone, and reserved for findings:
   - Red `#B42318` = confirmed danger / doctor review ("ডাক্তার দেখবেন")
   - Amber `#B54708` = pharmacist review ("ফার্মাসিস্ট দেখবেন")
   - Green `#067647` = checked, no problem found (use sparingly)
-- Define all colours as CSS variables / Tailwind tokens, with a proper dark theme.
+- All colours are CSS variables / Tailwind tokens in `frontend/src/app/globals.css`, with a
+  full dark theme. Every text pair passes WCAG AA; body text is ≥ 7:1.
 
 ## Typography
 - Bangla body: **Hind Siliguri** (fallback Noto Sans Bengali).
-- Bangla display: **Tiro Bangla** (warm serif, used for headings and the passport).
-- Latin body: **Instrument Sans**. Latin display: **Instrument Serif**.
+- Bangla display: **Anek Bangla** (variable, weight 500 for headings and the passport).
+- Latin body: **Instrument Sans**. Latin display: **Schibsted Grotesk** (variable, weight 600,
+  tracking −0.035em) — a sturdy newspaper grotesk, set tight but never shouting.
 - Family app body text minimum **18px**, line-height 1.6 for Bangla (Bangla needs room).
 - Numbers (strengths, BP readings) use tabular figures.
 
@@ -45,17 +56,24 @@ Visual metaphor: **prescription paper and medicine-strip foil.**
    paracetamol). This is the hero moment of the video.
 3. **SeverityBadge** — icon + word + colour, three sizes.
 4. **ReviewRow** — queue row with severity, patient age, rule, time waiting.
-5. **MedicinePassport** — an A5/A6 printable card: Tiro Bangla title, patient's medicines
+5. **MedicinePassport** — an A5/A6 printable card: Anek Bangla title, patient's medicines
    grouped by time of day (সকাল / দুপুর / রাত), generic names large, brand small,
    doctor-confirmed notes, QR code, "Show this at every doctor visit".
 6. **BPTrend** (Recharts) — 7-day line with the 140/90 target as a labelled reference line.
 
 ## Motion
-Only meaningful motion: cards assembling after a scan, the duplicate snap, a confirmed
-flag settling into place. 150–250ms, ease-out. Respect prefers-reduced-motion.
+Motion explains, it never decorates. One spring for the product (`SPRING` in
+`components/Motion.tsx`, stiffness 420 / damping 38) and a slower one for large travel.
+- **Cards keep their identity**: a strip that appears in two states (pile → list → duplicate
+  pair → review) shares a `layoutId` and travels between them instead of popping.
+- The duplicate bracket reveals from the middle outwards after the pair lands.
+- Panels enter with a short rise (24–28px) and settle; captions crossfade.
+- Buttons answer a press (scale 0.97); linked cards lift 2px on hover.
+- `MotionConfig reducedMotion="user"` and the CSS reduced-motion rule turn all of it off.
 
 ## ANTI-SLOP CHECKLIST — reject the screen if any of these appear
 - Purple/blue gradients, glassmorphism, neon glow, 3D blobs, mesh backgrounds.
+  (Indigo is a flat dye colour here, never a gradient or a glow.)
 - Sparkle "AI" icons, robot mascots, "AI-powered" badges, emoji as icons.
 - Generic hero copy ("Revolutionizing healthcare with AI").
 - A grid of identical stat cards with fake numbers. Any fake testimonial or logo wall.

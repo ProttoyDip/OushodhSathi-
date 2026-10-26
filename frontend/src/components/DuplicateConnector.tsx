@@ -17,6 +17,7 @@ export function DuplicateConnector({
   tone = "red",
   orientation = "vertical",
   animate = true,
+  snap = animate,
   delay = 0,
   className,
 }: {
@@ -25,6 +26,8 @@ export function DuplicateConnector({
   tone?: "red" | "amber";
   orientation?: "vertical" | "horizontal";
   animate?: boolean;
+  /** Slide the cards together (CSS). Off when a parent animates the cards itself. */
+  snap?: boolean;
   delay?: number;
   className?: string;
 }) {
@@ -34,6 +37,7 @@ export function DuplicateConnector({
     tone === "red" ? "bg-red text-paper-raised border-red" : "bg-amber text-paper-raised border-amber";
   const anim = (name: string, ms: number, extra = 0): CSSProperties | undefined =>
     animate ? { animation: `${name} ${ms}ms var(--ease-out-quint) ${delay + extra}ms both` } : undefined;
+  const snapAnim = (name: string, ms: number) => (snap ? anim(name, ms) : undefined);
 
   if (orientation === "horizontal") {
     return (
@@ -68,7 +72,7 @@ export function DuplicateConnector({
           {cards.map((card, i) => (
             <div
               key={i}
-              style={i === 0 ? anim("snap-left", 260) : i === cards.length - 1 ? anim("snap-right", 260) : undefined}
+              style={i === 0 ? snapAnim("snap-left", 260) : i === cards.length - 1 ? snapAnim("snap-right", 260) : undefined}
             >
               {card}
             </div>
@@ -101,7 +105,7 @@ export function DuplicateConnector({
           <div
             key={i}
             className="min-w-0"
-            style={i === 0 ? anim("snap-top", 260) : i === cards.length - 1 ? anim("snap-bottom", 260) : undefined}
+            style={i === 0 ? snapAnim("snap-top", 260) : i === cards.length - 1 ? snapAnim("snap-bottom", 260) : undefined}
           >
             {card}
           </div>

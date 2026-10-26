@@ -79,11 +79,11 @@ export default function ScanPage() {
                     aria-hidden
                     className={cx(
                       "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2",
-                      i < step ? "border-teal bg-teal text-on-teal" : i === step ? "border-teal" : "border-rule",
+                      i < step ? "border-neel bg-neel text-on-neel" : i === step ? "border-neel" : "border-rule",
                     )}
                   >
                     {i < step ? <Check size={16} strokeWidth={3} /> : i === step ? (
-                      <span className="block h-2.5 w-2.5 rounded-full bg-teal" style={{ animation: "breathe 1.4s ease-in-out infinite" }} />
+                      <span className="block h-2.5 w-2.5 rounded-full bg-neel" style={{ animation: "breathe 1.4s ease-in-out infinite" }} />
                     ) : null}
                   </span>
                   <span className={i === step ? "font-semibold" : undefined}>{label}</span>
@@ -99,7 +99,7 @@ export default function ScanPage() {
               <ul className="mt-2 grid gap-1.5">
                 {[t("tip1"), t("tip2"), t("tip3"), t("tip4")].map((tip) => (
                   <li key={tip} className="flex items-start gap-2.5">
-                    <Check aria-hidden size={20} className="mt-1 shrink-0 text-teal" />
+                    <Check aria-hidden size={20} className="mt-1 shrink-0 text-neel" />
                     {tip}
                   </li>
                 ))}

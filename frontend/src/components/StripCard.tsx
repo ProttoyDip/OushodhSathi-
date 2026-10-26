@@ -88,7 +88,7 @@ export function StripCard({
                       ? "border-red-line bg-red-tint text-red"
                       : highlight === "amber"
                         ? "border-amber-line bg-amber-tint text-amber"
-                        : "border-rule bg-teal-tint text-ink",
+                        : "border-rule bg-neel-tint text-ink",
                   )}
                 >
                   {genericName(item.generic, locale)}
@@ -138,7 +138,7 @@ export function StripCard({
             aria-valuenow={pct}
             className="h-1.5 flex-1 overflow-hidden rounded-chip bg-paper-sunk"
           >
-            <div className={cx("h-full rounded-chip", low ? "bg-amber" : "bg-teal")} style={{ width: `${pct}%` }} />
+            <div className={cx("h-full rounded-chip", low ? "bg-amber" : "bg-neel")} style={{ width: `${pct}%` }} />
           </div>
           <span className={cx("tabular shrink-0 font-medium", low ? "text-amber" : "text-ink-soft", compact ? "text-[13px]" : "text-sm")}>
             {num(pct, locale)}%

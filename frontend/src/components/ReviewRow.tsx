@@ -30,7 +30,7 @@ export const ReviewRow = forwardRef<
       className={cx(
         "group grid w-full grid-cols-[1fr_auto] gap-x-3 gap-y-1.5 rounded-card border px-3.5 py-3 text-left transition-colors duration-150",
         selected
-          ? "border-teal bg-paper-raised shadow-soft"
+          ? "border-neel bg-paper-raised shadow-soft"
           : "border-transparent hover:border-rule hover:bg-paper-raised/70",
       )}
     >

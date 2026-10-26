@@ -1,106 +1,122 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------
-   OushodhSathi tokens — "the pharmacist's ledger" (see DESIGN.md)
-   Prescription paper + medicine-strip foil. Light and dark.
+   OushodhSathi tokens — "Neel" (নীল, Bengal indigo). See DESIGN.md.
+   Cool porcelain, indigo-dye accent, medicine-strip foil, kantha stitch.
+   Light and dark. Severity hues (red/amber/green) are reserved for findings.
    ------------------------------------------------------------------ */
 
 :root {
   color-scheme: light;
-  --paper: #f6f2e9;
-  --paper-raised: #fcfaf5;
-  --paper-sunk: #ede6d6;
-  --ink: #12343b;
-  --ink-soft: #34535a;
-  --ink-faint: #5a7176;
-  --rule: #ddd4c1;
-  --rule-strong: #c5baa3;
+  --paper: #f3f5f9;
+  --paper-raised: #ffffff;
+  --paper-sunk: #e7ebf3;
+  --ink: #0e1530;
+  --ink-soft: #3a4466;
+  --ink-faint: #5b6584;
+  --rule: #dfe3ec;
+  --rule-strong: #c4cbdb;
 
-  --foil: #c9ced3;
-  --foil-hi: #eef0f2;
-  --foil-lo: #a3abb3;
-  --foil-ink: #5f6b74;
+  --foil: #c8cdd6;
+  --foil-hi: #f1f3f7;
+  --foil-lo: #9ea6b4;
+  --foil-ink: #586274;
 
-  --teal: #0f6b6b;
-  --teal-hover: #0b5858;
-  --teal-tint: #dcebe8;
-  --on-teal: #ffffff;
+  --neel: #2a3b91;
+  --neel-hover: #1f2d78;
+  --neel-tint: #e4e9f8;
+  --on-neel: #ffffff;
+  --stitch: #8f9bd6;
+  --dye: #1f2c6e;
+  --dye-deep: #172259;
+  --dye-stitch: rgb(255 255 255 / 0.38);
 
   --red: #b42318;
-  --red-tint: #f9e5e2;
-  --red-line: #e6b3ad;
+  --red-tint: #fce9e7;
+  --red-line: #f0b9b2;
   --amber: #b54708;
-  --amber-tint: #fcecd9;
-  --amber-line: #ecc49b;
+  --amber-tint: #fdefe0;
+  --amber-line: #f1c79c;
   --green: #067647;
-  --green-tint: #e0f1e7;
-  --green-line: #a6d4b9;
+  --green-tint: #e2f3ea;
+  --green-line: #a9d9bf;
 
-  --shadow-soft: 0 1px 2px rgb(18 52 59 / 0.06), 0 8px 20px -10px rgb(18 52 59 / 0.22);
-  --radius-card: 8px;
+  --shadow-soft: 0 1px 2px rgb(14 21 48 / 0.05), 0 10px 28px -14px rgb(14 21 48 / 0.22);
+  --shadow-lift: 0 2px 4px rgb(14 21 48 / 0.06), 0 24px 48px -20px rgb(14 21 48 / 0.35);
+  --radius-card: 10px;
   --radius-chip: 999px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --paper: #0f1e22;
-    --paper-raised: #15292e;
-    --paper-sunk: #0a1619;
-    --ink: #e8efec;
-    --ink-soft: #b9c8c5;
-    --ink-faint: #8ea2a1;
-    --rule: #22383d;
-    --rule-strong: #34505a;
-    --foil: #6c777e;
-    --foil-hi: #8d979d;
-    --foil-lo: #454f55;
-    --foil-ink: #c3cbd0;
-    --teal: #4fb7ab;
-    --teal-hover: #6cc8bd;
-    --teal-tint: #143a3a;
-    --on-teal: #071416;
+    --paper: #0a0e1c;
+    --paper-raised: #11172c;
+    --paper-sunk: #070a15;
+    --ink: #e8ebf6;
+    --ink-soft: #b3bad3;
+    --ink-faint: #8c95b4;
+    --rule: #1d2443;
+    --rule-strong: #2c365f;
+    --foil: #69717f;
+    --foil-hi: #8e95a2;
+    --foil-lo: #434a57;
+    --foil-ink: #c4cad4;
+    --neel: #98a8f6;
+    --neel-hover: #b3c0fa;
+    --neel-tint: #1a2350;
+    --on-neel: #0a0e1c;
+    --stitch: #46529a;
+    --dye: #182255;
+    --dye-deep: #111940;
+    --dye-stitch: rgb(255 255 255 / 0.28);
     --red: #f2877c;
-    --red-tint: #3a1916;
+    --red-tint: #3a1715;
     --red-line: #6e2c25;
     --amber: #f3a560;
-    --amber-tint: #382412;
+    --amber-tint: #362312;
     --amber-line: #6b4218;
     --green: #67c897;
-    --green-tint: #11301f;
+    --green-tint: #0f2e1e;
     --green-line: #22573b;
-    --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 24px -12px rgb(0 0 0 / 0.6);
+    --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.35), 0 12px 28px -14px rgb(0 0 0 / 0.7);
+    --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.4), 0 24px 48px -20px rgb(0 0 0 / 0.8);
   }
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --paper: #0f1e22;
-  --paper-raised: #15292e;
-  --paper-sunk: #0a1619;
-  --ink: #e8efec;
-  --ink-soft: #b9c8c5;
-  --ink-faint: #8ea2a1;
-  --rule: #22383d;
-  --rule-strong: #34505a;
-  --foil: #6c777e;
-  --foil-hi: #8d979d;
-  --foil-lo: #454f55;
-  --foil-ink: #c3cbd0;
-  --teal: #4fb7ab;
-  --teal-hover: #6cc8bd;
-  --teal-tint: #143a3a;
-  --on-teal: #071416;
-  --red: #f2877c;
-  --red-tint: #3a1916;
-  --red-line: #6e2c25;
-  --amber: #f3a560;
-  --amber-tint: #382412;
-  --amber-line: #6b4218;
-  --green: #67c897;
-  --green-tint: #11301f;
-  --green-line: #22573b;
-  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 24px -12px rgb(0 0 0 / 0.6);
+    --paper: #0a0e1c;
+    --paper-raised: #11172c;
+    --paper-sunk: #070a15;
+    --ink: #e8ebf6;
+    --ink-soft: #b3bad3;
+    --ink-faint: #8c95b4;
+    --rule: #1d2443;
+    --rule-strong: #2c365f;
+    --foil: #69717f;
+    --foil-hi: #8e95a2;
+    --foil-lo: #434a57;
+    --foil-ink: #c4cad4;
+    --neel: #98a8f6;
+    --neel-hover: #b3c0fa;
+    --neel-tint: #1a2350;
+    --on-neel: #0a0e1c;
+    --stitch: #46529a;
+    --dye: #182255;
+    --dye-deep: #111940;
+    --dye-stitch: rgb(255 255 255 / 0.28);
+    --red: #f2877c;
+    --red-tint: #3a1715;
+    --red-line: #6e2c25;
+    --amber: #f3a560;
+    --amber-tint: #362312;
+    --amber-line: #6b4218;
+    --green: #67c897;
+    --green-tint: #0f2e1e;
+    --green-line: #22573b;
+    --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.35), 0 12px 28px -14px rgb(0 0 0 / 0.7);
+    --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.4), 0 24px 48px -20px rgb(0 0 0 / 0.8);
 }
 
 @theme inline {
@@ -116,10 +132,10 @@
   --color-foil-hi: var(--foil-hi);
   --color-foil-lo: var(--foil-lo);
   --color-foil-ink: var(--foil-ink);
-  --color-teal: var(--teal);
-  --color-teal-hover: var(--teal-hover);
-  --color-teal-tint: var(--teal-tint);
-  --color-on-teal: var(--on-teal);
+  --color-neel: var(--neel);
+  --color-neel-hover: var(--neel-hover);
+  --color-neel-tint: var(--neel-tint);
+  --color-on-neel: var(--on-neel);
   --color-red: var(--red);
   --color-red-tint: var(--red-tint);
   --color-red-line: var(--red-line);
@@ -133,12 +149,17 @@
   --radius-card: var(--radius-card);
   --radius-chip: var(--radius-chip);
   --shadow-soft: var(--shadow-soft);
+  --shadow-lift: var(--shadow-lift);
+  --color-stitch: var(--stitch);
+  --color-dye: var(--dye);
+  --color-dye-deep: var(--dye-deep);
+  --color-dye-stitch: var(--dye-stitch);
 
   /* Latin glyphs come from the first face, Bangla glyphs fall through to the second */
   --font-sans: var(--font-instrument-sans), var(--font-hind-siliguri), "Noto Sans Bengali", system-ui, sans-serif;
-  --font-display: var(--font-instrument-serif), var(--font-tiro-bangla), "Noto Serif Bengali", Georgia, serif;
+  --font-display: var(--font-schibsted), var(--font-anek-bangla), "Noto Sans Bengali", system-ui, sans-serif;
   --font-bn: var(--font-hind-siliguri), "Noto Sans Bengali", var(--font-instrument-sans), sans-serif;
-  --font-bn-display: var(--font-tiro-bangla), "Noto Serif Bengali", var(--font-instrument-serif), serif;
+  --font-bn-display: var(--font-anek-bangla), "Noto Sans Bengali", var(--font-schibsted), sans-serif;
 
   --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
   --animate-assemble: assemble 240ms var(--ease-out-quint) both;
@@ -169,18 +190,18 @@ body {
 
 /* Browser surfaces carry the design too */
 ::selection {
-  background: var(--teal-tint);
+  background: var(--neel-tint);
   color: var(--ink);
 }
 :focus-visible {
-  outline: 3px solid var(--teal);
+  outline: 3px solid var(--neel);
   outline-offset: 2px;
   border-radius: 4px;
 }
 input,
 textarea,
 select {
-  caret-color: var(--teal);
+  caret-color: var(--neel);
 }
 a {
   text-underline-offset: 0.2em;
@@ -189,6 +210,70 @@ a {
 * {
   scrollbar-color: var(--rule-strong) transparent;
   scrollbar-width: thin;
+}
+
+/* Display face: a sturdy newspaper grotesk, set tight. Bangla display stays roomy. */
+.font-display {
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  font-feature-settings: "ss01" 1, "kern" 1;
+}
+.font-display:lang(bn),
+.font-bn-display {
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+/* ---------- kantha stitch: the running stitch of Bengali quilts ---------- */
+/* An indigo-dyed cloth panel with a stitched hem, for the one hero object on a page */
+.dyed-cloth {
+  position: relative;
+  background-color: var(--dye);
+  background-image:
+    radial-gradient(120% 80% at 15% 0%, rgb(255 255 255 / 0.07), transparent 60%),
+    repeating-linear-gradient(45deg, rgb(255 255 255 / 0.018) 0 2px, transparent 2px 6px);
+  border-radius: 28px;
+}
+.dyed-cloth::before {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border: 2px dashed var(--dye-stitch);
+  border-radius: 20px;
+  pointer-events: none;
+}
+.stitch-x {
+  height: 2px;
+  background: repeating-linear-gradient(90deg, var(--stitch) 0 9px, transparent 9px 15px);
+  border-radius: 2px;
+}
+.stitch-y {
+  width: 2px;
+  background: repeating-linear-gradient(180deg, var(--stitch) 0 9px, transparent 9px 15px);
+  border-radius: 2px;
+}
+
+/* ---------- micro-interactions ---------- */
+button,
+a {
+  transition:
+    transform 180ms var(--ease-out-quint),
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    box-shadow 220ms ease;
+}
+button:not(:disabled):active,
+a[class*="rounded"]:active {
+  transform: scale(0.97);
+}
+/* Linked cards lift a little under the pointer */
+@media (hover: hover) {
+  a.rounded-card:hover,
+  a[class*="rounded-card"]:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lift);
+  }
 }
 
 .tabular {
@@ -220,7 +305,7 @@ a {
   to { opacity: 1; transform: none; }
 }
 @keyframes settle {
-  0% { transform: translateY(-6px); box-shadow: 0 14px 28px -12px rgb(18 52 59 / 0.35); }
+  0% { transform: translateY(-6px); box-shadow: var(--shadow-lift); }
   100% { transform: none; }
 }
 @keyframes snap-top {
@@ -239,9 +324,14 @@ a {
   from { transform: translateX(28px); }
   to { transform: none; }
 }
-@keyframes draw {
-  from { stroke-dashoffset: var(--len, 400); }
-  to { stroke-dashoffset: 0; }
+/* Brackets reveal from the middle outwards; the resting state is always the full path. */
+@keyframes reveal-x {
+  from { clip-path: inset(0 50% 0 50%); }
+  to { clip-path: inset(0 0 0 0); }
+}
+@keyframes reveal-y {
+  from { clip-path: inset(50% 0 50% 0); }
+  to { clip-path: inset(0 0 0 0); }
 }
 @keyframes label-in-x {
   from { opacity: 0; transform: translateX(-50%) scale(0.9); }
@@ -280,4 +370,19 @@ a {
   .no-print {
     display: none !important;
   }
+}
+
+/* /demo: tall stages (phone, passport) scale down on short laptop screens so the
+   progress rail stays on screen. */
+@media (min-width: 1024px) and (max-height: 1120px) {
+  .demo-fit { zoom: 0.86; }
+}
+@media (min-width: 1024px) and (max-height: 940px) {
+  .demo-fit { zoom: 0.74; }
+}
+@media (min-width: 1024px) and (max-height: 800px) {
+  .demo-fit { zoom: 0.64; }
+}
+@media (min-width: 1024px) and (max-height: 800px) {
+  .demo-fit-sm { zoom: 0.86; }
 }

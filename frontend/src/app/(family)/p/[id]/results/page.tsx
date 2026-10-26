@@ -43,7 +43,7 @@ export default function ResultsPage() {
           </section>
         ) : list.length === 0 ? (
           <section className="mt-6 rounded-card border border-rule bg-paper-raised p-6">
-            <ScanLine aria-hidden size={32} className="text-teal" />
+            <ScanLine aria-hidden size={32} className="text-neel" />
             <h2 className="mt-3 font-bn-display text-[24px] leading-tight">{t("pendingTitle")}</h2>
             <p className="mt-2 text-ink-soft">{t("pendingBody")}</p>
           </section>

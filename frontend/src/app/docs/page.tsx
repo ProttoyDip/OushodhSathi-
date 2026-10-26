@@ -2,7 +2,7 @@ import { ExternalLink } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Wordmark } from "@/components/BrandMark";
-import { EvalPanel, LiveStatus } from "@/components/docs/LivePanels";
+import { EvalPanel, LiveStatus, PilotPanel } from "@/components/docs/LivePanels";
 
 export const metadata: Metadata = { title: "Docs — pitch, whitepaper, system status" };
 
@@ -120,6 +120,9 @@ export default function Docs() {
           <p>Extraction accuracy on our own labelled photos of real Bangladeshi strips (cut strips, Bangla text, blur):</p>
           <div className="mt-5"><EvalPanel /></div>
           <p>The rules engine, API safety gate, router fallback and explanation guard are covered by the pytest suite; the live count is in the status table below.</p>
+          <h3>Pilot</h3>
+          <p>What we find in real homes, reported as proportions with 95% Wilson score intervals, which stay honest at small sample sizes:</p>
+          <div className="mt-5"><PilotPanel /></div>
 
           <h2 id="status">Live system status</h2>
           <div className="mt-5"><LiveStatus /></div>
@@ -146,11 +149,11 @@ export default function Docs() {
   );
 }
 
-function Box({ title, sub, tone = "plain" }: { title: string; sub?: string; tone?: "plain" | "ink" | "teal" | "foil" }) {
+function Box({ title, sub, tone = "plain" }: { title: string; sub?: string; tone?: "plain" | "ink" | "neel" | "foil" }) {
   const cls = {
     plain: "border-rule-strong bg-paper-raised text-ink",
     ink: "border-ink bg-ink text-paper",
-    teal: "border-teal bg-teal text-on-teal",
+    neel: "border-neel bg-neel text-on-neel",
     foil: "foil border-foil-lo text-ink",
   }[tone];
   return (
@@ -194,7 +197,7 @@ function ArchitectureDiagram() {
           <div className="grid content-start">
             <Box title="SQLite" sub="items, flags, reviews, cache" />
             <Down label="pending flags" />
-            <Box tone="teal" title="Clinician review gate" sub="confirm / dismiss + note" />
+            <Box tone="neel" title="Clinician review gate" sub="confirm / dismiss + note" />
             <Down label="confirmed only" />
             <Box title="Family view + passport" sub="Bangla explanation, QR" />
           </div>

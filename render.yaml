@@ -1,0 +1,47 @@
+# Render Blueprint for the OushodhSathi API.
+# New → Blueprint → pick this repo. Secrets marked `sync: false` are entered in the
+# Render dashboard, never committed. SQLite lives on a persistent disk so the demo
+# household, reviews and audit trail survive restarts and deploys.
+services:
+  - type: web
+    name: oushodhsathi-api
+    runtime: python
+    rootDir: backend
+    plan: starter            # persistent disks need a paid instance
+    region: singapore        # closest Render region to Bangladesh
+    buildCommand: pip install -r requirements.txt
+    preDeployCommand: python scripts/seed_demo.py --if-empty
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    disk:
+      name: oushodh-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: OUSHODH_DB
+        value: /var/data/oushodh.db
+      - key: DEMO_MODE
+        value: "true"
+      - key: OLLAMA_DISABLED     # no Ollama on Render; Bangla explanations use the cloud fallback
+        value: "1"
+      - key: CORS_ORIGINS
+        sync: false              # e.g. https://oushodhsathi.vercel.app
+      - key: CORS_ORIGIN_REGEX
+        sync: false              # optional, e.g. ^https://oushodhsathi-.*\.vercel\.app$ for previews
+      - key: REVIEWER_TOKEN
+        generateValue: true
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_VISION_MODEL
+        sync: false
+      - key: OPENROUTER_TEXT_MODEL
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: PERPLEXITY_API_KEY
+        sync: false
+      - key: N8N_ALERT_WEBHOOK
+        sync: false

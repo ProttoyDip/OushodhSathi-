@@ -12,7 +12,7 @@ export function BrandMark({ size = 28, className }: { size?: number; className?:
     >
       <rect x="3" y="7" width="26" height="18" rx="3" fill="var(--foil)" stroke="var(--ink)" strokeWidth="1.6" />
       <circle cx="11" cy="16" r="4.2" fill="var(--foil-hi)" stroke="var(--ink)" strokeWidth="1.6" />
-      <circle cx="21" cy="16" r="4.2" fill="var(--teal)" stroke="var(--ink)" strokeWidth="1.6" />
+      <circle cx="21" cy="16" r="4.2" fill="var(--neel)" stroke="var(--ink)" strokeWidth="1.6" />
       <path d="M29 9.5v2M29 14.5v3M29 20.5v2" stroke="var(--paper)" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   );

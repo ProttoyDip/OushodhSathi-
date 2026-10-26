@@ -55,16 +55,16 @@ export default function StatusPage() {
                       <span
                         className={cx(
                           "flex h-10 w-10 items-center justify-center rounded-full border-2",
-                          complete ? "border-teal bg-teal text-on-teal" : active ? "border-teal bg-paper-raised" : "border-rule bg-paper-raised",
+                          complete ? "border-neel bg-neel text-on-neel" : active ? "border-neel bg-paper-raised" : "border-rule bg-paper-raised",
                         )}
                       >
                         {complete ? (
                           <Check aria-hidden size={20} strokeWidth={3} />
                         ) : active ? (
-                          <span className="block h-3 w-3 rounded-full bg-teal" style={{ animation: "breathe 1.6s ease-in-out infinite" }} />
+                          <span className="block h-3 w-3 rounded-full bg-neel" style={{ animation: "breathe 1.6s ease-in-out infinite" }} />
                         ) : null}
                       </span>
-                      {i < steps.length - 1 && <span aria-hidden className={cx("my-1 w-0.5 flex-1", i < current ? "bg-teal" : "bg-rule")} style={{ minHeight: 28 }} />}
+                      {i < steps.length - 1 && <span aria-hidden className={cx("my-1 w-0.5 flex-1", i < current ? "bg-neel" : "bg-rule")} style={{ minHeight: 28 }} />}
                     </div>
                     <p className={cx("pb-6 pt-1.5", active ? "font-semibold text-ink" : complete ? "text-ink" : "text-ink-faint")}>
                       <span className="sr-only">{complete ? "✓ " : active ? "… " : ""}</span>
@@ -85,7 +85,7 @@ export default function StatusPage() {
             )}
 
             <aside className="mt-8 flex gap-3 rounded-card border border-rule bg-paper-raised p-5">
-              <Info aria-hidden size={22} className="mt-0.5 shrink-0 text-teal" />
+              <Info aria-hidden size={22} className="mt-0.5 shrink-0 text-neel" />
               <p className="text-base text-ink-soft">{t("why")}</p>
             </aside>
             <p className="mt-6 rounded-card border border-rule-strong p-4 font-semibold">{tc("safety")}</p>

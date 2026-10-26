@@ -80,7 +80,7 @@ function Login({ onSignIn }: { onSignIn: (s: Session) => void }) {
           <input required type="password" value={token} onChange={(e) => setToken(e.target.value)} className={field} autoComplete="current-password" />
         </label>
         {error && <p role="alert" className="rounded-md border border-red-line bg-red-tint px-3 py-2 text-red">{error}</p>}
-        <button type="submit" disabled={busy} className="inline-flex h-11 items-center justify-center gap-2 rounded-card bg-teal px-5 font-semibold text-on-teal transition-colors hover:bg-teal-hover disabled:opacity-60">
+        <button type="submit" disabled={busy} className="inline-flex h-11 items-center justify-center gap-2 rounded-card bg-neel px-5 font-semibold text-on-neel transition-colors hover:bg-neel-hover disabled:opacity-60">
           <KeyRound aria-hidden size={18} />
           {busy ? "Checking…" : "Open the queue"}
         </button>
@@ -288,7 +288,7 @@ function Dashboard({ session, onSignOut }: { session: Session; onSignOut: () => 
                 />
                 {noteError && <p id="note-err" className="mt-1.5 text-sm font-medium text-red">Add a short note to dismiss this finding.</p>}
                 <div className="mt-4 flex items-center gap-3">
-                  <button type="button" onClick={() => decide("confirmed")} className="inline-flex h-11 items-center gap-2 rounded-card bg-teal px-5 font-semibold text-on-teal transition-colors hover:bg-teal-hover">
+                  <button type="button" onClick={() => decide("confirmed")} className="inline-flex h-11 items-center gap-2 rounded-card bg-neel px-5 font-semibold text-on-neel transition-colors hover:bg-neel-hover">
                     <Check aria-hidden size={18} strokeWidth={2.5} /> Confirm <Kbd tone="onTeal">C</Kbd>
                   </button>
                   <button type="button" onClick={() => decide("dismissed")} className="inline-flex h-11 items-center gap-2 rounded-card border border-rule-strong bg-paper-raised px-5 font-semibold text-ink hover:border-ink-faint">
@@ -437,7 +437,7 @@ function PatientPanel({ token, patientId }: { token: string; patientId: number }
           <ol className="mt-2 grid gap-2.5 text-sm">
             {audit.data.slice(0, 12).map((a) => (
               <li key={a.id} className="border-l border-rule pl-3">
-                <span className={cx("font-semibold", a.status === "confirmed" ? "text-teal" : a.status === "dismissed" ? "text-ink" : "text-ink-faint")}>{a.status}</span>{" "}
+                <span className={cx("font-semibold", a.status === "confirmed" ? "text-neel" : a.status === "dismissed" ? "text-ink" : "text-ink-faint")}>{a.status}</span>{" "}
                 <span className="text-ink-soft">{RULE_NAME[a.code]}</span>
                 <span className="block text-[13px] text-ink-faint">{a.reviewer} · {date(a.created_at, "en", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
                 {a.note && <span className="mt-0.5 flex gap-1 text-[13px] text-ink-soft"><FileText aria-hidden size={12} className="mt-1 shrink-0" />{a.note}</span>}
@@ -491,7 +491,7 @@ function Kbd({ children, tone }: { children: React.ReactNode; tone?: "onTeal" })
   return (
     <kbd className={cx(
       "inline-flex h-5 min-w-5 items-center justify-center rounded border px-1 font-sans text-[12px] font-semibold leading-none",
-      tone === "onTeal" ? "border-on-teal/40 text-on-teal" : "border-rule-strong bg-paper-raised text-ink-soft",
+      tone === "onTeal" ? "border-on-neel/40 text-on-neel" : "border-rule-strong bg-paper-raised text-ink-soft",
     )}>
       {children}
     </kbd>

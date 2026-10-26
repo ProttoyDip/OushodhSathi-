@@ -26,6 +26,7 @@ from .models import (  # noqa: E402
     MedicineItem, MedicineItemIn, MedicineItemPatch, Patient, PatientIn, ReviewIn, RuleItem, StoredFlag,
 )
 from .rules import run_rules  # noqa: E402
+from .stats import pilot_stats, proportion  # noqa: E402
 from .store import Store  # noqa: E402
 from .tables import load_rule_tables  # noqa: E402
 
@@ -39,7 +40,7 @@ app = FastAPI(
 )
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")],
+    allow_origins=[o.strip() for o in (os.getenv("CORS_ORIGINS") or "http://localhost:3000,http://127.0.0.1:3000").split(",")],
     allow_origin_regex=os.getenv("CORS_ORIGIN_REGEX") or None,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -473,6 +474,18 @@ def eval_results() -> list[dict]:
             data = json.loads(f.read_text(encoding="utf-8"))
         except ValueError:
             continue
-        out.append({k: data.get(k) for k in ("prompt_version", "model_id", "run_at", "images", "labelled_items",
-                                              "brand_accuracy", "strength_accuracy", "avg_confidence")})
+        row = {k: data.get(k) for k in ("prompt_version", "model_id", "run_at", "images", "labelled_items",
+                                         "brand_accuracy", "strength_accuracy", "avg_confidence")}
+        n = data.get("labelled_items") or 0
+        for key in ("brand_accuracy", "strength_accuracy"):
+            if n and data.get(key) is not None:
+                ci = proportion(key, round(data[key] * n), n)
+                row[f"{key}_ci"] = [ci["ci_low"], ci["ci_high"]]
+        out.append(row)
     return out
+
+
+@app.get("/pilot/stats")
+def pilot() -> dict:
+    """Pilot proportions with 95% Wilson intervals, from eval/pilot.csv (real households only)."""
+    return pilot_stats(EVAL_DIR / "pilot.csv")

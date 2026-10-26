@@ -11,6 +11,7 @@
   "dependencies": {
     "clsx": "^2.1.1",
     "lucide-react": "^1.61.0",
+    "motion": "^12.43.0",
     "next": "15.5.28",
     "next-intl": "^4.14.9",
     "qrcode": "^1.5.4",

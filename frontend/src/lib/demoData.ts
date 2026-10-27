@@ -9,10 +9,10 @@ const base = {
 };
 
 export const DEMO_ITEMS: Record<string, MedicineItem> = {
-  napa: { ...base, id: 1, brand: "Napa", strength: "500 mg", expiry: "2027-03", prescriber: "Local drug shop", confidence: 0.96, generic: "paracetamol", drug_class: "analgesic-paracetamol", schedule: ["morning", "night"] },
-  ace: { ...base, id: 2, brand: "Ace", strength: "500 mg", expiry: "2026-12", prescriber: "Village doctor", confidence: 0.91, generic: "paracetamol", drug_class: "analgesic-paracetamol", schedule: ["noon"] },
-  camlodin: { ...base, id: 3, brand: "Camlodin", strength: "5 mg", expiry: "2027-06", prescriber: "Dr. A (Cumilla Medical College OPD)", confidence: 0.97, generic: "amlodipine", drug_class: "CCB-dihydropyridine", source: "box", schedule: ["morning"] },
-  amdocal: { ...base, id: 4, brand: "Amdocal", strength: "5 mg", expiry: "2027-01", prescriber: "Village doctor", confidence: 0.82, generic: "amlodipine", drug_class: "CCB-dihydropyridine", schedule: ["night"] },
+  napa: { ...base, id: 1, brand: "Napa", purpose: "Pain or fever", purpose_bn: "ব্যথা বা জ্বর", strength: "500 mg", expiry: "2027-03", prescriber: "Local drug shop", confidence: 0.96, generic: "paracetamol", drug_class: "analgesic-paracetamol", schedule: ["morning", "night"] },
+  ace: { ...base, id: 2, brand: "Ace", purpose: "Pain or fever", purpose_bn: "ব্যথা বা জ্বর", strength: "500 mg", expiry: "2026-12", prescriber: "Village doctor", confidence: 0.91, generic: "paracetamol", drug_class: "analgesic-paracetamol", schedule: ["noon"] },
+  camlodin: { ...base, id: 3, brand: "Camlodin", purpose: "Blood pressure", purpose_bn: "রক্তচাপ", strength: "5 mg", expiry: "2027-06", prescriber: "Dr. A (Cumilla Medical College OPD)", confidence: 0.97, generic: "amlodipine", drug_class: "CCB-dihydropyridine", source: "box", schedule: ["morning"] },
+  amdocal: { ...base, id: 4, brand: "Amdocal", purpose: "Blood pressure", purpose_bn: "রক্তচাপ", strength: "5 mg", expiry: "2027-01", prescriber: "Village doctor", confidence: 0.82, generic: "amlodipine", drug_class: "CCB-dihydropyridine", schedule: ["night"] },
   tryptin: { ...base, id: 8, brand: "Tryptin", strength: "10 mg", expiry: "2026-09", prescriber: "Village doctor", confidence: 0.68, generic: "amitriptyline", drug_class: "TCA", needs_review: true, confirmed: false, schedule: ["night"] },
   unknown: { ...base, id: 20, brand: "Napa Extra", strength: "500 mg", expiry: "2027-04", prescriber: null, confidence: 0.88, generic: null, drug_class: null, match_method: "not_found", match_score: null, match_source: null, needs_review: true, confirmed: false },
   web: { ...base, id: 21, brand: "Bisocor", strength: "2.5 mg", expiry: "2027-02", prescriber: "Dr. A (Cumilla Medical College OPD)", confidence: 0.9, generic: "bisoprolol", drug_class: null, match_method: "web_unverified", match_score: null, match_source: "https://medex.com.bd/", needs_review: true, confirmed: false },
@@ -52,14 +52,14 @@ export const DEMO_PASSPORT: Passport = {
   patient: { id: 1, name: "Rahima Begum", name_bn: "রহিমা বেগম", age: 68, conditions: ["hypertension", "type 2 diabetes"], district: "Cumilla" },
   groups: {
     morning: [
-      { id: 1, generic: "paracetamol", brand: "Napa", strength: "500 mg", prescriber: "Local drug shop", needs_review: false },
-      { id: 3, generic: "amlodipine", brand: "Camlodin", strength: "5 mg", prescriber: "Dr. A", needs_review: false },
-      { id: 9, generic: "metformin", brand: "Comet", strength: "500 mg", prescriber: "Dr. A", needs_review: false },
+      { id: 1, generic: "paracetamol", brand: "Napa", purpose: "Pain or fever", purpose_bn: "ব্যথা বা জ্বর", strength: "500 mg", prescriber: "Local drug shop", needs_review: false },
+      { id: 3, generic: "amlodipine", brand: "Camlodin", purpose: "Blood pressure", purpose_bn: "রক্তচাপ", strength: "5 mg", prescriber: "Dr. A", needs_review: false },
+      { id: 9, generic: "metformin", brand: "Comet", purpose: "Diabetes", purpose_bn: "ডায়াবেটিস", strength: "500 mg", prescriber: "Dr. A", needs_review: false },
     ],
-    noon: [{ id: 2, generic: "paracetamol", brand: "Ace", strength: "500 mg", prescriber: "Village doctor", needs_review: false }],
+    noon: [{ id: 2, generic: "paracetamol", brand: "Ace", purpose: "Pain or fever", purpose_bn: "ব্যথা বা জ্বর", strength: "500 mg", prescriber: "Village doctor", needs_review: false }],
     night: [
-      { id: 4, generic: "amlodipine", brand: "Amdocal", strength: "5 mg", prescriber: "Village doctor", needs_review: false },
-      { id: 9, generic: "metformin", brand: "Comet", strength: "500 mg", prescriber: "Dr. A", needs_review: false },
+      { id: 4, generic: "amlodipine", brand: "Amdocal", purpose: "Blood pressure", purpose_bn: "রক্তচাপ", strength: "5 mg", prescriber: "Village doctor", needs_review: false },
+      { id: 9, generic: "metformin", brand: "Comet", purpose: "Diabetes", purpose_bn: "ডায়াবেটিস", strength: "500 mg", prescriber: "Dr. A", needs_review: false },
     ],
     as_needed: [],
   },
@@ -69,4 +69,14 @@ export const DEMO_PASSPORT: Passport = {
   medicine_count: 6,
   generated_at: "2026-10-26T09:12:00+00:00",
   demo_label: "Demo household — invented data",
+  allergies: ["Penicillin"],
+  allergies_confirmed_by: "Demo pharmacist (invented)",
+  allergies_confirmed_at: "2026-10-26T09:10:00+00:00",
+  prescribers: [
+    { name: "Dr. A", medicines: ["Camlodin", "Comet"] },
+    { name: "Village doctor", medicines: ["Ace", "Amdocal"] },
+    { name: "Local drug shop", medicines: ["Napa"] },
+  ],
+  last_reviewed: { by: "Demo pharmacist (invented)", role: "pharmacist", at: "2026-10-26T09:10:00+00:00" },
+  emergency_enabled: true,
 };

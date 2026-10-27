@@ -2,26 +2,30 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=1920">
 <title>Architecture · OushodhSathi</title><link rel="stylesheet" href="scenes.css"></head>
 <body><main class="scene">
-<header class="topbar"><div class="mark"><svg width="44" height="44" viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="7" width="26" height="18" rx="3" fill="#c9ced3" stroke="#12343b" stroke-width="1.6"/><circle cx="11" cy="16" r="4.2" fill="#eef0f2" stroke="#12343b" stroke-width="1.6"/><circle cx="21" cy="16" r="4.2" fill="#0f6b6b" stroke="#12343b" stroke-width="1.6"/><path d="M29 9.5v2M29 14.5v3M29 20.5v2" stroke="#f6f2e9" stroke-width="1.6" stroke-linecap="round"/></svg><span class="bn-display" lang="bn">ওষুধসাথী</span><span class="serif">OushodhSathi</span></div>
-<span class="step tab">03 / 06 · Architecture</span></header>
+<header class="topbar"><div class="mark"><svg width="44" height="44" viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="7" width="26" height="18" rx="3" fill="#c8cdd6" stroke="#0e1530" stroke-width="1.6"/><circle cx="11" cy="16" r="4.2" fill="#f1f3f7" stroke="#0e1530" stroke-width="1.6"/><circle cx="21" cy="16" r="4.2" fill="#2a3b91" stroke="#0e1530" stroke-width="1.6"/><path d="M29 9.5v2M29 14.5v3M29 20.5v2" stroke="#f3f5f9" stroke-width="1.6" stroke-linecap="round"/></svg><span class="bn-display" lang="bn">ওষুধসাথী</span><span class="display">OushodhSathi</span></div>
+<span class="step tab">03 / 07 · Architecture</span></header>
 
-<div style="margin-top:70px">
+<div style="margin-top:50px">
   <p class="kicker rise">How it works · কীভাবে কাজ করে</p>
-  <h1 class="serif rise d1" style="font-size:96px">From a photo to a doctor-checked list.</h1>
+  <h1 class="display rise d1" style="font-size:88px">From a photo to a doctor-checked list.</h1>
 </div>
-<div class="rise d2 flow" style="margin-top:110px;display:grid;grid-template-columns:repeat(6,1fr);gap:40px;align-items:stretch">
-  <div style="border:1.5px solid var(--rule-strong);background:var(--paper-raised);border-radius:10px;padding:22px 26px;font-size:26px;line-height:1.3"><b>Photos</b><br><span style="color:var(--ink-soft);font-size:22px">strips, boxes, prescriptions · kept in memory only</span></div>
-  <div style="border:1.5px solid var(--rule-strong);background:linear-gradient(160deg,var(--foil-hi),var(--foil));border-radius:10px;padding:22px 26px;font-size:26px;line-height:1.3"><b>Vision model</b><br><span style="color:var(--ink-soft);font-size:22px">reads them into typed data</span></div>
-  <div style="border:1.5px solid var(--rule-strong);background:linear-gradient(160deg,var(--foil-hi),var(--foil));border-radius:10px;padding:22px 26px;font-size:26px;line-height:1.3"><b>Brand → generic</b><br><span style="color:var(--ink-soft);font-size:22px">table first; unknown brands searched, must cite a source</span></div>
-  <div style="border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);border-radius:10px;padding:22px 26px;font-size:26px;line-height:1.3"><b>Rules engine</b><br><span style="opacity:.8;font-size:22px">duplicates, interactions, Beers 65+, expiry · no AI</span></div>
-  <div style="border:1.5px solid var(--teal);background:var(--teal);color:#fff;border-radius:10px;padding:22px 26px;font-size:26px;line-height:1.3"><b>Clinician review</b><br><span style="opacity:.85;font-size:22px">confirm or dismiss every flag, with a note</span></div>
-  <div style="border:1.5px solid var(--rule-strong);background:var(--paper-raised);border-radius:10px;padding:22px 26px;font-size:26px;line-height:1.3"><b>Family + passport</b><br><span style="color:var(--ink-soft);font-size:22px">confirmed flags only, in plain Bangla</span></div>
+<div class="rise d2" style="margin-top:80px;display:grid;grid-template-columns:repeat(6,1fr);gap:28px;align-items:stretch">
+  <div class="card"><b>Photos</b><span>strips, boxes, prescriptions · in memory only, never stored</span></div>
+  <div class="card" style="background:linear-gradient(160deg,var(--foil-hi),var(--foil))"><b>Vision model</b><span>NVIDIA Nemotron VL first, free fallbacks · typed data</span></div>
+  <div class="card" style="background:linear-gradient(160deg,var(--foil-hi),var(--foil))"><b>Brand → generic</b><span>table first; unknown brands searched, must cite a source</span></div>
+  <div class="card" style="background:var(--ink);color:var(--paper);border-color:var(--ink)"><b>Rules engine</b><span style="color:rgb(255 255 255 / .75)">duplicates, interactions, Beers 65+, expiry · no AI</span></div>
+  <div class="card dye"><b>Clinician review</b><span>confirm or dismiss every flag · AI summary marked "check the evidence"</span></div>
+  <div class="card"><b>Family</b><span>confirmed findings in Bangla · passport · Sathi helper</span></div>
 </div>
-<div class="rise d3" style="display:grid;grid-template-columns:repeat(6,1fr);gap:40px;margin-top:22px;font-size:20px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;white-space:nowrap">
+<div class="rise d3" style="display:grid;grid-template-columns:repeat(6,1fr);gap:28px;margin-top:20px;font-size:20px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;white-space:nowrap">
   <span style="grid-column:2/span 2;border-top:4px solid var(--foil-lo);padding-top:12px;color:var(--ink-faint)">AI · perception</span>
   <span style="border-top:4px solid var(--ink);padding-top:12px">Rules · judgement</span>
-  <span style="border-top:4px solid var(--teal);padding-top:12px;color:var(--teal)">People · judgement</span>
+  <span style="border-top:4px solid var(--dye);padding-top:12px;color:var(--dye)">People · judgement</span>
 </div>
-<p class="rise d4" style="margin-top:auto;font-size:24px;color:var(--ink-soft)">Next.js · FastAPI · Pydantic-AI · SQLite · n8n automations · read-only MCP server</p>
+<div class="rise d4" style="margin-top:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:28px;font-size:23px;color:var(--ink-soft);line-height:1.4">
+  <p><b style="color:var(--ink)">Sathi guard</b><br>every question checked before and after any model</p>
+  <p><b style="color:var(--ink)">Private by default</b><br>each family opens its list with its own link · rate-limited</p>
+  <p><b style="color:var(--ink)">Built on</b><br>Next.js · FastAPI · Pydantic-AI · Postgres · FHIR R4 export</p>
+</div>
 <footer class="foot"><span></span><span>International AI Builders Congress 2026 · HealthSphere AI</span></footer>
 </main></body></html>

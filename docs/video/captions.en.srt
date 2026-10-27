@@ -1,0 +1,132 @@
+1
+00:00:00,500 --> 00:00:07,500
+Hypertension is now Bangladesh's
+most common illness,
+
+2
+00:00:07,500 --> 00:00:14,500
+yet only about one in ten people with it
+has it under control.
+
+3
+00:00:15,000 --> 00:00:22,500
+Our grandparents collect medicines from a hospital doctor,
+a village doctor and the local drug shop,
+
+4
+00:00:22,500 --> 00:00:29,500
+under thousands of brand names.
+Nobody ever looks at the whole shelf.
+
+5
+00:00:30,000 --> 00:00:36,000
+OushodhSathi is a pharmacist
+for every elderly home.
+
+6
+00:00:36,000 --> 00:00:42,000
+A family member photographs every medicine.
+
+7
+00:00:42,000 --> 00:00:50,000
+We turn the pile into one doctor-checked list, in Bangla,
+
+8
+00:00:50,000 --> 00:00:59,500
+with a helper called Sathi,
+and a medicine passport for every doctor visit.
+
+9
+00:01:00,000 --> 00:01:04,000
+This is a demo household: Rahima Begum, 68.
+Her daughter photographs the shelf,
+
+10
+00:01:04,000 --> 00:01:09,000
+and the list builds itself.
+
+11
+00:01:09,000 --> 00:01:12,500
+Here: Napa and Ace. Different names, same medicine:
+paracetamol, twice.
+
+12
+00:01:12,500 --> 00:01:16,000
+Different names, same medicine:
+so a pharmacist checks every one.
+
+13
+00:01:16,000 --> 00:01:22,000
+A pharmacist checks the evidence, with an AI summary
+they must verify, and confirms it.
+
+14
+00:01:22,000 --> 00:01:27,000
+Only then does the family see it, in simple Bangla.
+
+15
+00:01:27,000 --> 00:01:33,000
+The passport says what each medicine is for,
+
+16
+00:01:33,000 --> 00:01:38,000
+and its QR opens an emergency page:
+no login, first name only.
+
+17
+00:01:38,000 --> 00:01:44,000
+For a mother who can't read,
+today's medicines are pictures, read aloud.
+
+18
+00:01:44,000 --> 00:01:48,000
+Blood pressure can be read
+from a photo of the machine.
+
+19
+00:01:48,000 --> 00:01:53,000
+Sathi, our helper, always shows the next step,
+
+20
+00:01:53,000 --> 00:01:59,000
+and when Nusrat asks "Should Ma stop Ace?", Sathi doesn't guess.
+It sends the question to the pharmacist.
+
+21
+00:01:59,000 --> 00:02:05,000
+Before every visit, one page shows what changed,
+and who changed it.
+
+22
+00:02:05,000 --> 00:02:15,000
+AI does perception: a vision model reads cut strips and prescriptions,
+and unknown brands must cite a source.
+
+23
+00:02:15,000 --> 00:02:22,000
+Rules and humans do judgement: a deterministic engine checks every list,
+and a clinician confirms every flag.
+
+24
+00:02:22,000 --> 00:02:30,000
+In our 80-question safety test, Sathi sent all 30 medical questions
+to a pharmacist, and every emergency to 999.
+
+25
+00:02:30,000 --> 00:02:40,000
+It's built for parents who can't read,
+and children far away.
+
+26
+00:02:40,000 --> 00:02:45,000
+Families abroad pay; parents stay safe.
+
+27
+00:02:45,000 --> 00:02:50,000
+We are now recruiting our first pilot families,
+and will publish results only when they are real.
+
+28
+00:02:50,000 --> 00:02:58,000
+OushodhSathi.
+Build locally, protect globally.

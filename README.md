@@ -246,6 +246,10 @@ Claude Desktop config (Settings → Developer → Edit config), with your own ab
 
 More in [`mcp/README.md`](mcp/README.md).
 
+## Demo video
+
+The 2:58 video is planned second by second in [`docs/video/SHOTLIST.md`](docs/video/SHOTLIST.md), with the voiceover and captions in Bangla and English ([`captions.bn.srt`](docs/video/captions.bn.srt), [`captions.en.srt`](docs/video/captions.en.srt)). Seven 1920×1080 scenes live in [`video/scenes`](video/scenes) (stills in [`docs/video/stills`](docs/video/stills)), and the product footage comes from the keyboard-paced [`/demo`](https://oushodhsathi.vercel.app/demo) walkthrough. `cd video && npm install && node record.mjs` re-records every clip and stitches a silent draft cut for the voiceover.
+
 ## Roadmap
 
 1. A pharmacist-verified brand table, replacing the demo seed with a licensed Bangladeshi drug database.

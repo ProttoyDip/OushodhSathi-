@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, BookOpen, Camera, Check, Keyboard, MessageSquareReply, Send, ShieldQuestion, Stethoscope } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, BookOpen, Camera, Check, Keyboard, MessageSquareReply, Minus, Moon, Phone as PhoneIcon, Plus, Printer, Send, ShieldAlert, ShieldQuestion, Sparkles, Stethoscope, Sun, Sunrise, Volume2 } from "lucide-react";
 import { NextIntlClientProvider, useLocale, useTranslations } from "next-intl";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { type ReactNode, useCallback, useEffect, useState, useSyncExternalStore } from "react";
@@ -33,9 +33,12 @@ const STEPS = [
   { ch: "Review", chBn: "যাচাই", who: "Pharmacist dashboard", whoBn: "ফার্মাসিস্টের ড্যাশবোর্ড", en: "A pharmacist confirms the finding, with a note.", bn: "একজন ফার্মাসিস্ট নিশ্চিত করেন, নোটসহ।" },
   { ch: "Family", chBn: "পরিবার", who: "Her daughter's phone, Toronto", whoBn: "মেয়ের ফোন, টরন্টো", en: "Only now does the family see it, in simple Bangla.", bn: "এরপরই পরিবার দেখতে পায়, সহজ বাংলায়।" },
   { ch: "Passport", chBn: "পাসপোর্ট", who: "Printed, carried to every visit", whoBn: "ছাপানো, প্রতিবার সাথে নেওয়া", en: "A passport for every doctor visit.", bn: "প্রতিবার ডাক্তারের কাছে নেওয়ার পাসপোর্ট।" },
-  { ch: "Report", chBn: "রিপোর্ট", who: "Weekly report", whoBn: "সাপ্তাহিক রিপোর্ট", en: "And the weekly report keeps watch.", bn: "সাপ্তাহিক রিপোর্টে রক্তচাপের খোঁজ।" },
+  { ch: "Emergency", chBn: "জরুরি", who: "Passport QR · read-only, no login", whoBn: "পাসপোর্টের কিউআর · শুধু পড়া, লগইন নেই", en: "In an emergency, the QR opens what a doctor needs first.", bn: "জরুরি অবস্থায় কিউআর খোলে, ডাক্তারের প্রথমে যা জানা দরকার।" },
+  { ch: "Today", chBn: "আজকের ওষুধ", who: "Works without reading", whoBn: "পড়তে না পারলেও চলে", en: "For a parent who can't read: pictures, tablets drawn, read aloud.", bn: "যিনি পড়তে পারেন না, তাঁর জন্য: ছবি, আঁকা বড়ি, পড়ে শোনানো।" },
+  { ch: "Report", chBn: "রিপোর্ট", who: "Weekly report · BP from a photo", whoBn: "সাপ্তাহিক রিপোর্ট · ছবি থেকে রক্তচাপ", en: "Blood pressure, typed or read from a photo of the machine.", bn: "রক্তচাপ লিখে, বা মেশিনের ছবি থেকে পড়ে।" },
   { ch: "Sathi", chBn: "সাথী", who: "In-app helper · answers only from the app guide", whoBn: "অ্যাপের সাহায্যকারী · শুধু অ্যাপ গাইড থেকে", en: "Sathi always shows the one next step, and helps with the app.", bn: "সাথী সবসময় পরের কাজটা দেখায়, অ্যাপ চালাতে সাহায্য করে।" },
   { ch: "Ask a person", chBn: "মানুষের কাছে", who: "Guard · the pharmacist replies, never the AI", whoBn: "গার্ড · উত্তর দেন ফার্মাসিস্ট, এআই নয়", en: "Medicine questions go to the pharmacist, never to the AI.", bn: "ওষুধের প্রশ্ন যায় ফার্মাসিস্টের কাছে, এআই-এর কাছে নয়।" },
+  { ch: "Doctor visit", chBn: "ডাক্তার দেখানো", who: "One printable page", whoBn: "এক পাতায়, ছাপানো যায়", en: "Before every visit: what changed, and who changed it.", bn: "প্রতি ভিজিটের আগে: কী বদলেছে, আর কে বদলেছে।" },
 ];
 
 /** A keyboard-paced walkthrough of the hero flow for recording. → / Space next, ← back. */
@@ -112,7 +115,7 @@ export default function DemoWalkthrough() {
         </main>
 
         <footer className="mx-auto flex w-full max-w-[1680px] items-end justify-between gap-6 px-8 pb-6 lg:px-16">
-          <ol className="grid min-w-0 flex-1 grid-cols-10 gap-2" aria-label={t("progress")}>
+          <ol className="grid min-w-0 flex-1 grid-cols-13 gap-2" aria-label={t("progress")}>
             {STEPS.map((st, i) => (
               <li key={i} className="min-w-0">
                 <button
@@ -308,6 +311,13 @@ function Stage({ step, passportUrl }: { step: number; passportUrl?: string }) {
             <span className="font-display text-[28px] leading-none">Same generic, two brands</span>
           </div>
           <p className="mt-2 text-ink-soft">Rahima Begum, 68 · rule <code className="font-mono text-[14px]">DUPLICATE_GENERIC</code> · source: brand table</p>
+          <motion.div {...later(0.15)} className="mt-4 rounded-card border border-dashed border-rule-strong bg-paper px-4 py-3 text-[14px]">
+            <p className="flex items-center gap-2 font-semibold text-ink"><Sparkles aria-hidden size={15} className="text-neel" /> AI summary — check the evidence</p>
+            <ul className="mt-1.5 grid list-disc gap-0.5 pl-5 text-ink-soft">
+              <li>9 confirmed medicines from three prescribers.</li>
+              <li>Napa and Ace both contain paracetamol.</li>
+            </ul>
+          </motion.div>
           <div className="mt-5"><Pair wide={wide} label="Both are paracetamol" compact delay={200} /></div>
           <p className="mt-5 font-semibold text-ink">Note to the family</p>
           <p className="mt-1.5 rounded-md border border-rule-strong bg-paper px-3.5 py-2.5 text-ink">{DEMO_FLAG.note}</p>
@@ -327,8 +337,11 @@ function Stage({ step, passportUrl }: { step: number; passportUrl?: string }) {
     );
   }
   if (step === 5) return <Phone label="ওষুধসাথী"><FlagResult flag={DEMO_FLAG} /></Phone>;
-  if (step === 8) return <Phone label="ওষুধসাথী"><SathiGuideScene /></Phone>;
-  if (step === 9) return <Phone label="ওষুধসাথী"><SathiHumanScene /></Phone>;
+  if (step === 7) return <Phone label="ওষুধসাথী"><EmergencyScene /></Phone>;
+  if (step === 8) return <Phone label="ওষুধসাথী"><TodayScene /></Phone>;
+  if (step === 10) return <Phone label="ওষুধসাথী"><SathiGuideScene /></Phone>;
+  if (step === 11) return <Phone label="ওষুধসাথী"><SathiHumanScene /></Phone>;
+  if (step === 12) return <VisitScene />;
   if (step === 6)
     return (
       <motion.div className="demo-fit w-full max-w-[580px]" initial={{ opacity: 0, y: 40, rotate: -2 }} animate={{ opacity: 1, y: 0, rotate: 0.6 }} transition={SPRING_TRAVEL}>
@@ -348,6 +361,10 @@ function Stage({ step, passportUrl }: { step: number; passportUrl?: string }) {
         )}
       </div>
       <div className="mt-4"><BPTrend readings={DEMO_BP} height={300} /></div>
+      <motion.p {...later(0.5)} className="mt-4 flex flex-wrap items-center gap-2 rounded-md border border-dashed border-rule-strong px-4 py-3 text-[15px] text-ink">
+        <Camera aria-hidden size={18} className="text-neel" /> Read from a photo of the machine: <b className="tabular font-semibold">142/88</b>
+        <span className="text-ink-soft">· the family checks it against the machine before saving</span>
+      </motion.p>
       <p className="mt-4 border-t border-rule pt-4 text-[15px] text-ink-soft">Sent to the family every Friday. Target 140/90 marked on the chart.</p>
     </motion.div>
   );
@@ -410,5 +427,84 @@ function SathiHumanScene() {
         <p lang="en" className="mt-2 text-[13px] text-ink-faint">Written by a person. The AI never answers medical questions.</p>
       </motion.div>
     </div>
+  );
+}
+
+/** Scene: what the passport QR opens. Read-only, first name only, the family can switch it off. */
+function EmergencyScene() {
+  return (
+    <div className="grid gap-4">
+      <motion.p {...later(0.1)} className="flex items-center gap-2 rounded-md border-b-4 border-red bg-red-tint px-4 py-3 text-lg font-bold text-red">
+        <ShieldAlert aria-hidden size={22} /> জরুরি চিকিৎসা তথ্য
+      </motion.p>
+      <motion.p {...later(0.3)} className="font-bn-display text-[26px]">রহিমা <span className="text-lg text-ink-soft">৬৮ বছর</span></motion.p>
+      <motion.div {...later(0.6)} className="rounded-card border-2 border-red p-4">
+        <p className="flex items-center gap-2 font-semibold text-red"><AlertTriangle aria-hidden size={18} /> অ্যালার্জি</p>
+        <p className="mt-1 text-2xl font-bold">Penicillin</p>
+      </motion.div>
+      <motion.span {...later(0.9)} className="flex min-h-14 items-center gap-3 rounded-card bg-neel px-5 font-semibold text-on-neel">
+        <PhoneIcon aria-hidden size={22} /> Nusrat (daughter)-কে ফোন করুন
+      </motion.span>
+      <motion.ul {...later(1.2)} className="grid gap-2">
+        {[["Amlodipine", "Camlodin 5 mg", "সকাল"], ["Metformin", "Comet 500 mg", "সকাল · রাত"]].map(([g, b, w]) => (
+          <li key={g} className="rounded-card border border-rule p-3"><b className="text-[19px]">{g}</b> <span className="text-ink-soft">{b}</span><span className="block text-[15px] text-ink-soft">{w}</span></li>
+        ))}
+      </motion.ul>
+    </div>
+  );
+}
+
+/** Scene: today's medicines for a parent who cannot read. */
+function TodayScene() {
+  const pills = (n: number) => (
+    <span className="flex gap-1">{Array.from({ length: n }).map((_, i) => <span key={i} className="h-5 w-5 rounded-full border-2 border-ink bg-paper" />)}</span>
+  );
+  return (
+    <div className="grid gap-3">
+      <motion.div {...later(0.1)} className="flex items-center justify-between">
+        <p className="font-bn-display text-[28px]">আজকের ওষুধ</p>
+        <span className="inline-flex h-11 items-center gap-1.5 rounded-card bg-neel px-4 font-semibold text-on-neel"><Volume2 aria-hidden size={18} /> শুনুন</span>
+      </motion.div>
+      {([[Sunrise, "সকাল", "text-amber", [["Camlodin", 1], ["Comet", 1]]], [Sun, "দুপুর", "text-amber", [["Ace", 1]]], [Moon, "রাত", "text-neel", [["Comet", 1], ["Amdocal", 1]]]] as const).map(([Icon, label, tone, meds], i) => (
+        <motion.section key={label} {...later(0.3 + i * 0.25)} className="rounded-card border border-rule p-4">
+          <p className="flex items-center gap-3"><Icon aria-hidden size={40} strokeWidth={1.75} className={tone} /><span className="font-bn-display text-[24px]">{label}</span></p>
+          <ul className="mt-2 grid gap-2">
+            {meds.map(([m, n]) => (
+              <li key={m} className="flex items-center gap-3"><span aria-hidden className="foil h-11 w-11 shrink-0 rounded-md border border-foil-lo" /><b className="flex-1 text-[18px]">{m}</b>{pills(n)}</li>
+            ))}
+          </ul>
+        </motion.section>
+      ))}
+    </div>
+  );
+}
+
+/** Scene: before the doctor visit, one printable page. */
+function VisitScene() {
+  return (
+    <motion.div className="demo-fit-sm w-full max-w-[760px] rounded-card border border-rule-strong bg-paper-raised p-7 text-[16px] shadow-lift" {...panelIn}>
+      <div className="flex items-center justify-between gap-3">
+        <p className="font-bn-display text-[28px]">ডাক্তারের কাছে যাওয়ার আগে</p>
+        <span className="inline-flex h-10 items-center gap-1.5 rounded-card border border-rule-strong px-3 text-[14px] font-semibold"><Printer aria-hidden size={16} /> Print</span>
+      </div>
+      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <motion.div {...later(0.3)} className="rounded-md border border-rule p-4">
+          <p className="font-semibold">What changed since the last visit</p>
+          <p className="mt-2 flex items-center gap-2"><Minus aria-hidden size={16} className="text-red" /> <b>Ace</b> stopped <span className="text-ink-soft">· Demo pharmacist</span></p>
+          <p className="mt-1 flex items-center gap-2"><Plus aria-hidden size={16} className="text-green" /> <b>Comet</b> added <span className="text-ink-soft">· Dr. A</span></p>
+        </motion.div>
+        <motion.div {...later(0.6)} className="rounded-md border border-rule p-4">
+          <p className="font-semibold">Our questions for the doctor</p>
+          <ol className="mt-2 grid list-decimal gap-1 pl-5" lang="bn"><li>প্রেশারের ওষুধ কি একটা কমানো যায়?</li><li>রাতে ঘুমের ওষুধ কি দরকার?</li></ol>
+        </motion.div>
+        <motion.div {...later(0.9)} className="rounded-md border border-rule p-4 sm:col-span-2">
+          <p className="font-semibold">Blood pressure, last 4 weeks</p>
+          <div className="mt-2"><BPTrend readings={DEMO_BP} height={170} /></div>
+        </motion.div>
+      </div>
+      <motion.span {...later(1.2)} className="mt-5 inline-flex min-h-12 items-center gap-2 rounded-card bg-neel px-5 font-semibold text-on-neel">
+        <Camera aria-hidden size={18} /> Visit done: scan the new prescription
+      </motion.span>
+    </motion.div>
   );
 }

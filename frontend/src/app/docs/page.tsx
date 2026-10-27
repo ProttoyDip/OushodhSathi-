@@ -5,6 +5,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 import { Wordmark } from "@/components/BrandMark";
 import { LangToggle, ThemeToggle } from "@/components/Chrome";
+import { stickyBar } from "@/lib/layout";
 import { EvalPanel, LiveStatus, PilotPanel, ReviewTimePanel, SathiEvalPanel } from "@/components/docs/LivePanels";
 import { reveal } from "@/lib/reveal";
 
@@ -38,18 +39,20 @@ export default async function Docs() {
 
   return (
     <div className="min-h-dvh">
-      <nav className="mx-auto flex max-w-[1200px] items-center justify-between gap-3 px-5 py-4 sm:px-8">
-        <Link href="/" title={t("nav.home")} className="shrink-0"><Wordmark /></Link>
-        <div className="flex items-center gap-2">
-          <Link href="/p/1" className="hidden h-11 items-center rounded-chip border border-rule px-4 text-[15px] font-medium sm:inline-flex">{t("nav.openDemo")}</Link>
-          <ThemeToggle className="h-11 w-11" />
-          <LangToggle className="h-11" />
-        </div>
-      </nav>
+      <div className={stickyBar}>
+        <nav className="mx-auto flex max-w-[1200px] items-center justify-between gap-3 px-5 py-3 sm:px-8">
+          <Link href="/" title={t("nav.home")} className="shrink-0"><Wordmark /></Link>
+          <div className="flex items-center gap-2">
+            <Link href="/p/1" className="hidden h-11 items-center rounded-chip border border-rule px-4 text-[15px] font-medium sm:inline-flex">{t("nav.openDemo")}</Link>
+            <ThemeToggle className="h-11 w-11" />
+            <LangToggle className="h-11" />
+          </div>
+        </nav>
+      </div>
 
       <div className="mx-auto grid max-w-[1200px] grid-cols-[minmax(0,1fr)] gap-10 px-5 pb-24 pt-6 sm:px-8 lg:grid-cols-[220px_minmax(0,1fr)]">
         <aside className="hidden lg:block">
-          <nav aria-label={t("nav.onThisPage")} className="sticky top-6">
+          <nav aria-label={t("nav.onThisPage")} className="sticky top-24">
             <ol className="grid gap-0.5 border-l border-rule text-[15px]">
               {TOC.map((id) => (
                 <li key={id}><a href={`#${id}`} className="block py-1.5 pl-4 text-ink-soft hover:text-ink">{t(`toc.${id}`)}</a></li>

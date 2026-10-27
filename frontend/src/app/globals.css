@@ -172,6 +172,8 @@ html {
   background: var(--paper);
   color: var(--ink);
   -webkit-text-size-adjust: 100%;
+  /* anchors and scrollIntoView land below the pinned top bar */
+  scroll-padding-top: 5.5rem;
 }
 
 body {

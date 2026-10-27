@@ -5,6 +5,7 @@ import { WarmUp } from "@/components/JudgeBar";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Wordmark } from "@/components/BrandMark";
 import { LangToggle, ThemeToggle } from "@/components/Chrome";
+import { stickyBar } from "@/lib/layout";
 import { HeroDemo } from "@/components/landing/HeroDemo";
 import { FlowStrip } from "@/components/landing/FlowStrip";
 import { reveal } from "@/lib/reveal";
@@ -31,19 +32,21 @@ export default async function Landing() {
   return (
     <div className="min-h-dvh">
       <WarmUp />
-      <nav aria-label="Main" className="mx-auto flex max-w-[1200px] items-center justify-between gap-3 px-5 py-4 sm:px-8">
-        <Link href="/" title={t("nav.home")} className="shrink-0"><Wordmark /></Link>
-        <div className="flex items-center gap-1 sm:gap-2">
-          <a href="#how" className="hidden h-11 items-center rounded-chip px-3 text-[15px] font-medium text-ink-soft hover:text-ink lg:inline-flex">{t("nav.how")}</a>
-          <a href="#safe" className="hidden h-11 items-center rounded-chip px-3 text-[15px] font-medium text-ink-soft hover:text-ink lg:inline-flex">{t("nav.safe")}</a>
-          <Link href="/docs" className="hidden h-11 items-center rounded-chip px-3 text-[15px] font-medium text-ink-soft hover:text-ink md:inline-flex">{t("nav.docs")}</Link>
-          <Link href="/review" className="hidden h-11 items-center gap-1.5 rounded-chip border border-rule px-4 text-[15px] font-medium text-ink hover:border-rule-strong sm:inline-flex">
-            <Stethoscope aria-hidden size={16} /> {t("nav.reviewer")}
-          </Link>
-          <ThemeToggle className="h-11 w-11" />
-          <LangToggle className="h-11" />
-        </div>
-      </nav>
+      <div className={stickyBar}>
+        <nav aria-label="Main" className="mx-auto flex max-w-[1200px] items-center justify-between gap-3 px-5 py-3 sm:px-8">
+          <Link href="/" title={t("nav.home")} className="shrink-0"><Wordmark /></Link>
+          <div className="flex items-center gap-1 sm:gap-2">
+            <a href="#how" className="hidden h-11 items-center rounded-chip px-3 text-[15px] font-medium text-ink-soft hover:text-ink lg:inline-flex">{t("nav.how")}</a>
+            <a href="#safe" className="hidden h-11 items-center rounded-chip px-3 text-[15px] font-medium text-ink-soft hover:text-ink lg:inline-flex">{t("nav.safe")}</a>
+            <Link href="/docs" className="hidden h-11 items-center rounded-chip px-3 text-[15px] font-medium text-ink-soft hover:text-ink md:inline-flex">{t("nav.docs")}</Link>
+            <Link href="/review" className="hidden h-11 items-center gap-1.5 rounded-chip border border-rule px-4 text-[15px] font-medium text-ink hover:border-rule-strong sm:inline-flex">
+              <Stethoscope aria-hidden size={16} /> {t("nav.reviewer")}
+            </Link>
+            <ThemeToggle className="h-11 w-11" />
+            <LangToggle className="h-11" />
+          </div>
+        </nav>
+      </div>
 
       {/* first viewport: the mechanism itself */}
       <header className="mx-auto grid max-w-[1200px] grid-cols-[minmax(0,1fr)] items-center gap-12 px-5 pb-16 pt-8 sm:px-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:pb-24 lg:pt-14">

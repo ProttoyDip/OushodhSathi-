@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState, useTransition } from "react";
 import { cx } from "@/lib/format";
+import { stickyBar } from "@/lib/layout";
 import { Wordmark } from "./BrandMark";
 
 export function LangToggle({ className }: { className?: string }) {
@@ -95,28 +96,30 @@ export const familyWidth = "max-w-[480px] lg:max-w-[1120px] lg:px-8";
 export function FamilyHeader({ back, demo }: { back?: string; demo?: boolean }) {
   const t = useTranslations("common");
   return (
-    <header className={`no-print mx-auto w-full px-4 pt-3 ${familyWidth}`}>
-      <div className="flex items-center justify-between gap-2">
-        {back ? (
-          <Link
-            href={back}
-            className="-ml-2 inline-flex h-12 items-center gap-1.5 rounded-chip px-2 text-base font-medium text-ink"
-          >
-            <ArrowLeft aria-hidden size={22} />
-            {t("back")}
-          </Link>
-        ) : (
-          <Link href="/" className="inline-flex h-12 items-center rounded-md" title={t("home")}>
-            <Wordmark compact />
-          </Link>
-        )}
-        <div className="flex items-center gap-2">
-          <ThemeToggle />
-          <LangToggle />
+    <>
+      <header className={stickyBar}>
+        <div className={`mx-auto flex w-full items-center justify-between gap-2 px-4 py-1.5 ${familyWidth}`}>
+          {back ? (
+            <Link
+              href={back}
+              className="-ml-2 inline-flex h-12 items-center gap-1.5 rounded-chip px-2 text-base font-medium text-ink"
+            >
+              <ArrowLeft aria-hidden size={22} />
+              {t("back")}
+            </Link>
+          ) : (
+            <Link href="/" className="inline-flex h-12 items-center rounded-md" title={t("home")}>
+              <Wordmark compact />
+            </Link>
+          )}
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <LangToggle />
+          </div>
         </div>
-      </div>
-      {demo && <DemoTag className="mt-2" />}
-    </header>
+      </header>
+      {demo && <div className={`no-print mx-auto w-full px-4 ${familyWidth}`}><DemoTag className="mt-3" /></div>}
+    </>
   );
 }
 

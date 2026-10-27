@@ -8,6 +8,7 @@ import bn from "../../../messages/bn.json";
 import { BPTrend } from "@/components/BPTrend";
 import { Wordmark } from "@/components/BrandMark";
 import { DemoTag, LangToggle, ThemeToggle } from "@/components/Chrome";
+import { stickyBar } from "@/lib/layout";
 import { JudgeBar } from "@/components/JudgeBar";
 import { DuplicateConnector } from "@/components/DuplicateConnector";
 import { FlagResult } from "@/components/FlagResult";
@@ -69,16 +70,18 @@ export default function DemoWalkthrough() {
   const lead = isBn ? { text: s.bn, lang: "bn", cls: "font-bn-display leading-[1.2]" } : { text: s.en, lang: "en", cls: "font-display leading-[1.04]" };
   const accent = isBn ? { text: s.en, lang: "en", cls: "font-display italic" } : { text: s.bn, lang: "bn", cls: "font-bn-display" };
   return (
-      <div className="flex min-h-dvh flex-col overflow-x-hidden">
+      <div className="flex min-h-dvh flex-col overflow-x-clip">
         <JudgeBar />
-        <header className="mx-auto flex w-full max-w-[1680px] items-center justify-between gap-4 px-8 py-5 lg:px-16">
-          <Wordmark />
-          <div className="flex items-center gap-2">
-            <DemoTag className="hidden sm:inline-flex" />
-            <ThemeToggle className="h-11 w-11" />
-            <LangToggle className="h-11" />
-          </div>
-        </header>
+        <div className={stickyBar}>
+          <header className="mx-auto flex w-full max-w-[1680px] items-center justify-between gap-4 px-8 py-3 lg:px-16">
+            <Wordmark />
+            <div className="flex items-center gap-2">
+              <DemoTag className="hidden sm:inline-flex" />
+              <ThemeToggle className="h-11 w-11" />
+              <LangToggle className="h-11" />
+            </div>
+          </header>
+        </div>
 
         <main className="mx-auto grid w-full max-w-[1680px] flex-1 grid-cols-[minmax(0,1fr)] items-center gap-10 px-8 pb-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-20 lg:px-16">
           <AnimatePresence mode="wait" initial={false}>

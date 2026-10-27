@@ -23,7 +23,7 @@ export default function EmergencyPage() {
 
   return (
     <div className="min-h-dvh text-[18px]">
-      <header className="border-b-4 border-red bg-red-tint">
+      <header className="sticky top-0 z-30 border-b-4 border-red bg-red-tint">
         <div className="mx-auto flex max-w-[720px] items-center justify-between gap-3 px-4 py-4">
           <h1 className="flex items-center gap-2 text-xl font-bold text-red">
             <ShieldAlert aria-hidden size={26} /> {t("title")}

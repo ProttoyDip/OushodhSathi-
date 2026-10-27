@@ -260,7 +260,11 @@ async def read_shelf(photos: list[bytes], store=None, age: int | None = None,
         outcome.provider = outcome.provider or provider
         outcome.model_id = outcome.model_id or model_id
         outcome.needs_review |= needs_review
-        thumb = thumbnail(photo) if items else None
+        # AGENTS.md rule 6: only strip and box photos get a small thumbnail (for the family to
+        # compare against the strip, kept in their browser only). A photo with a prescription
+        # in it can show the patient's name, so it gets none.
+        has_prescription = any(x.source == "prescription" for x in items)
+        thumb = thumbnail(photo) if items and not has_prescription else None
         for x in items:
             dedupe = (x.brand.lower(), x.strength.lower(), x.expiry, (x.prescriber or "").lower())
             if dedupe in seen and seen[dedupe].item.confidence >= x.confidence:
@@ -271,7 +275,7 @@ async def read_shelf(photos: list[bytes], store=None, age: int | None = None,
                 item=MedicineItemIn(brand=x.brand, strength=x.strength or None, form=x.form or None,
                                     expiry=x.expiry, prescriber=x.prescriber, source=x.source,
                                     confidence=x.confidence),
-                match=match, thumbnail=thumb,
+                match=match, thumbnail=thumb if x.source in ("strip", "box") else None,
             )
     outcome.items = list(seen.values())
     return outcome

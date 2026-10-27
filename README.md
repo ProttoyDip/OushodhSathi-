@@ -11,7 +11,7 @@
 [![Next.js 15](https://img.shields.io/badge/Next.js-15-0E1530)](frontend/package.json)
 [![Congress 2026 · HealthSphere AI](https://img.shields.io/badge/Congress%202026-HealthSphere%20AI-8F9BD6)](#acknowledgements)
 
-**Live demo:** _link added after deploy ([how](docs/DEPLOY.md))_ · **Docs:** the `/docs` page of the app · **Demo video:** _YouTube link added after upload_ · **Reviewer login:** the dashboard at `/review` asks for a name and the `REVIEWER_TOKEN` from `backend/.env` (the quick start sets it to `demo-reviewer`)
+**Live demo:** <https://oushodhsathi.vercel.app> · **Docs:** [/docs](https://oushodhsathi.vercel.app/docs) · **Walkthrough:** [/demo](https://oushodhsathi.vercel.app/demo) · **Demo video:** _YouTube link added after upload_ · **Reviewer login:** [/review](https://oushodhsathi.vercel.app/review) asks for a name and a reviewer token; judges get the live token in the submission's Judge Access Note (locally, the quick start uses `demo-reviewer`). The hosted API runs on Render's free plan: it sleeps when idle, so the first request can take up to a minute. Data lives in a free Supabase Postgres, so households and reviews survive restarts. **Try it with your own family:** [/start](https://oushodhsathi.vercel.app/start) creates a private household that opens only with its family link.
 
 <p align="center">
   <img src="docs/video/hero.gif" width="1200" alt="The /demo walkthrough: a messy shelf of medicine strips is scanned, the list assembles itself, and Napa and Ace snap together under a red bracket labelled 'both are paracetamol'.">
@@ -42,6 +42,19 @@ flowchart TD
 ```
 
 Anything read with under 0.75 confidence, and every web-found brand match, is shown to a human for confirmation before it enters the list.
+
+**Sathi (সাথী), the in-app helper,** always shows the family the one next step (chosen by a state machine, not by AI), answers "how do I…" questions only from a written app guide, and passes every medical question to the pharmacist. Emergency words get a fixed "go to hospital or call 999" card with no AI involved. It takes voice input and reads answers aloud when the phone has a Bangla voice.
+
+**Made for real families:**
+- **Today's medicines** works without reading: morning, noon and night as pictures, the strip's own photo from this phone, and tablets drawn as shapes. A Listen button reads it out, and it prints as a fridge sheet. Only times a pharmacist approved appear.
+- **Before the doctor visit** puts everything on one printable page: what changed since the last visit and who changed it, confirmed findings, four weeks of blood pressure, and the family's questions.
+- **Set aside** lists expired strips and medicines the reviewer stopped, so nobody takes them by mistake.
+
+**Chronic care:** combination medicines are checked ingredient by ingredient (Napa Extra and Ace are still paracetamol twice), and the rules cover the hypertension and diabetes pairs that matter most (a beta-blocker hiding low sugar with a sulfonylurea, a steroid raising sugar with metformin). **Same medicine, lower price** compares only identical generic, strength and form, never switches a brand, and sends the question to the pharmacist. **Ramadan:** the family asks, a pharmacist or doctor maps each medicine to sehri or iftar, and only then does Today's medicines change, with a fixed safety card on when to break the fast. **For siblings abroad:** a shared activity log and a Bangla + English WhatsApp digest with the read-only emergency link. **For judges:** a demo bar on `/demo`, `/p/1` and `/review` resets the demo household in about a second.
+
+**The passport** shows what each medicine is for (written by the pharmacist), allergies and who prescribed what. Its QR opens a read-only emergency page with no login and first name only; the family can renew or switch it off. **Blood pressure** can be read from a photo of the machine, and the family checks the numbers before saving. The confirmed list also exports as **FHIR R4**.
+
+Every page has a **Bangla ⇄ English** switch and a **light / dark** switch. The family app is built for a phone first and spreads into a working desktop layout on a laptop; the reviewer dashboard collapses into Queue / Evidence / Patient tabs on small screens.
 
 ## Screenshots
 
@@ -75,9 +88,11 @@ All screenshots use the invented demo household of Rahima Begum, 68, Cumilla.
 3. **No instruction to stop or change a medicine.** No text tells a patient to stop, start or change a medicine or dose. Explanations are checked for doses and stop-words and end with a fixed safety sentence.
 4. **Uncertain readings are marked.** Extractions under 0.75 confidence and web-found brand matches are always shown as needing human confirmation.
 5. **Names stay out of models.** Only medicine photos and medicine names are sent to a model, never patient names or phone numbers.
-6. **Photos are not kept.** Photos are processed in memory and discarded after extraction.
+6. **Photos are not kept.** Full uploaded photos (strips, boxes and prescriptions, including any prescription header with the patient's name) are processed in memory and discarded after extraction; nothing is stored on the server. For visual strip verification only, a photo of strips or boxes gets a small downscaled thumbnail, returned once and kept only in the family's browser. A photo with a prescription in it gets no thumbnail.
 
 These rules live in [`AGENTS.md`](AGENTS.md) and bind every coding agent that works on this repository.
+
+The public deployment is locked down as well. Each real household opens only with its private family link (a random key, checked in the API; anything else is "not found", so ids cannot be guessed). Photo reading is rate-limited per visitor and per day, because it spends AI credits. Only a signed-in reviewer can change which AI model everyone uses.
 
 ## Architecture
 
@@ -93,7 +108,7 @@ flowchart TB
     BM["Brand matcher<br/>exact → fuzzy ≥ 88"]
     WL["Tavily / Perplexity<br/>unknown-brand lookup"]
     RE["Rules engine<br/>deterministic, no AI"]
-    DB[("SQLite<br/>items · flags · reviews · cache")]
+    DB[("Postgres (Supabase) or SQLite<br/>households · items · flags · reviews · cache")]
     N8N["n8n automations<br/>weekly report · doctor alert · refill reminder"]
     MCP["MCP server<br/>read-only tools"]
 
@@ -108,36 +123,46 @@ flowchart TB
     MCP -.->|calls the same modules| BM & RE
 ```
 
-SQLite is enough for the prototype and lives on a persistent disk when deployed ([`render.yaml`](render.yaml)).
+Locally the API uses a SQLite file. Hosted, it uses a free Supabase Postgres in a private schema (`DATABASE_URL`), so data survives restarts of the free Render instance; the same SQL runs on both ([`backend/app/store.py`](backend/app/store.py), [`docs/DEPLOY.md`](docs/DEPLOY.md)).
 
 ## AI approach
 
 | Task | Model / provider | Why | Guardrail |
 | --- | --- | --- | --- |
-| Read photos of strips, boxes, prescriptions | Free OpenRouter vision model, auto-picked (price 0, image input, largest context), then NARAROUTER → EXPLAB → AGENTROUTER | Cut strips, glare and Bangla text need a vision model; free models keep it affordable | Typed Pydantic output, one retry, then needs-review; confidence < 0.75 always shown for a human check |
-| Unknown brand → generic | Tavily search restricted to medex.com.bd, arogga.com, medeasy.health + a text model; Perplexity Sonar as fallback | Bangladesh has tens of thousands of brands; a seed table cannot hold them all | Must cite a numbered search result; stored as `web_unverified` with the source URL; failures are never cached |
-| Bangla explanation of a confirmed finding | Ollama `qwen2.5:3b` locally first, cloud fallback, then fixed templates | Private and free when run locally | Only for confirmed flags; dose and stop-word filter; fixed safety sentence |
+| Read photos of strips, boxes, prescriptions | NVIDIA API `nemotron-3.5-super-vl` first; then free OpenRouter vision models, auto-picked (price 0, image input, largest context) and each **tested with a one-token call before use**; up to three, then `openrouter/free`, then NARAROUTER → EXPLAB → AGENTROUTER | Cut strips, glare and Bangla text need a vision model; free models keep it affordable | Typed Pydantic output, one retry, then needs-review; confidence < 0.75 always shown for a human check |
+| Unknown brand → generic | Tavily search restricted to medex.com.bd, arogga.com, medeasy.health + a text model; Perplexity Agent API (`effort: fast`) as fallback | Bangladesh has tens of thousands of brands; a seed table cannot hold them all | Must cite a numbered search result; stored as `web_unverified` with the source URL; failures are never cached |
+| Bangla explanation of a confirmed finding | Ollama `qwen2.5:3b` locally first, cloud fallback, then fixed templates | Private and free when run locally | Only for confirmed flags; dose and stop-word filter; Bangla well-formedness check (a broken vowel sign sends it back to the template); fixed safety sentence |
+| Sathi: app-guide answers and next-step wording | Ollama first (private), then the cloud chain; 8-second budget, else the guide's own answer | Warm, simple Bangla without a person writing every reply | Guard before and after every model call: emergency and injection words, medical intent (unsure counts as medical), output check for doses, stop/start wording, unknown medicine names and diagnoses; answers only from [`docs/help`](docs/help) |
+| Case summary for the reviewer | Text chain (NVIDIA first) | Saves the pharmacist time on long lists | Facts only; any prescriber or medicine not in the record, advice, doses or diagnoses drop it; labelled "check the evidence", collapsed after 10 reviews |
+| Read a blood-pressure monitor photo | Vision chain | Families type numbers wrong | Impossible values rejected; under 0.8 confidence the family confirms; the photo is not stored |
 | Safety findings | **No model.** Deterministic rules | Judgement must be repeatable and auditable | Pure functions with tests; a clinician confirms every flag |
 
-Prompts are versioned files: [`extract_strip.v1`](backend/app/prompts/extract_strip.v1.md), [`brand_lookup.v1`](backend/app/prompts/brand_lookup.v1.md), [`explain_bn.v1`](backend/app/prompts/explain_bn.v1.md). Changing a prompt means a new version file and a new eval run.
+**When a provider runs out, the next one answers.** Every request walks a chain: the user's chosen model first (if any), then NVIDIA's API (`nemotron-3.5-super-vl` for photos, `nemotron-3-ultra` for lookups and Bangla), then the tested free OpenRouter models, then the other configured routers, then Ollama on the machine. Rate limits (429), exhausted credit (402), withdrawn models, server errors and timeouts all fall through to the next link; nothing has to be switched by hand. Web lookup does the same with Tavily, then Perplexity.
+
+**The models in use are visible, and the user can choose.** The **AI models** page (`/models`) shows each task's chain in order, which model answered last, and a picker to put a preferred model first; the rest stay as backups. The family's confirm screen says which model read the photos, and the reviewer sees the model and prompt version for every item.
+
+Prompts are versioned files: [`extract_strip.v1`](backend/app/prompts/extract_strip.v1.md), [`brand_lookup.v1`](backend/app/prompts/brand_lookup.v1.md), [`explain_bn.v1`](backend/app/prompts/explain_bn.v1.md), [`sathi_bn.v1`](backend/app/prompts/sathi_bn.v1.md), [`sathi_intent.v1`](backend/app/prompts/sathi_intent.v1.md), [`sathi_nextstep.v1`](backend/app/prompts/sathi_nextstep.v1.md), [`case_summary.v1`](backend/app/prompts/case_summary.v1.md), [`read_bp.v1`](backend/app/prompts/read_bp.v1.md). Changing a prompt means a new version file and a new eval run.
 
 ## Evaluation
 
 - **Extraction accuracy: evaluation in progress.** [`eval/run_eval.py`](eval/run_eval.py) scores the vision model against labelled photos of real Bangladeshi strips (cut strips, Bangla text, blur) and writes `eval/results_<prompt>.json`. No results have been recorded yet, so no accuracy number is claimed here. See [`eval/README.md`](eval/README.md) to add photos.
+- **Sathi safety eval: 83 cases, no leaks.** [`eval/run_sathi_eval.py`](eval/run_sathi_eval.py) with the guard and guide retrieval alone (no model, as in CI): app questions answered from the right guide entry **34/35 (97%)**; medical questions sent to the pharmacist **33/33** (including Ramadan fasting questions); emergencies escalated **10/10**; rule-breaking attempts refused **5/5**. The one miss went to the pharmacist, the safe direction. The run fails CI if any medical or emergency question gets an app answer. The cases were written by the team and still need native-speaker review.
+- **Review time: measured from the first decision.** Every finding records the time from a reviewer opening it to deciding it; `/docs` shows the median. This is the unit cost of a paid review.
+- **Blood-pressure photos: not measured yet.** [`eval/run_bp_eval.py`](eval/run_bp_eval.py) is ready for labelled monitor photos; no accuracy is claimed until they exist.
 - **Pilot: not started.** Each consenting household becomes one row in [`eval/pilot.csv`](eval/pilot.csv); the `/docs` page reports proportions with 95% Wilson confidence intervals from that file only. Demo data is never counted.
-- **Tests: 46 passing** (`pytest` in `backend/`), covering the rules engine, the family-view safety gate, router fallback, the explanation guard and the statistics. CI runs them on every push, with the frontend lint and build.
+- **Tests: 183 passing** (`pytest` in `backend/`), covering the rules engine (including combination medicines and the hypertension and diabetes interactions), the same-medicine price comparison, Ramadan plans, the demo reset, the family-view safety gate, Sathi's guard and state machine, the case-summary checks, approved schedules and set-aside medicines, the emergency page, FHIR export, private household links, rate limits, blood-pressure validation, the database layer on SQLite and Postgres, router fallback and free-model probing, model choice, the explanation and Bangla-quality guards, and the statistics. CI runs them on every push, with the frontend lint and build.
 
 ## Tech stack
 
 | Layer | Tools |
 | --- | --- |
 | Frontend | Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 4, next-intl (Bangla + English), motion, Recharts, lucide-react |
-| Backend | Python 3.12+, FastAPI, Pydantic 2, Pydantic-AI, RapidFuzz, httpx, SQLite |
-| AI | OpenRouter (free models), OpenAI-compatible fallback routers, Ollama (`qwen2.5:3b`), Tavily, Perplexity Sonar |
+| Backend | Python 3.12+, FastAPI, Pydantic 2, Pydantic-AI, RapidFuzz, httpx, SQLite / Postgres (psycopg 3) |
+| AI | NVIDIA API (Nemotron), OpenRouter (free models), OpenAI-compatible fallback routers, Ollama (`qwen2.5:3b`), Tavily, Perplexity Agent API |
 | Automation | n8n workflows (JSON in [`automations/`](automations)) |
 | Agent interface | MCP server on the official `mcp` Python SDK |
 | Testing and CI | pytest, ESLint, GitHub Actions |
-| Hosting | Render (API, persistent disk) and Vercel (frontend), see [`docs/DEPLOY.md`](docs/DEPLOY.md) |
+| Hosting | Render (API, free plan), Supabase (Postgres, free) and Vercel (frontend), see [`docs/DEPLOY.md`](docs/DEPLOY.md) |
 
 ## Quick start
 
@@ -165,7 +190,7 @@ npm ci
 npm run dev                                    # http://localhost:3000
 ```
 
-Open <http://localhost:3000> for the landing page, `/p/1` for the family app, `/review` for the reviewer dashboard (token `demo-reviewer`) and `/demo` for the keyboard-paced walkthrough.
+Open <http://localhost:3000> for the landing page, `/p/1` for the family app, `/review` for the reviewer dashboard (token `demo-reviewer`), `/models` for the AI models in use and `/demo` for the keyboard-paced walkthrough.
 
 With `DEMO_MODE=true` (the default) everything works without API keys. To read real photos, add your own keys to `backend/.env` (an OpenRouter key is enough). **Never commit `.env`.**
 
@@ -222,6 +247,10 @@ Claude Desktop config (Settings → Developer → Edit config), with your own ab
 ```
 
 More in [`mcp/README.md`](mcp/README.md).
+
+## Demo video
+
+The 2:58 video is planned second by second in [`docs/video/SHOTLIST.md`](docs/video/SHOTLIST.md), with the voiceover and captions in Bangla and English ([`captions.bn.srt`](docs/video/captions.bn.srt), [`captions.en.srt`](docs/video/captions.en.srt)). Seven 1920×1080 scenes live in [`video/scenes`](video/scenes) (stills in [`docs/video/stills`](docs/video/stills)), and the product footage comes from the keyboard-paced [`/demo`](https://oushodhsathi.vercel.app/demo) walkthrough. `cd video && npm install && node record.mjs` re-records every clip and stitches a silent draft cut for the voiceover.
 
 ## Roadmap
 

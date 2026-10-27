@@ -1,14 +1,18 @@
 "use client";
 
-import { FlaskConical, PackageOpen } from "lucide-react";
+import { Camera, Check, FlaskConical, Loader2, PackageOpen, Plus } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import { useRef, useState } from "react";
 import { BPTrend } from "@/components/BPTrend";
-import { FamilyHeader } from "@/components/Chrome";
+import { SavingsCard } from "@/components/SavingsCard";
+import { buttonStyles, FamilyHeader, familyWidth } from "@/components/Chrome";
 import { ErrorState, Skeleton } from "@/components/States";
-import { api } from "@/lib/api";
-import { genericName, num } from "@/lib/format";
+import { api, ApiError } from "@/lib/api";
+import { cx, genericName, num } from "@/lib/format";
+import type { Report } from "@/lib/types";
 import { useApi } from "@/lib/useApi";
+import { reveal } from "@/lib/reveal";
 
 export default function ReportPage() {
   const { id } = useParams<{ id: string }>();
@@ -21,23 +25,24 @@ export default function ReportPage() {
   return (
     <>
       <FamilyHeader back={`/p/${pid}`} demo={!!r?.demo_label} />
-      <main className="mx-auto w-full max-w-[480px] px-4 pb-12 pt-4">
-        <h1 className="font-bn-display text-[32px] leading-[1.2]">{t("title")}</h1>
+      <main className={`mx-auto w-full px-4 pb-12 pt-4 lg:pt-8 ${familyWidth}`}>
+        <h1 className="font-bn-display text-[32px] leading-[1.2] lg:text-[40px]">{t("title")}</h1>
 
         {report.error ? (
           <div className="mt-6"><ErrorState error={report.error} onRetry={report.reload} /></div>
         ) : !r ? (
           <Skeleton lines={4} className="mt-6" />
         ) : (
-          <div className="mt-6 grid gap-5">
-            <section aria-labelledby="bp-h" className="rounded-card border border-rule bg-paper-raised p-5">
+          <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:items-start">
+            <section {...reveal(0)} aria-labelledby="bp-h" className="rounded-card border border-rule bg-paper-raised p-5 lg:p-7">
               <h2 id="bp-h" className="font-semibold">{t("bpTitle")}</h2>
               <div className="mt-3">
                 {r.bp.readings.length ? <BPTrend readings={r.bp.readings} target={r.bp.target} /> : <p className="text-ink-soft">{t("bpNone")}</p>}
               </div>
+              <BPForm pid={pid} onSaved={(readings) => report.setData({ ...r, bp: { ...r.bp, readings } })} />
             </section>
 
-            <section aria-labelledby="refill-h" className="rounded-card border border-rule bg-paper-raised p-5">
+            <section {...reveal(90)} aria-labelledby="refill-h" className="rounded-card border border-rule bg-paper-raised p-5">
               <h2 id="refill-h" className="font-semibold">{t("refillsTitle")}</h2>
               {r.refills_due.length === 0 ? (
                 <p className="mt-2 text-ink-soft">{t("refillsNone")}</p>
@@ -59,7 +64,9 @@ export default function ReportPage() {
               )}
             </section>
 
-            <section aria-labelledby="flags-h" className="rounded-card border border-rule bg-paper-raised p-5">
+            <div {...reveal(120)} className="lg:col-span-2"><SavingsCard pid={pid} /></div>
+
+            <section {...reveal(140)} aria-labelledby="flags-h" className="rounded-card border border-rule bg-paper-raised p-5">
               <h2 id="flags-h" className="font-semibold">{t("flagsTitle")}</h2>
               <dl className="mt-3 divide-y divide-rule">
                 {[
@@ -75,7 +82,7 @@ export default function ReportPage() {
               </dl>
             </section>
 
-            <section aria-labelledby="doses-h" className="rounded-card border border-dashed border-rule-strong p-5">
+            <section {...reveal(200)} aria-labelledby="doses-h" className="rounded-card border border-dashed border-rule-strong p-5">
               <h2 id="doses-h" className="font-semibold">{t("dosesTitle")}</h2>
               {r.doses ? (
                 <>
@@ -95,5 +102,129 @@ export default function ReportPage() {
         )}
       </main>
     </>
+  );
+}
+
+const today = () => new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD in the family's own time zone
+
+/** Same limits as the API: top 60–260, bottom 30–160, top above bottom. */
+function bpProblem(sys: number, dia: number): boolean {
+  return !(sys >= 60 && sys <= 260 && dia >= 30 && dia <= 160 && sys > dia);
+}
+
+function BPForm({ pid, onSaved }: { pid: number; onSaved: (readings: Report["bp"]["readings"]) => void }) {
+  const t = useTranslations("report");
+  const tc = useTranslations("common");
+  const [open, setOpen] = useState(false);
+  const [sys, setSys] = useState("");
+  const [dia, setDia] = useState("");
+  const [pulse, setPulse] = useState("");
+  const [day, setDay] = useState(today);
+  // a photo of the machine fills the numbers in; the family always checks them before saving
+  const [photo, setPhoto] = useState<"idle" | "reading" | "read" | "check" | "unreadable">("idle");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function readPhoto(file: File) {
+    setPhoto("reading");
+    setMessage(null);
+    try {
+      const r = await api.readBP(pid, file);
+      if (!r.readable || r.systolic == null || r.diastolic == null) {
+        setPhoto("unreadable");
+        return;
+      }
+      setSys(String(r.systolic));
+      setDia(String(r.diastolic));
+      setPulse(r.pulse != null ? String(r.pulse) : "");
+      setPhoto(r.needs_check ? "check" : "read");
+    } catch (err) {
+      setPhoto("idle");
+      const status = err instanceof ApiError ? err.status : 0;
+      setMessage({ kind: "error", text: status === 429 ? tc("errorTooMany") : t("bpPhotoFailed") });
+    }
+  }
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
+  const field = "tabular mt-1 block h-12 w-full rounded-md border border-rule-strong bg-paper px-3 text-lg text-ink";
+
+  if (!open) {
+    return (
+      <div className="mt-4 border-t border-rule pt-4">
+        <button type="button" onClick={() => { setOpen(true); setMessage(null); }} className={cx(buttonStyles.secondary, "w-full sm:w-auto")}>
+          <Plus aria-hidden size={20} />{t("bpAdd")}
+        </button>
+        {message && <p className="mt-2 flex items-center gap-1.5 text-base text-green" role="status"><Check aria-hidden size={18} />{message.text}</p>}
+      </div>
+    );
+  }
+
+  return (
+    <form
+      className="mt-4 grid gap-3 border-t border-rule pt-4"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        const s = Number(sys), d = Number(dia);
+        if (bpProblem(s, d)) {
+          setMessage({ kind: "error", text: t("bpInvalid") });
+          return;
+        }
+        setBusy(true);
+        try {
+          const res = await api.addBP(pid, {
+            systolic: s, diastolic: d, pulse: pulse ? Number(pulse) : undefined, taken_on: day || undefined,
+            source: photo === "read" || photo === "check" ? "photo" : "manual",
+          });
+          onSaved(res.readings);
+          setSys("");
+          setDia("");
+          setPulse("");
+          setPhoto("idle");
+          setOpen(false);
+          setMessage({ kind: "ok", text: t("bpSaved") });
+        } catch (err) {
+          const status = err instanceof ApiError ? err.status : 0;
+          setMessage({ kind: "error", text: status === 422 ? t("bpInvalid") : status === 429 ? tc("errorTooMany") : tc("errorGeneric") });
+        } finally {
+          setBusy(false);
+        }
+      }}
+    >
+      <div className="rounded-md border border-dashed border-rule-strong p-3">
+        <input ref={fileRef} type="file" accept="image/*" capture="environment" className="sr-only" tabIndex={-1} aria-hidden
+          onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) readPhoto(f); }} />
+        <button type="button" disabled={photo === "reading"} onClick={() => fileRef.current?.click()} className={cx(buttonStyles.quiet, "px-2")}>
+          {photo === "reading" ? <Loader2 aria-hidden size={20} className="animate-spin motion-reduce:animate-none" /> : <Camera aria-hidden size={20} />}
+          {photo === "reading" ? t("bpPhotoReading") : t("bpPhoto")}
+        </button>
+        <p className="px-2 text-[15px] text-ink-soft" aria-live="polite">
+          {photo === "read" ? t("bpPhotoRead") : photo === "check" ? t("bpPhotoCheck") : photo === "unreadable" ? t("bpPhotoUnreadable") : t("bpPhotoHint")}
+        </p>
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        <label className="text-base text-ink-soft">
+          {t("bpTop")}
+          <input required inputMode="numeric" type="number" min={60} max={260} value={sys} onChange={(e) => setSys(e.target.value)} className={field} placeholder="140" />
+        </label>
+        <label className="text-base text-ink-soft">
+          {t("bpBottom")}
+          <input required inputMode="numeric" type="number" min={30} max={160} value={dia} onChange={(e) => setDia(e.target.value)} className={field} placeholder="90" />
+        </label>
+        <label className="text-base text-ink-soft">
+          {t("bpPulse")}
+          <input inputMode="numeric" type="number" min={30} max={220} value={pulse} onChange={(e) => setPulse(e.target.value)} className={field} placeholder="72" />
+        </label>
+      </div>
+      <label className="text-base text-ink-soft">
+        {t("bpDate")}
+        <input type="date" value={day} max={today()} onChange={(e) => setDay(e.target.value)} className={cx(field, "sm:max-w-[220px]")} />
+      </label>
+      {message?.kind === "error" && <p role="alert" className="text-base text-red">{message.text}</p>}
+      <div className="flex flex-wrap gap-2">
+        <button type="submit" disabled={busy || !sys || !dia} className={cx(buttonStyles.secondary, "flex-1 border-neel text-neel sm:flex-none")}>
+          <Check aria-hidden size={20} />{busy ? t("bpSaving") : t("bpSave")}
+        </button>
+        <button type="button" onClick={() => { setOpen(false); setMessage(null); }} className={buttonStyles.quiet}>{tc("cancel")}</button>
+      </div>
+    </form>
   );
 }

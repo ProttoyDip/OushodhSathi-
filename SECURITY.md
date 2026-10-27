@@ -14,7 +14,7 @@ Especially relevant reports:
 
 - any way for the family view to show a finding that a clinician has not confirmed;
 - any path that sends patient names or phone numbers to a model provider;
-- uploaded photos being stored after extraction;
+- uploaded photos being stored after extraction, or a prescription photo ever getting a thumbnail;
 - reviewer-token bypass on the review endpoints.
 
 ## Secrets
@@ -26,5 +26,8 @@ Especially relevant reports:
 - Before a release, scan the history for key prefixes:
 
   ```bash
-  git log --all -p | grep -nE "sk-[A-Za-z0-9_-]{10,}|pplx-|tvly-[A-Za-z0-9]|xpl_"
+  git log --all -p | grep -nE "sk-[A-Za-z0-9_-]{10,}|pplx-|tvly-[A-Za-z0-9]|xpl_|nvapi-|postgresql://"
   ```
+
+  `nvapi-` catches NVIDIA keys and `postgresql://` database URLs (Supabase). Expected matches: the
+  pattern itself and the `<password>` placeholder example in `docs/DEPLOY.md` and `render.yaml`.

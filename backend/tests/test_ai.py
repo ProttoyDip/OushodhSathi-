@@ -86,6 +86,50 @@ def test_free_model_autopick_prefers_largest_free_vision_context():
     llm_router._auto_models.clear()
 
 
+def test_autopick_probes_and_skips_models_that_refuse():
+    models = {"data": [
+        {"id": f"free/m{i}", "pricing": {"prompt": "0", "completion": "0"},
+         "architecture": {"input_modalities": ["text"], "output_modalities": ["text"]}, "context_length": 1000 - i}
+        for i in range(5)
+    ] + [{"id": "free/music", "pricing": {"prompt": "0", "completion": "0"},
+          "architecture": {"input_modalities": ["text"], "output_modalities": ["audio"]}, "context_length": 99999}]}
+
+    def handler(request: httpx.Request):
+        if request.method == "GET":
+            return httpx.Response(200, json=models)
+        model = json.loads(request.content)["model"]
+        return httpx.Response(403 if model == "free/m0" else 200, json={"choices": [{"message": {"content": "o"}}]})
+
+    llm_router._auto_models.clear()
+    picked = llm_router.pick_free_openrouter_models("text", "k", httpx.Client(transport=httpx.MockTransport(handler)))
+    assert picked == ["free/m1", "free/m2", "free/m3", llm_router.OPENROUTER_FALLBACK]  # m0 refused, music skipped
+    llm_router._auto_models.clear()
+
+
+def test_chosen_model_goes_first_and_the_rest_stay_as_fallback(two_providers):
+    before = [(p.name, p.model) for p in llm_router.configured_providers("text")]
+    assert before == [("openrouter", "first/model"), ("nararouter", "second/model")]
+    llm_router.set_preferred("text", "nararouter", "second/model")
+    after = [(p.name, p.model) for p in llm_router.configured_providers("text")]
+    assert after == [("nararouter", "second/model"), ("openrouter", "first/model")]
+    llm_router.set_preferred("text", None, None)
+
+
+def test_model_preference_api(two_providers, client):
+    tasks = client.get("/models").json()["tasks"]
+    assert tasks["text"]["chain"][0] == {"provider": "openrouter", "model": "first/model"}
+    assert "k1" not in json.dumps(tasks)  # names only, never keys
+    choice = {"kind": "text", "provider": "nararouter", "model": "second/model"}
+    assert client.put("/models/preference", json=choice).status_code == 401  # changes it for everyone: reviewers only
+    client.headers["X-Reviewer-Token"] = "test-token"
+    r = client.put("/models/preference", json=choice)
+    assert r.status_code == 200 and r.json()["tasks"]["text"]["chain"][0]["provider"] == "nararouter"
+    bad = client.put("/models/preference", json={"kind": "text", "provider": "openrouter", "model": "not/real"})
+    assert bad.status_code == 422
+    reset = client.put("/models/preference", json={"kind": "text"}).json()
+    assert reset["tasks"]["text"]["preferred"] is None
+
+
 @pytest.mark.parametrize("bad", [
     "নাপা ৫০০ mg করে খাবেন।",
     "Take 2 টি daily",
@@ -168,3 +212,60 @@ def test_shelf_agent_runs_with_tools_and_typed_output():
     assert isinstance(result.output, Extraction)
     tool_names = {t.name for t in model.last_model_request_parameters.function_tools}
     assert {"match_brand", "lookup_unknown_brand", "check_medicines"} <= tool_names
+
+
+def test_perplexity_agent_response_parsing():
+    from app.research import _perplexity_answer
+    data = {"output": [
+        {"type": "search_results", "results": [{"id": 1, "url": "https://medex.com.bd/a"}, {"id": 2, "url": "https://arogga.com/b"}]},
+        {"type": "message", "content": [{"type": "output_text", "text": '{"generic":"omeprazole","source_index":2}'}]},
+    ]}
+    text, urls = _perplexity_answer(data)
+    assert json.loads(text)["source_index"] == 2 and urls == ["https://medex.com.bd/a", "https://arogga.com/b"]
+
+
+
+def test_bangla_quality_guard():
+    from app.explain import is_good_bangla
+    good = "নাপা ও এস — নাম আলাদা হলেও দুটোই আসলে একই ওষুধ: প্যারাসিটামল। ডাক্তার বিষয়টি দেখেছেন।"
+    assert is_good_bangla(good)
+    assert not is_good_bangla("নাপা এবং আেস দুটির মধ্যে একই উপাদান আছে।")  # sign on a standalone vowel (real model output)
+    assert not is_good_bangla("Napa and Ace both contain paracetamol. The doctor reviewed it.")  # not Bangla
+    assert is_good_bangla("Napa ও Ace দুটোই প্যারাসিটামল; ডাক্তার বিষয়টি দেখেছেন।")  # Latin brand names are fine
+    assert is_good_bangla("কোৗ")  # two-part ৌ folds correctly
+
+
+def test_every_template_is_good_bangla():
+    from app.explain import is_good_bangla
+    for code, meta in [("DUPLICATE_GENERIC", {"generic": "paracetamol"}), ("THERAPEUTIC_DUPLICATION", {}),
+                       ("INTERACTION", {"effect_bn": "ঝুঁকি বাড়তে পারে।"}), ("BEERS_65", {"reason_bn": "ঝুঁকি বেশি।"}),
+                       ("EXPIRED", {})]:
+        assert is_good_bangla(template(_flag(code=code, meta=meta), ITEMS)), code
+
+
+def test_malformed_llm_bangla_falls_back_to_template(two_providers):
+    router = _router(lambda r: _reply("নাপা এবং আেস দুটির মধ্যে একই উপাদান প্যারাসিটামোল আছে।"))
+    text, how = explain_flag(_flag(), ITEMS, "seen", router)
+    assert how == "template" and text == template(_flag(), ITEMS)
+
+
+
+def test_text_only_router_stays_out_of_photo_reading(two_providers, monkeypatch):
+    monkeypatch.setenv("NARAROUTER_VISION_MODEL", "none")
+    assert [p.name for p in llm_router.configured_providers("vision")] == ["openrouter"]
+    assert [p.name for p in llm_router.configured_providers("text")] == ["openrouter", "nararouter"]
+    monkeypatch.setenv("NARAROUTER_VISION_MODEL", "seeing/model")
+    vision = {p.name: p.model for p in llm_router.configured_providers("vision")}
+    assert vision["nararouter"] == "seeing/model"
+
+
+
+def test_nvidia_leads_with_its_own_vision_model(two_providers, monkeypatch):
+    monkeypatch.setenv("NVIDIA_API_KEY", "nv")
+    monkeypatch.setenv("NVIDIA_MODEL", "nvidia/text-model")
+    monkeypatch.setenv("NVIDIA_VISION_MODEL", "nvidia/vl-model")
+    vision = [(p.name, p.model) for p in llm_router.configured_providers("vision")]
+    text = [(p.name, p.model) for p in llm_router.configured_providers("text")]
+    assert vision[0] == ("nvidia", "nvidia/vl-model") and text[0] == ("nvidia", "nvidia/text-model")
+    assert llm_router.configured_providers("text")[0].base_url == llm_router.NVIDIA_BASE
+    assert llm_router.provider_names("vision")[0] == "nvidia"

@@ -1,0 +1,5 @@
+# never upload local env files or build output to Vercel
+.env*.local
+.env
+.next
+node_modules

@@ -30,6 +30,29 @@ class Patient(PatientIn):
     id: int
     created_at: datetime
     last_checked_at: datetime | None = None
+    allergies: list[str] = []
+    allergies_confirmed_by: str | None = None
+    allergies_confirmed_at: datetime | None = None
+    emergency_contact_name: str | None = None
+    emergency_contact_phone: str | None = None
+    last_visit_at: datetime | None = None
+    results_seen_at: datetime | None = None
+    passport_seen_at: datetime | None = None
+    visit_questions: list[str] = []
+    ramadan_status: Literal["requested", "approved"] | None = None
+    ramadan_requested_at: datetime | None = None
+    ramadan_note: str | None = None
+    ramadan_approved_by: str | None = None
+    ramadan_approved_at: datetime | None = None
+
+
+class PatientPatch(BaseModel):
+    """What the family can change. Editing allergies clears the pharmacist's confirmation."""
+
+    allergies: list[str] | None = Field(default=None, max_length=20)
+    emergency_contact_name: str | None = Field(default=None, max_length=80)
+    emergency_contact_phone: str | None = Field(default=None, max_length=20, pattern=r"^[0-9+\- ]*$")
+    visit_questions: list[str] | None = Field(default=None, max_length=20)
 
 
 class MedicineItemIn(BaseModel):
@@ -45,6 +68,7 @@ class MedicineItemIn(BaseModel):
     schedule: list[Literal["morning", "noon", "night"]] = []
     pills_left: int | None = None
     doses_per_day: float | None = None
+    per_dose: int = Field(default=1, ge=1, le=10)  # tablets each time
 
 
 class MedicineItemPatch(BaseModel):
@@ -55,7 +79,18 @@ class MedicineItemPatch(BaseModel):
     schedule: list[Literal["morning", "noon", "night"]] | None = None
     pills_left: int | None = None
     doses_per_day: float | None = None
+    per_dose: int | None = Field(default=None, ge=1, le=10)
     confirmed: bool | None = None
+    set_aside: bool | None = None
+
+
+class ClinicalPatch(BaseModel):
+    """Reviewer-only fields on an item: written by the pharmacist or doctor, never by AI."""
+
+    purpose: str | None = Field(default=None, max_length=120)
+    purpose_bn: str | None = Field(default=None, max_length=120)
+    stopped: bool | None = None
+    reviewer: str = Field(min_length=1)
 
 
 class MedicineItem(MedicineItemIn):
@@ -69,6 +104,16 @@ class MedicineItem(MedicineItemIn):
     prompt_version: str | None = None
     model_id: str | None = None
     confirmed: bool = False
+    purpose: str | None = None
+    purpose_bn: str | None = None
+    stopped: bool = False
+    stopped_by: str | None = None
+    stopped_at: datetime | None = None
+    set_aside: bool = False
+    schedule_approved_by: str | None = None
+    schedule_approved_at: datetime | None = None
+    created_at: datetime | None = None
+    ramadan_slots: list[Literal["sehri", "iftar"]] = []
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -114,6 +159,7 @@ class StoredFlag(Flag):
     note: str | None = None
     reviewed_at: datetime | None = None
     explanation_bn: str | None = None
+    opened_at: datetime | None = None  # first opened by a reviewer
 
 
 class ReviewIn(BaseModel):

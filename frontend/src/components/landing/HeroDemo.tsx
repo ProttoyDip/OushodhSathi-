@@ -32,7 +32,7 @@ function Travel({ id, i = 0, enter = false, children }: { id: number; i?: number
  * The family's phone, live: the shelf assembles card by card, then Napa and Ace
  * travel together under "দুটোই প্যারাসিটামল". Real components, invented household.
  */
-export function HeroDemo() {
+export function HeroDemo({ replayLabel }: { replayLabel: string }) {
   const [phase, setPhase] = useState<0 | 1>(0);
   const [run, setRun] = useState(0);
 
@@ -56,7 +56,7 @@ export function HeroDemo() {
             <button
               type="button"
               onClick={() => setRun((r) => r + 1)}
-              aria-label="Replay the demo animation"
+              aria-label={replayLabel}
               className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-rule text-ink-soft hover:text-ink"
             >
               <RotateCcw aria-hidden size={17} />

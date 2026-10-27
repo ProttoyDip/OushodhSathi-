@@ -14,9 +14,11 @@
     "retry": "Try again",
     "errorGeneric": "Something went wrong. Please try again in a moment.",
     "errorOffline": "Can't reach the server. Check the internet connection and try again.",
-    "errorNotFound": "We couldn't find this patient.",
+    "errorNotFound": "We couldn't find this household. Open it with the family link you were sent.",
     "safety": "Do not stop or change any medicine without talking to the doctor.",
-    "years": "{age} years"
+    "years": "{age} years",
+    "cancel": "Cancel",
+    "errorTooMany": "Too many tries from here just now. Please wait a little and try again."
   },
   "severity": {
     "red": "Doctor review",
@@ -66,7 +68,23 @@
     "report": "Weekly report",
     "reportHint": "Blood pressure, medicines running out",
     "countRed": "{count} · doctor reviewed",
-    "countAmber": "{count} · pharmacist reviewed"
+    "countAmber": "{count} · pharmacist reviewed",
+    "models": "AI models",
+    "modelsHint": "Which models read and explain",
+    "share": "Share with family",
+    "shareHint": "Send the private link so others can see this list",
+    "shareCopied": "Link copied. Anyone with it can open this household.",
+    "shareTitle": "OushodhSathi",
+    "shareText": "Our family's medicine list on OushodhSathi (private link):",
+    "shareCopyPrompt": "Copy this private link:",
+    "questions": "Questions to the pharmacist",
+    "questionsHint": "Ask about a medicine and read the replies",
+    "today": "Today's medicines",
+    "todayHint": "Morning, noon and night, in pictures",
+    "visit": "Before the doctor visit",
+    "visitHint": "Everything to show the doctor on one page",
+    "cleanup": "Medicines to set aside",
+    "cleanupHint": "Expired strips, and ones the pharmacist stopped"
   },
   "scan": {
     "title": "Photograph the medicines",
@@ -108,7 +126,16 @@
     "empty": "No medicines on the list. Take photos first.",
     "addManual": "Add a medicine by name",
     "add": "Add",
-    "alreadyConfirmed": "Already confirmed"
+    "alreadyConfirmed": "Already confirmed",
+    "readBy": "Read by {model}",
+    "whenTaken": "When is it taken?",
+    "morning": "Morning",
+    "noon": "Noon",
+    "night": "Night",
+    "asNeeded": "Only when needed",
+    "asNeededHint": "None chosen: listed as \"only when needed\".",
+    "pillsLeft": "Pills left (optional)",
+    "editTimes": "Edit times"
   },
   "status": {
     "title": "A pharmacist or doctor is reviewing",
@@ -151,7 +178,23 @@
     "flagsReviewed": "Reviewed in total",
     "refillsTitle": "Running out soon",
     "refillDays": "About {days} days left",
-    "refillsNone": "Nothing runs out this week."
+    "refillsNone": "Nothing runs out this week.",
+    "bpAdd": "Add a blood pressure reading",
+    "bpTop": "Top number",
+    "bpBottom": "Bottom number",
+    "bpDate": "Date",
+    "bpSave": "Save reading",
+    "bpSaving": "Saving…",
+    "bpSaved": "Reading saved.",
+    "bpInvalid": "Please check the numbers: the top number is usually 60–260, the bottom 30–160, and the top is always higher.",
+    "bpPhoto": "Take a photo of the machine",
+    "bpPhotoReading": "Reading the numbers…",
+    "bpPhotoHint": "Or type the numbers below.",
+    "bpPhotoRead": "Read from the photo. Check them against the machine, then save.",
+    "bpPhotoCheck": "Not fully sure about these numbers. Please compare them with the machine and correct them.",
+    "bpPhotoUnreadable": "Couldn't read the numbers. Please type them in.",
+    "bpPhotoFailed": "Couldn't read the photo right now. Please type the numbers.",
+    "bpPulse": "Pulse"
   },
   "passport": {
     "title": "Medicine passport",
@@ -169,13 +212,791 @@
     "notes": "Clinician-confirmed notes",
     "noNotes": "No confirmed notes.",
     "updated": "Updated {date}",
-    "scanQr": "Scan for the latest list",
+    "scanQr": "Scan in an emergency",
     "print": "Print",
     "empty": "No confirmed medicines on the list.",
     "needsCheck": "Needs checking",
     "conditions": {
       "hypertension": "High blood pressure",
       "type 2 diabetes": "Type 2 diabetes"
+    },
+    "qrOff": "Emergency page is off",
+    "purpose": "For",
+    "allergies": "Allergies",
+    "allergiesNone": "None recorded",
+    "allergiesConfirmed": "Confirmed by {name}",
+    "allergiesUnconfirmed": "Not yet confirmed by the pharmacist",
+    "prescribers": "Prescribed by",
+    "prescriberUnknown": "Not known",
+    "lastReviewed": "Last reviewed by {name} ({role}), {date}",
+    "roleDoctor": "doctor",
+    "rolePharmacist": "pharmacist",
+    "safetyTitle": "Allergies and emergencies",
+    "safetyIntro": "Add what a doctor needs to know in an emergency. A pharmacist confirms the allergies.",
+    "addAllergy": "Add",
+    "allergyPh": "For example: penicillin",
+    "removeAllergy": "Remove {name}",
+    "contactName": "Emergency contact",
+    "contactPhone": "Their phone number",
+    "saveContact": "Save contact",
+    "emergencyTitle": "Emergency page",
+    "emergencyBody": "The passport's QR code opens a read-only page with the medicines, allergies and emergency contact, with no login. Only the first name is shown. You can renew the link or switch it off at any time.",
+    "emergencyOn": "Switch on the emergency page",
+    "emergencyOff": "Switch off",
+    "emergencyRenew": "New link",
+    "emergencyOpen": "Open the page",
+    "fhirHint": "For hospital or clinic systems: the medicine list in the international FHIR format.",
+    "fhirDownload": "Download (FHIR)",
+    "saved": "Saved.",
+    "printHint": "Prints on A5 in black and white. Take it to every doctor visit."
+  },
+  "landing": {
+    "nav": {
+      "how": "How it works",
+      "safe": "Why it’s safe",
+      "docs": "Docs",
+      "reviewer": "Reviewer",
+      "home": "OushodhSathi home"
+    },
+    "hero": {
+      "title1": "Napa and Ace are",
+      "title2": "the same medicine.",
+      "accent": "নাম আলাদা, ওষুধ একই — প্যারাসিটামল, দুইবার।",
+      "body": "Elderly Bangladeshis collect medicines from a hospital doctor, a village doctor and the local drug shop, under thousands of brand names, and nobody looks at the whole shelf. OushodhSathi reads every strip in the house, catches duplicates and dangerous combinations, and a pharmacist or doctor confirms every finding before the family sees it, in simple Bangla.",
+      "ctaDemo": "See the demo",
+      "ctaReviewer": "Reviewer dashboard",
+      "demoNote": "The demo opens the invented household of Rahima Begum, 68, Cumilla.",
+      "replay": "Replay the demo animation",
+      "ctaStart": "Start for your family"
+    },
+    "how": {
+      "title": "How it works",
+      "accent": "ছবি থেকে নিশ্চিত তালিকা",
+      "body": "A family member photographs every strip, box and prescription. Six steps later the family has one clinician-checked list and a passport to carry to every doctor visit."
+    },
+    "flow": {
+      "legend": "Legend",
+      "actor": {
+        "family": "Family",
+        "ai": "AI (perception)",
+        "rules": "Rules (deterministic)",
+        "human": "Clinician (judgement)"
+      },
+      "s1": {
+        "title": "Photograph",
+        "alt": "ছবি",
+        "body": "Every strip, box and prescription in the house, cut strips included."
+      },
+      "s2": {
+        "title": "Read",
+        "alt": "পড়া",
+        "body": "A vision model turns photos into typed items: brand, strength, expiry, confidence."
+      },
+      "s3": {
+        "title": "Match",
+        "alt": "মেলানো",
+        "body": "Each Bangladeshi brand maps to its generic. Unknown brands are searched on Bangladeshi medicine sites and marked unverified."
+      },
+      "s4": {
+        "title": "Check",
+        "alt": "নিয়ম",
+        "body": "A deterministic engine flags duplicates, same-class pairs, interactions, Beers 65+ drugs and expired strips."
+      },
+      "s5": {
+        "title": "Confirm",
+        "alt": "নিশ্চিত",
+        "body": "A pharmacist or doctor confirms or dismisses each finding, with a note, in under 30 seconds."
+      },
+      "s6": {
+        "title": "Understand",
+        "alt": "বোঝা",
+        "body": "The family sees only confirmed findings in plain Bangla, a weekly report and a printable passport."
+      }
+    },
+    "safe": {
+      "title": "AI for perception. Rules and humans for judgement.",
+      "accent": "এআই পড়ে, নিয়ম আর মানুষ বিচার করে।",
+      "body": "A vision model is good at reading a cut strip under a tube light. It is not who should decide that a 68-year-old is taking paracetamol twice. So it doesn’t.",
+      "r1": {
+        "title": "Rules make every finding.",
+        "body": "A deterministic engine flags duplicates, interactions, drugs risky after 65 and expired strips. Language models never create, remove or grade a finding."
+      },
+      "r2": {
+        "title": "A clinician confirms before the family sees it.",
+        "body": "Findings start as pending. The API only ever returns confirmed findings to the family, and a test enforces it."
+      },
+      "r3": {
+        "title": "We never tell anyone to stop a medicine.",
+        "body": "Explanations are checked for doses and stop-words, and always end: ডাক্তারের সাথে কথা না বলে কোনো ওষুধ বন্ধ বা পরিবর্তন করবেন না।"
+      },
+      "r4": {
+        "title": "Uncertain readings are marked.",
+        "body": "Anything read with under 75% confidence, or matched from the web, is shown as needing a human check."
+      },
+      "r5": {
+        "title": "Names stay out of models.",
+        "body": "Only medicine photos and medicine names reach a model. Patient names and phone numbers never do."
+      },
+      "r6": {
+        "title": "Photos are not kept.",
+        "body": "Photos are read in memory and discarded; the family sees a thumbnail once."
+      }
+    },
+    "evidence": {
+      "title": "The shelf problem, in public numbers.",
+      "e1": {
+        "figure": "78 per 1,000",
+        "claim": "Hypertension is now the most common illness in Bangladesh.",
+        "source": "BBS Health and Morbidity Status Survey (HMSS) 2025, reported by BSS"
+      },
+      "e2": {
+        "figure": "11%",
+        "claim": "of people with hypertension in Bangladesh had their blood pressure under control (below 140/90).",
+        "source": "Background figure in the WHO-HEARTS evaluation, Heart (BMJ), 2024"
+      },
+      "e3": {
+        "figure": "69%",
+        "claim": "of geriatric outpatients were prescribed five or more medicines.",
+        "source": "Small 2011 study of 35 patients at a private hospital in Bangladesh"
+      },
+      "pilot": "Pilot in progress. We will publish results here only once they are real; nothing on this site is a pilot outcome."
+    },
+    "team": {
+      "title": "Team",
+      "body": "Built for the International AI Builders Congress 2026 · HealthSphere AI → ChronicCare AI.",
+      "member": "[Team member {n} — name to be added]",
+      "role": "[Role] · [GitHub]"
+    },
+    "footer": {
+      "disclaimer": "OushodhSathi is a research prototype, not a medical device. It does not give medical advice. All findings must be confirmed by a registered pharmacist or doctor. Demo data is invented.",
+      "docs": "Technical docs",
+      "design": "Design system"
     }
+  },
+  "docs": {
+    "nav": {
+      "home": "OushodhSathi home",
+      "openDemo": "Open the demo",
+      "onThisPage": "On this page"
+    },
+    "toc": {
+      "problem": "Problem",
+      "solution": "Solution",
+      "architecture": "Architecture",
+      "ai": "AI approach",
+      "safety": "Safety & privacy",
+      "evaluation": "Evaluation",
+      "status": "Live system status",
+      "roadmap": "Roadmap",
+      "team": "Team"
+    },
+    "title": "OushodhSathi, in depth",
+    "accent": "ওষুধসাথী — পিচ, হোয়াইটপেপার ও সিস্টেম ড্যাশবোর্ড",
+    "intro": "The live pitch, technical whitepaper and system dashboard for the International AI Builders Congress 2026 (HealthSphere AI → ChronicCare AI). Every number on this page is either cited, read live from the running system, or labelled as demo data.",
+    "problem": {
+      "body": "An elderly patient with high blood pressure or diabetes in Bangladesh often collects medicines from three places: a hospital outpatient doctor, a village doctor, and the local drug shop. Each sees only their own prescription. The same molecule is sold under many brand names, so a family cannot tell that <b>Napa</b> and <b>Ace</b> are both paracetamol, or that two doctors have each started amlodipine.",
+      "l1": "Hypertension is now the most common illness in Bangladesh, at 78.28 per 1,000 people (BBS Health and Morbidity Status Survey 2025, as reported by <bss>BSS</bss> and <ds>The Daily Star</ds>).",
+      "l2": "Only 11% of people with hypertension had their blood pressure controlled below 140/90, a background figure in the <heart>WHO-HEARTS evaluation in Bangladesh (Heart, 2024)</heart>.",
+      "l3": "In a small 2011 study of 35 geriatric outpatients at a private hospital, 69% were prescribed five or more medicines (<trend>Trends of prescribing for out-door geriatric patients</trend>)."
+    },
+    "solution": {
+      "body": "A family member photographs every strip, box and prescription. A vision model reads the photos into a typed list; each brand is mapped to its generic; a deterministic rules engine flags duplicates, same-class pairs, interactions, drugs risky after 65 (AGS Beers Criteria) and expired strips; a pharmacist or doctor confirms every flag; and only then does the family see a plain-Bangla explanation, a weekly report and a printable medicine passport with a QR code."
+    },
+    "ai": {
+      "body": "One router (<code>backend/app/llm_router.py</code>) talks to every model through OpenAI-compatible APIs, falls through on 429, 5xx and timeouts, and caches every response in SQLite by a SHA-256 of task, model and messages. The shelf agent is built with Pydantic-AI and may call three tools: match_brand, lookup_unknown_brand and a read-only check_medicines. It cannot write flags.",
+      "hTask": "Task",
+      "hModel": "Model / provider",
+      "hWhy": "Why",
+      "hGuard": "Guardrail",
+      "r1": {
+        "task": "Read photos",
+        "model": "NVIDIA API Nemotron VL first; then free OpenRouter vision models (tested before use), NARAROUTER → EXPLAB → AGENTROUTER",
+        "why": "Cut strips, glare and Bangla text need a vision model; free models keep it affordable",
+        "guard": "Typed Pydantic output, one retry, then needs-review; confidence < 0.75 always shown for a human check"
+      },
+      "r2": {
+        "task": "Unknown brand → generic",
+        "model": "Tavily search on medex.com.bd, arogga.com, medeasy.health + text model; Perplexity Agent API fallback",
+        "why": "Bangladesh has tens of thousands of brands; the seed table cannot hold them all",
+        "guard": "Model must cite a numbered result; stored as web_unverified with the source URL; failures never cached"
+      },
+      "r3": {
+        "task": "Bangla explanation",
+        "model": "Ollama qwen2.5:3b locally first, cloud fallback",
+        "why": "Private and free when run locally",
+        "guard": "Only for confirmed flags; dose and stop-word filter; fixed template fallback; fixed safety sentence"
+      },
+      "r4": {
+        "task": "Safety findings",
+        "model": "No model. Deterministic rules in backend/app/rules.py",
+        "why": "Judgement must be repeatable and auditable",
+        "guard": "Pure functions with tests; a clinician confirms every flag"
+      },
+      "prompts": "Prompts are versioned files in <code>backend/app/prompts/</code> (extract_strip.v1, brand_lookup.v1, explain_bn.v1). Changing a prompt means a new version file and a new eval run."
+    },
+    "safety": {
+      "s1": "Safety flags come only from the deterministic rules engine. Models never create, remove or change the severity of a flag.",
+      "s2": "Flags start as pending review. The family view of the API returns only confirmed flags, and a test enforces it.",
+      "s3": "No text tells a patient to stop, start or change a medicine or a dose.",
+      "s4": "Readings below 0.75 confidence and web-found brand matches are always marked for human confirmation.",
+      "s5": "Patient names and phone numbers are never sent to a model, only medicine photos and medicine names.",
+      "s6": "Photos are processed in memory and not stored after extraction.",
+      "pdpo": "These follow the data-minimisation and purpose-limitation principles of Bangladesh’s Personal Data Protection Ordinance 2025 (PDPO). OushodhSathi is a research prototype, not a medical device, and makes no compliance claim.",
+      "fhir": "The confirmed list exports as a FHIR R4 Bundle (a Patient with no identifiers beyond an internal id, and one MedicationStatement per medicine), ready for Bangladesh's Shared Health Record and health ID plans."
+    },
+    "evaluation": {
+      "intro": "Extraction accuracy on our own labelled photos of real Bangladeshi strips (cut strips, Bangla text, blur):",
+      "tests": "The rules engine, API safety gate, router fallback and explanation guard are covered by the pytest suite; the live count is in the status table below.",
+      "pilotTitle": "Pilot",
+      "pilotIntro": "What we find in real homes, reported as proportions with 95% Wilson score intervals, which stay honest at small sample sizes:",
+      "sathiTitle": "Sathi, the in-app helper",
+      "sathiIntro": "80 test questions in Bangla, Banglish and English: app questions must be answered from the right guide entry; medical questions must go to the pharmacist; emergencies must get the 999 message; attempts to talk Sathi out of its rules must fail. The run fails, in CI too, if a single medical or emergency question gets an app answer.",
+      "reviewTitle": "What a review costs",
+      "reviewIntro": "The time from a pharmacist opening a finding to deciding it, recorded for every decision. This is the unit cost behind a paid review service."
+    },
+    "roadmap": {
+      "r1": "A pharmacist-verified brand table (replace the demo seed with a licensed Bangladeshi drug database).",
+      "r2": "Full DDInter 2.0 interaction import, reviewed for medicines common in Bangladesh.",
+      "r3": "Partner pharmacies as scan points for families without a smartphone.",
+      "r4": "Bangla voice check-ins for blood pressure and doses.",
+      "r5": "A pilot with families, with results published here only once they are real."
+    },
+    "team": {
+      "placeholder": "[Team names, roles and mentor to be added.]"
+    },
+    "footer": {
+      "disclaimer": "OushodhSathi is a research prototype, not a medical device. It does not give medical advice. All findings must be confirmed by a registered pharmacist or doctor. Demo data is invented.",
+      "back": "Back to the overview"
+    },
+    "arch": {
+      "frontend": {
+        "t": "Next.js frontend",
+        "s": "family app (Bangla) · reviewer dashboard · passport · /docs"
+      },
+      "api": {
+        "t": "FastAPI",
+        "s": "family view returns confirmed flags only"
+      },
+      "agent": {
+        "t": "Shelf agent",
+        "s": "Pydantic-AI, typed output"
+      },
+      "router": {
+        "t": "LLM router",
+        "s": "cache + fall-through"
+      },
+      "providers": {
+        "t": "Providers",
+        "s": "OpenRouter → NARAROUTER → EXPLAB → AGENTROUTER → Ollama"
+      },
+      "matcher": {
+        "t": "Brand matcher",
+        "s": "exact → fuzzy ≥ 88 → web lookup (Tavily / Perplexity, unverified)"
+      },
+      "rules": {
+        "t": "Rules engine",
+        "s": "deterministic, no AI"
+      },
+      "sqlite": {
+        "t": "SQLite",
+        "s": "items, flags, reviews, cache"
+      },
+      "gate": {
+        "t": "Clinician review gate",
+        "s": "confirm / dismiss + note"
+      },
+      "family": {
+        "t": "Family view + passport",
+        "s": "Bangla explanation, QR"
+      },
+      "https": "HTTPS, JSON",
+      "confirmedItems": "confirmed items",
+      "pendingFlags": "pending flags",
+      "confirmedOnly": "confirmed only",
+      "caption": "Silver: AI perception. Ink: deterministic judgement. Indigo: human judgement. The MCP server and n8n automations call the same backend modules, read-only."
+    },
+    "live": {
+      "unreachable": "The API is not reachable from this page right now ({reason}).",
+      "offline": "offline",
+      "api": "API",
+      "mode": "Mode",
+      "modeDemo": "Demo mode (works without keys)",
+      "modeLive": "Live",
+      "vision": "Vision providers",
+      "text": "Text providers",
+      "noneConfigured": "none configured",
+      "explain": "Bangla explanations",
+      "templates": "fixed templates",
+      "visionModel": "Vision model",
+      "textModel": "Text model",
+      "local": "Local model (Ollama)",
+      "reachable": "reachable",
+      "notReachable": "not reachable",
+      "notSet": "not set",
+      "web": "Web lookup",
+      "notConfigured": "not configured",
+      "prompts": "Prompts in use",
+      "reviewer": "Reviewer login",
+      "tests": "Test functions",
+      "footnote": "Read live from GET /health every 30 seconds. Provider names only; keys never leave the server.",
+      "noPilotTitle": "No pilot results yet.",
+      "noPilotBody": "Each consenting household we visit becomes one row in <code>eval/pilot.csv</code>. Proportions and their 95% Wilson confidence intervals appear here from that file only. Demo data is never counted.",
+      "measure": "Measure",
+      "count": "Count",
+      "proportion": "Proportion",
+      "wilson": "95% Wilson CI",
+      "ci": "95% CI",
+      "pilotFoot": "{households} households, {medicines} medicines. Read live from GET /pilot/stats.",
+      "evalTitle": "Evaluation in progress.",
+      "evalBody": "No labelled real-photo results have been recorded yet. When <code>eval/run_eval.py</code> runs on our photo set it writes <code>eval/results_PROMPT.json</code>, and the numbers appear here automatically.",
+      "prompt": "Prompt",
+      "model": "Model",
+      "photos": "Photos / items",
+      "brand": "Brand",
+      "strength": "Strength",
+      "conf": "Avg conf.",
+      "sathiCategory": "Question type",
+      "sathiResult": "Handled correctly",
+      "sathiTarget": "Target",
+      "sathiCat": {
+        "app": "App questions (right guide entry)",
+        "medical": "Medical → pharmacist",
+        "emergency": "Emergency → 999",
+        "injection": "Rule-breaking attempts refused"
+      },
+      "sathiMeta": "{cases} cases · {mode} · {version} · {leaks} leaks",
+      "seconds": "{n} s",
+      "minutes": "{n} min",
+      "reviewTimeBody": "median time per decision, over {n} reviews",
+      "reviewTimeNone": "No timed reviews yet. The clock starts when a reviewer opens a finding."
+    }
+  },
+  "models": {
+    "title": "AI models",
+    "intro": "OushodhSathi tries these models in order. If one is busy, out of credits or withdrawn, the next one answers automatically — you never have to switch by hand.",
+    "safety": "Whichever model answers, it only reads photos, finds brands and words explanations. Safety findings always come from fixed rules and a clinician.",
+    "task": {
+      "vision": {
+        "title": "Reading photos",
+        "desc": "Turns photos of strips, boxes and prescriptions into a medicine list."
+      },
+      "text": {
+        "title": "Looking up unknown brands",
+        "desc": "Reads Bangladeshi medicine-site results to find a brand’s generic. Results are always marked unverified."
+      },
+      "explain_bn": {
+        "title": "Bangla explanations",
+        "desc": "Written only after a clinician confirms a finding. Your own computer (Ollama) is tried first when it is running."
+      },
+      "sathi": {
+        "title": "Sathi, the app helper",
+        "desc": "Rewords answers from the app guide. Never answers medical questions; the local model goes first."
+      }
+    },
+    "first": "Tried first",
+    "backup": "Backup {n}",
+    "lastUsed": "Last answered: {model}",
+    "lastCached": "(from cache)",
+    "never": "Not used yet since the server started.",
+    "choose": "Preferred model",
+    "auto": "Automatic — best free model first",
+    "yourChoice": "Your choice",
+    "saved": "Saved. The other models stay as backups.",
+    "failed": "Could not save. Try again.",
+    "none": "No model is set up for this task. Add an API key in backend/.env.",
+    "templates": "If no model answers, fixed, pre-checked Bangla templates are used.",
+    "fixedNote": "The order for explanations is fixed: on your computer first, then the cloud.",
+    "checking": "Checking which free models answer… the first time can take a few seconds.",
+    "local": "on this computer",
+    "chooseReviewerOnly": "Choosing a model changes it for every family, so only a signed-in pharmacist or doctor can do it."
+  },
+  "demo": {
+    "keys": "→ next · ← back",
+    "next": "Next",
+    "back": "Back",
+    "progress": "Progress",
+    "step": "Step {n}: {name}"
+  },
+  "review": {
+    "backToSite": "Back to site",
+    "home": "OushodhSathi home",
+    "login": {
+      "title": "Clinical review",
+      "body": "Pharmacists and doctors confirm or dismiss every finding before a family sees it.",
+      "name": "Your name (recorded with every decision)",
+      "namePh": "e.g. Pharm. S. Akter",
+      "token": "Reviewer token",
+      "badToken": "That reviewer token is not right.",
+      "offline": "Can’t reach the review server.",
+      "checking": "Checking…",
+      "open": "Open the queue",
+      "demo": "Demo server: the reviewer token is <code>demo-reviewer</code>. Set REVIEWER_TOKEN in backend/.env for real use."
+    },
+    "dash": {
+      "title": "Review queue",
+      "counts": "Pending counts",
+      "pending": "Pending",
+      "red": "Red",
+      "amber": "Amber",
+      "forDoctors": "For doctors",
+      "forPharmacists": "For pharmacists",
+      "signedIn": "Signed in as <b>{name}</b>",
+      "signOut": "Sign out",
+      "models": "AI models",
+      "queueLabel": "Findings waiting for review",
+      "severity": "Severity",
+      "route": "Route",
+      "all": "All",
+      "everyone": "Everyone",
+      "doctor": "Doctor",
+      "pharmacist": "Pharmacist",
+      "queue": "Queue",
+      "loadError": "Could not load the queue.",
+      "clearTitle": "Queue clear",
+      "clearBody": "No findings are waiting with these filters.",
+      "kMove": "move",
+      "kConfirm": "confirm",
+      "kDismiss": "dismiss",
+      "kNote": "note",
+      "evidence": "Evidence",
+      "patient": "Patient",
+      "note": "Note",
+      "noteHint": "— shown to the family with a confirmed finding; required to dismiss",
+      "notePh": "Plain words. Do not write doses or tell the family to stop or change a medicine.",
+      "noteError": "Add a short note to dismiss this finding.",
+      "confirm": "Confirm",
+      "dismiss": "Dismiss",
+      "ctrlEnter": "confirms from the note",
+      "select": "Select a finding.",
+      "toastConfirmed": "Confirmed",
+      "toastDismissed": "Dismissed",
+      "undo": "Undo (U)",
+      "panels": "Panels",
+      "mode": "What to review",
+      "findings": "Findings",
+      "questionsTab": "Questions"
+    },
+    "ev": {
+      "badge": "{sev} · for the {route}",
+      "meta": "waiting {time} · routed to the {route}",
+      "both": "Both are {generic}",
+      "all": "All are {generic}",
+      "interaction": "{level} interaction",
+      "major": "major",
+      "moderate": "moderate",
+      "ruleFired": "Rule that fired",
+      "dataSource": "Data source",
+      "webMatch": "Web match",
+      "unverified": "unverified",
+      "brandMatching": "Brand matching",
+      "thBrand": "Brand",
+      "thGeneric": "Generic · class",
+      "thMatch": "Match",
+      "thReadBy": "Read by",
+      "clinicalNote": "Rule evidence is recorded in English."
+    },
+    "routes": {
+      "doctor": "doctor",
+      "pharmacist": "pharmacist"
+    },
+    "panel": {
+      "years": "{age} years",
+      "confirmedMeds": "Confirmed medicines ({n})",
+      "prescribers": "Prescribers",
+      "audit": "Decisions (audit trail)",
+      "noDecisions": "No decisions yet.",
+      "unknown": "unknown",
+      "status": {
+        "confirmed": "confirmed",
+        "dismissed": "dismissed",
+        "undone": "undone"
+      }
+    },
+    "row": {
+      "waiting": "Time waiting",
+      "age": "{age}y"
+    },
+    "rules": {
+      "DUPLICATE_GENERIC": "Same generic, two brands",
+      "THERAPEUTIC_DUPLICATION": "Two drugs, same class",
+      "INTERACTION": "Drug interaction",
+      "BEERS_65": "Beers list, age 65+",
+      "EXPIRED": "Expired or expiring strip"
+    },
+    "questions": {
+      "title": "Questions from families",
+      "intro": "Sathi passes every medical question to you. Reply in plain words; the family sees it on their questions page. Target: within 1–2 days.",
+      "filter": "Show",
+      "open": "Waiting",
+      "all": "All",
+      "none": "No questions yet.",
+      "noneOpen": "No questions waiting. Well done.",
+      "demo": "Demo",
+      "waiting": "Waiting {time}",
+      "overdue": "over 2 days",
+      "repliedBy": "Replied by {name}, {date}",
+      "replyLabel": "Your reply",
+      "replyPh": "Write as you would speak to the family.",
+      "humanOnly": "Written by you. Sathi never writes replies.",
+      "send": "Send reply",
+      "failed": "The reply was not sent. Please try again."
+    },
+    "summary": {
+      "title": "AI summary — check the evidence",
+      "none": "not available",
+      "questions": "Questions to check",
+      "caveat": "Facts only, generated by AI; every name was checked against the record. You decide.",
+      "dropped": "No summary for this patient. Use the evidence below.",
+      "loading": "preparing…"
+    },
+    "clinical": {
+      "allergies": "Allergies",
+      "noAllergies": "None entered by the family",
+      "confirmedBy": "Confirmed by {name}",
+      "confirmAllergies": "Confirm allergies",
+      "medicines": "Confirmed medicines ({n})",
+      "unknown": "not recognised",
+      "approved": "times approved",
+      "notApproved": "times not approved",
+      "approveTimes": "Approve times ({n})",
+      "timesApproved": "All times approved",
+      "purposeLabel": "What {brand} is for",
+      "purposePh": "What it is for (Bangla)",
+      "save": "Save",
+      "markStopped": "Mark as stopped",
+      "stoppedBy": "Stopped by {name}"
+    },
+    "ramadan": {
+      "title": "Ramadan plans to review ({n})",
+      "intro": "The family asked for a fasting plan. Choose sehri and/or iftar for each medicine and add a note. Nothing changes for the family until you approve.",
+      "asked": "asked {time} ago",
+      "medicine": "Medicine",
+      "now": "Now",
+      "sehri": "Sehri",
+      "iftar": "Iftar",
+      "slotFor": "{slot} for {brand}",
+      "note": "Your note to the family",
+      "notePh": "For example: what to watch for, and when to check sugar.",
+      "unplaced": "{n, plural, one {# medicine has} other {# medicines have}} no slot: the family will see it as \"not in the Ramadan plan\".",
+      "approve": "Approve the Ramadan plan",
+      "failed": "The plan was not saved. Please try again."
+    }
+  },
+  "start": {
+    "title": "Add a family member",
+    "intro": "Make a private medicine list for the person whose medicines you look after. It takes a minute.",
+    "nameBn": "Name in Bangla",
+    "nameBnPlaceholder": "e.g. রহিমা বেগম",
+    "nameEn": "Name in English",
+    "nameEnPlaceholder": "e.g. Rahima Begum",
+    "nameHint": "One of the two is enough.",
+    "age": "Age",
+    "district": "District (optional)",
+    "districtPlaceholder": "e.g. Cumilla",
+    "conditions": "Long-term conditions (optional)",
+    "create": "Create the list",
+    "creating": "Creating…",
+    "privateTitle": "Private to your family",
+    "privateBody": "This list opens only on this phone and through its private link. The name is never sent to an AI model.",
+    "privateShare": "Afterwards, use \"Share with family\" on the home screen to send the link to brothers, sisters or a carer."
+  },
+  "sathi": {
+    "name": "Sathi",
+    "role": "Helps with the app. Medicine questions go to the pharmacist.",
+    "open": "Open Sathi, the app helper",
+    "close": "Close Sathi",
+    "nextStep": "Next step",
+    "urgent": "Urgent",
+    "greeting": "I'm Sathi. I can help you use the app. I'll send any question about medicines to the pharmacist.",
+    "suggestions": "Suggested questions",
+    "thinking": "Sathi is looking in the app guide…",
+    "error": "I can't answer right now. Please try again in a moment.",
+    "fromGuide": "From the app guide",
+    "inputLabel": "Your question",
+    "placeholder": "Type or speak your question",
+    "mic": "Speak your question",
+    "micStop": "Stop listening",
+    "micUnsupported": "This browser can't turn speech into text. Please type instead.",
+    "micBlocked": "The microphone is blocked. Allow it in the browser settings, or type instead.",
+    "send": "Send",
+    "listen": "Listen",
+    "stopListening": "Stop",
+    "draftLabel": "Your question for the pharmacist (you can change it)",
+    "askPharmacist": "Ask the pharmacist",
+    "sent": "Sent. The pharmacist usually replies within a day or two.",
+    "seeQuestions": "See your questions",
+    "chips": {
+      "scan": [
+        "How do I scan medicines?",
+        "How do I take a good photo?",
+        "What if the strip is cut?",
+        "Can I scan a prescription?",
+        "Do you keep my photos?",
+        "What can Sathi do?"
+      ],
+      "confirm": [
+        "How do I fix a wrong name?",
+        "What if the photo is blurry?",
+        "Who checks my list?",
+        "What does \"Please check\" mean?",
+        "How do I add a medicine by hand?",
+        "How do I set the times?"
+      ],
+      "review": [
+        "How long does checking take?",
+        "Who checks my list?",
+        "Why don't results show straight away?",
+        "What does \"confirmed\" mean?",
+        "How do I print the passport?",
+        "What can Sathi do?"
+      ],
+      "results": [
+        "What do red and amber mean?",
+        "How do I print the passport?",
+        "How do I send the passport on WhatsApp?",
+        "What should I show the doctor?",
+        "How do I show the list to my brother?",
+        "How do I add a blood pressure reading?"
+      ]
+    }
+  },
+  "questions": {
+    "title": "Questions to the pharmacist",
+    "intro": "A pharmacist or doctor reads your question and replies, usually within a day or two. Replies are written by a person, never by AI.",
+    "askLabel": "Your question",
+    "placeholder": "For example: Do Napa and Ace need to be taken together?",
+    "privacy": "Only the reviewing pharmacist or doctor sees this.",
+    "send": "Send to the pharmacist",
+    "sending": "Sending…",
+    "sent": "Sent. You'll see the reply here.",
+    "listTitle": "Your questions",
+    "none": "No questions yet.",
+    "askedOn": "Asked {date}",
+    "replyFrom": "Reply from {name}",
+    "waiting": "Waiting for a reply"
+  },
+  "emergency": {
+    "title": "Emergency medical information",
+    "inactive": "This emergency link is not active. The family may have switched it off or made a new one.",
+    "allergies": "Allergies",
+    "noAllergies": "No allergies recorded",
+    "allergiesUnconfirmed": "Entered by the family; not yet confirmed by a pharmacist.",
+    "call": "Call {name}",
+    "contact": "the emergency contact",
+    "medicines": "{count, plural, one {# medicine} other {# medicines}} currently taken",
+    "footer": "Read-only page from OushodhSathi. The medicine list was checked by a pharmacist or doctor. The family can switch this page off at any time."
+  },
+  "today": {
+    "title": "Today's medicines",
+    "intro": "The times the pharmacist checked. Tap Listen to hear them.",
+    "print": "Print for the fridge",
+    "listen": "Listen",
+    "stop": "Stop",
+    "nothing": "Nothing at this time",
+    "tablets": "{count, plural, one {# tablet} other {# tablets}}",
+    "waiting": "{count, plural, one {# medicine's times are} other {# medicines' times are}} waiting for the pharmacist to check. They will appear here after that.",
+    "fromPlan": "Only times approved by a pharmacist or doctor are shown. Change nothing without asking them.",
+    "sehri": "Sehri",
+    "iftar": "Iftar",
+    "ramadanOn": "Ramadan plan approved by the pharmacist or doctor",
+    "clinicianNote": "Note from {name}:",
+    "notInPlan": "Not in the Ramadan plan — ask the pharmacist about these",
+    "ramadanEnd": "Ramadan is over: back to the usual times",
+    "ramadanTitle": "Fasting in Ramadan?",
+    "ramadanBody": "Ask the pharmacist or doctor to plan the medicines around sehri and iftar. Nothing changes here until they approve a plan.",
+    "ramadanAsk": "Ask for a Ramadan plan",
+    "ramadanWaiting": "Request sent. Today's medicines stay as they are until a pharmacist or doctor approves a Ramadan plan."
+  },
+  "visit": {
+    "title": "Before the doctor visit",
+    "since": "changes since {date}",
+    "firstVisit": "first visit with OushodhSathi",
+    "print": "Print or save",
+    "medicines": "{count, plural, one {# medicine now} other {# medicines now}}",
+    "changes": "What changed since the last visit",
+    "noChanges": "Nothing changed since the last visit.",
+    "changesFirst": "After this visit, changes will be listed here.",
+    "added": "added",
+    "stopped": "stopped",
+    "findings": "Findings the pharmacist confirmed",
+    "noFindings": "No confirmed findings.",
+    "bp": "Blood pressure, last 4 weeks",
+    "noBp": "No readings in the last 4 weeks.",
+    "questions": "Our questions for the doctor",
+    "questionsHint": "Write or say what you want to ask. Sathi can help you put it into words, but never answers it.",
+    "addQuestion": "Add a question",
+    "add": "Add",
+    "speak": "Say the question",
+    "removeQuestion": "Remove this question",
+    "pharmacistAnswers": "Already answered by the pharmacist",
+    "afterTitle": "After the visit",
+    "afterBody": "If the doctor gave a new prescription, scan it. The pharmacist checks the new list the same way.",
+    "afterCta": "Visit done: scan the new prescription",
+    "generated": "Prepared {date}",
+    "mic": {
+      "micUnsupported": "This browser can't turn speech into text. Please type instead.",
+      "micBlocked": "The microphone is blocked. Allow it in the browser settings, or type instead."
+    }
+  },
+  "cleanup": {
+    "title": "Medicines to set aside",
+    "intro": "So nobody takes them by mistake: strips that have expired, and medicines the pharmacist or doctor stopped.",
+    "tip1": "Keep them in a separate bag, away from the medicines in use.",
+    "tip2": "Ask how to throw them away safely:",
+    "ask": "ask the pharmacist",
+    "toDo": "{count, plural, =0 {Nothing to set aside} one {# strip to set aside} other {# strips to set aside}}",
+    "none": "Nothing to set aside right now.",
+    "done": "I have set it aside",
+    "putAway": "Already set aside ({count})",
+    "undo": "Put back",
+    "expired": "Expired {date}",
+    "stopped": "Stopped by {name}"
+  },
+  "savings": {
+    "title": "Same medicine, lower price",
+    "none": "No lower-price brand of exactly the same medicine, strength and form was found.",
+    "perYear": "a year ({month} a month), if the pharmacist agrees",
+    "perTablet": "{now} → {other} a tablet",
+    "saves": "{month} a month · {year} a year",
+    "ask": "Ask the pharmacist",
+    "question": "Can we switch to the lower-MRP brand of {generic} ({alt})? We now take {brand}.",
+    "sent": "Sent to the pharmacist.",
+    "seeQuestions": "See your questions",
+    "failed": "Could not send. Please try again.",
+    "priceNote": "Demo reference prices — verify the MRP at the pharmacy. Only the same generic, strength and form are compared."
+  },
+  "activity": {
+    "title": "What happened",
+    "kind": {
+      "scanned": "{count, plural, one {# medicine scanned} other {# medicines scanned}}",
+      "sent_for_review": "{count, plural, one {# medicine sent for checking} other {# medicines sent for checking}}",
+      "finding_confirmed": "{count, plural, one {Pharmacist confirmed # safety finding} other {Pharmacist confirmed # safety findings}}",
+      "schedule_approved": "Schedule approved by the pharmacist",
+      "schedule_updated": "Schedule updated",
+      "bp_logged": "Blood pressure added",
+      "pharmacist_replied": "Pharmacist answered a question",
+      "set_aside": "A strip was set aside",
+      "visit_done": "Doctor visit done",
+      "ramadan_requested": "Ramadan plan requested",
+      "ramadan_approved": "Ramadan plan approved",
+      "ramadan_ended": "Back to the usual schedule"
+    }
+  },
+  "digest": {
+    "title": "Share with the family (WhatsApp / Copy)",
+    "body": "A short Bangla and English summary for the family group: confirmed findings, the approved schedule, possible savings and the read-only emergency link.",
+    "whatsapp": "Send on WhatsApp",
+    "copy": "Copy",
+    "copied": "Copied",
+    "failed": "Could not prepare the summary. Please try again."
+  },
+  "judge": {
+    "label": "Demo & judges",
+    "family": "Family view",
+    "reviewer": "Reviewer queue",
+    "passport": "Passport",
+    "docs": "Docs",
+    "reset": "Reset demo household",
+    "failed": "Reset failed"
   }
 }

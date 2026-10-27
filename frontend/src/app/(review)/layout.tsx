@@ -1,11 +1,4 @@
-import { NextIntlClientProvider } from "next-intl";
-import en from "../../../messages/en.json";
-
-// The reviewer dashboard is an English clinical tool; family-facing Bangla is previewed inside it.
+// The reviewer dashboard follows the site language toggle (Bangla or English).
 export default function ReviewLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <NextIntlClientProvider locale="en" messages={en} timeZone="Asia/Dhaka">
-      <div lang="en" className="min-h-dvh text-[15px]">{children}</div>
-    </NextIntlClientProvider>
-  );
+  return <div className="min-h-dvh text-[15px]">{children}</div>;
 }

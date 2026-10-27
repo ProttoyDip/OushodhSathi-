@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState, useTransition } from "react";
 import { cx } from "@/lib/format";
+import { stickyBar } from "@/lib/layout";
 import { Wordmark } from "./BrandMark";
 
 export function LangToggle({ className }: { className?: string }) {
@@ -24,7 +25,7 @@ export function LangToggle({ className }: { className?: string }) {
         start(() => router.refresh());
       }}
       className={cx(
-        "inline-flex h-12 min-w-12 items-center justify-center rounded-chip border border-rule bg-paper-raised px-4 text-base font-medium text-ink transition-colors hover:border-rule-strong disabled:opacity-60",
+        "press inline-flex h-12 min-w-12 items-center justify-center rounded-chip border border-rule bg-paper-raised px-4 text-base font-medium text-ink transition-colors hover:border-rule-strong disabled:opacity-60",
         className,
       )}
     >
@@ -64,7 +65,7 @@ export function ThemeToggle({ className }: { className?: string }) {
         } catch {}
       }}
       className={cx(
-        "inline-flex h-12 w-12 items-center justify-center rounded-chip border border-rule bg-paper-raised text-ink transition-colors hover:border-rule-strong",
+        "press inline-flex h-12 w-12 items-center justify-center rounded-chip border border-rule bg-paper-raised text-ink transition-colors hover:border-rule-strong",
         className,
       )}
     >
@@ -88,40 +89,45 @@ export function DemoTag({ label, className }: { label?: string; className?: stri
   );
 }
 
+/** Family app width: a phone column, widening to a working desktop canvas from lg up. */
+export const familyWidth = "max-w-[480px] lg:max-w-[1120px] lg:px-8";
+
 /** Top bar for the family app: wordmark, optional back link, language + theme. */
 export function FamilyHeader({ back, demo }: { back?: string; demo?: boolean }) {
   const t = useTranslations("common");
   return (
-    <header className="no-print mx-auto w-full max-w-[480px] px-4 pt-3">
-      <div className="flex items-center justify-between gap-2">
-        {back ? (
-          <Link
-            href={back}
-            className="-ml-2 inline-flex h-12 items-center gap-1.5 rounded-chip px-2 text-base font-medium text-ink"
-          >
-            <ArrowLeft aria-hidden size={22} />
-            {t("back")}
-          </Link>
-        ) : (
-          <Link href="/" className="inline-flex h-12 items-center rounded-md" aria-label={t("appName")}>
-            <Wordmark compact />
-          </Link>
-        )}
-        <div className="flex items-center gap-2">
-          <ThemeToggle />
-          <LangToggle />
+    <>
+      <header className={stickyBar}>
+        <div className={`mx-auto flex w-full items-center justify-between gap-2 px-4 py-1.5 ${familyWidth}`}>
+          {back ? (
+            <Link
+              href={back}
+              className="-ml-2 inline-flex h-12 items-center gap-1.5 rounded-chip px-2 text-base font-medium text-ink"
+            >
+              <ArrowLeft aria-hidden size={22} />
+              {t("back")}
+            </Link>
+          ) : (
+            <Link href="/" className="inline-flex h-12 items-center rounded-md" title={t("home")}>
+              <Wordmark compact />
+            </Link>
+          )}
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <LangToggle />
+          </div>
         </div>
-      </div>
-      {demo && <DemoTag className="mt-2" />}
-    </header>
+      </header>
+      {demo && <div className={`no-print mx-auto w-full px-4 ${familyWidth}`}><DemoTag className="mt-3" /></div>}
+    </>
   );
 }
 
 export const buttonStyles = {
   primary:
-    "inline-flex min-h-14 w-full items-center justify-center gap-2.5 rounded-card bg-neel px-6 text-lg font-semibold text-on-neel shadow-soft transition-colors duration-150 hover:bg-neel-hover disabled:cursor-not-allowed disabled:opacity-50",
+    "press inline-flex min-h-14 w-full items-center justify-center gap-2.5 rounded-card bg-neel px-6 text-lg font-semibold text-on-neel shadow-soft transition-colors duration-150 hover:bg-neel-hover disabled:cursor-not-allowed disabled:opacity-50",
   secondary:
-    "inline-flex min-h-12 items-center justify-center gap-2 rounded-card border border-rule-strong bg-paper-raised px-5 text-base font-semibold text-ink transition-colors duration-150 hover:border-ink-faint disabled:opacity-50",
+    "press inline-flex min-h-12 items-center justify-center gap-2 rounded-card border border-rule-strong bg-paper-raised px-5 text-base font-semibold text-ink transition-colors duration-150 hover:border-ink-faint disabled:opacity-50",
   quiet:
-    "inline-flex min-h-12 items-center justify-center gap-2 rounded-card px-4 text-base font-medium text-ink-soft underline-offset-4 hover:text-ink hover:underline disabled:opacity-50",
+    "press inline-flex min-h-12 items-center justify-center gap-2 rounded-card px-4 text-base font-medium text-ink-soft underline-offset-4 hover:text-ink hover:underline disabled:opacity-50",
 };

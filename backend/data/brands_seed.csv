@@ -1,18 +1,23 @@
-brand,generic,drug_class,manufacturer,verified,note
-Napa,paracetamol,analgesic-paracetamol,,no,demo seed - verify against MedEx
-Ace,paracetamol,analgesic-paracetamol,,no,demo seed - verify against MedEx
-Seclo,omeprazole,PPI,,no,demo seed - verify against MedEx
-Maxpro,esomeprazole,PPI,,no,demo seed - verify against MedEx
-Sergel,esomeprazole,PPI,,no,demo seed - verify against MedEx
-Camlodin,amlodipine,CCB-dihydropyridine,,no,demo seed - verify against MedEx
-Amdocal,amlodipine,CCB-dihydropyridine,,no,demo seed - verify against MedEx
-Angilock,losartan,ARB,,no,demo seed - verify against MedEx
-Osartil,losartan,ARB,,no,demo seed - verify against MedEx
-Comet,metformin,biguanide,,no,demo seed - verify against MedEx
-Rivotril,clonazepam,benzodiazepine,,no,demo seed - verify against MedEx
-Tryptin,amitriptyline,TCA,,no,demo seed - verify against MedEx
-Clofenac,diclofenac,NSAID,,no,demo seed - verify against MedEx
-Naprosyn,naproxen,NSAID,,no,demo seed - verify against MedEx
-Flexi,aceclofenac,NSAID,,no,demo seed - verify against MedEx
-Ecosprin,aspirin,antiplatelet-aspirin,,no,demo seed - verify against MedEx
-Atova,atorvastatin,statin,,no,demo seed - verify against MedEx
+brand,generic,drug_class,manufacturer,verified,note,strength,form,mrp_bdt,pack_source
+Napa,paracetamol,analgesic-paracetamol,,no,demo seed - verify against MedEx,500 mg,tablet,1.20,demo reference price — verify MRP
+Ace,paracetamol,analgesic-paracetamol,,no,demo seed - verify against MedEx,500 mg,tablet,1.00,demo reference price — verify MRP
+Napa Extra,paracetamol + caffeine,analgesic-paracetamol + stimulant-caffeine,,no,demo seed - verify against MedEx,500 mg + 65 mg,tablet,2.50,demo reference price — verify MRP
+Seclo,omeprazole,PPI,,no,demo seed - verify against MedEx,20 mg,capsule,5.00,demo reference price — verify MRP
+Maxpro,esomeprazole,PPI,,no,demo seed - verify against MedEx,20 mg,tablet,7.00,demo reference price — verify MRP
+Sergel,esomeprazole,PPI,,no,demo seed - verify against MedEx,20 mg,tablet,6.00,demo reference price — verify MRP
+Camlodin,amlodipine,CCB-dihydropyridine,,no,demo seed - verify against MedEx,5 mg,tablet,6.00,demo reference price — verify MRP
+Amdocal,amlodipine,CCB-dihydropyridine,,no,demo seed - verify against MedEx,5 mg,tablet,5.00,demo reference price — verify MRP
+Amdocal Plus,amlodipine + atenolol,CCB-dihydropyridine + beta-blocker,,no,demo seed - verify against MedEx,5 mg + 25 mg,tablet,8.00,demo reference price — verify MRP
+Angilock,losartan,ARB,,no,demo seed - verify against MedEx,50 mg,tablet,10.00,demo reference price — verify MRP
+Osartil,losartan,ARB,,no,demo seed - verify against MedEx,50 mg,tablet,8.00,demo reference price — verify MRP
+Osartil Plus,losartan + hydrochlorothiazide,ARB + thiazide-diuretic,,no,demo seed - verify against MedEx,50 mg + 12.5 mg,tablet,12.00,demo reference price — verify MRP
+Comet,metformin,biguanide,,no,demo seed - verify against MedEx,500 mg,tablet,4.00,demo reference price — verify MRP
+Secrin,glimepiride,sulfonylurea,,no,demo seed - verify against MedEx,2 mg,tablet,10.00,demo reference price — verify MRP
+Oradexon,dexamethasone,corticosteroid,,no,demo seed - verify against MedEx,0.5 mg,tablet,0.60,demo reference price — verify MRP
+Rivotril,clonazepam,benzodiazepine,,no,demo seed - verify against MedEx,0.5 mg,tablet,6.00,demo reference price — verify MRP
+Tryptin,amitriptyline,TCA,,no,demo seed - verify against MedEx,10 mg,tablet,1.50,demo reference price — verify MRP
+Clofenac,diclofenac,NSAID,,no,demo seed - verify against MedEx,50 mg,tablet,1.50,demo reference price — verify MRP
+Naprosyn,naproxen,NSAID,,no,demo seed - verify against MedEx,250 mg,tablet,3.00,demo reference price — verify MRP
+Flexi,aceclofenac,NSAID,,no,demo seed - verify against MedEx,100 mg,tablet,4.00,demo reference price — verify MRP
+Ecosprin,aspirin,antiplatelet-aspirin,,no,demo seed - verify against MedEx,75 mg,tablet,0.80,demo reference price — verify MRP
+Atova,atorvastatin,statin,,no,demo seed - verify against MedEx,10 mg,tablet,10.00,demo reference price — verify MRP

@@ -3,6 +3,8 @@ import { Anek_Bangla, Hind_Siliguri, Instrument_Sans, Schibsted_Grotesk } from "
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { MotionProvider } from "@/components/Motion";
+import { RevealController } from "@/components/Reveal";
+import { revealArmScript } from "@/lib/reveal";
 import "./globals.css";
 
 const hind = Hind_Siliguri({
@@ -57,10 +59,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script dangerouslySetInnerHTML={{ __html: revealArmScript }} />
       </head>
       <body>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <MotionProvider>{children}</MotionProvider>
+          <RevealController />
         </NextIntlClientProvider>
       </body>
     </html>

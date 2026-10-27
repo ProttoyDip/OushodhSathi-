@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { reveal } from "@/lib/reveal";
 import { BPTrend } from "@/components/BPTrend";
 import { BrandMark, Wordmark } from "@/components/BrandMark";
 import { buttonStyles, DemoTag, LangToggle, ThemeToggle } from "@/components/Chrome";
@@ -140,7 +141,7 @@ export default function Styleguide() {
 
 function Section({ title, note, action, children }: { title: string; note?: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <section className="border-b border-rule py-10">
+    <section {...reveal(0)} className="border-b border-rule py-10">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="font-display text-[32px] leading-none">{title}</h2>

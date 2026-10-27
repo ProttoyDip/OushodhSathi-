@@ -19,6 +19,12 @@ export interface Patient {
   created_at: string;
   last_checked_at: string | null;
   demo_label?: string | null;
+  allergies?: string[];
+  allergies_confirmed_by?: string | null;
+  emergency_contact_name?: string | null;
+  emergency_contact_phone?: string | null;
+  visit_questions?: string[];
+  last_visit_at?: string | null;
 }
 
 export interface MedicineItem {
@@ -44,6 +50,14 @@ export interface MedicineItem {
   confirmed: boolean;
   needs_review: boolean;
   thumbnail?: string | null;
+  per_dose?: number;
+  purpose?: string | null;
+  purpose_bn?: string | null;
+  stopped?: boolean;
+  stopped_by?: string | null;
+  set_aside?: boolean;
+  schedule_approved_by?: string | null;
+  schedule_approved_at?: string | null;
 }
 
 export interface Flag {
@@ -82,6 +96,9 @@ export interface PassportEntry {
   strength: string | null;
   prescriber: string | null;
   needs_review: boolean;
+  per_dose?: number;
+  purpose?: string | null;
+  purpose_bn?: string | null;
 }
 
 export interface Passport {
@@ -99,11 +116,17 @@ export interface Passport {
   medicine_count: number;
   generated_at: string;
   demo_label: string | null;
+  allergies?: string[];
+  allergies_confirmed_by?: string | null;
+  allergies_confirmed_at?: string | null;
+  prescribers?: { name: string | null; medicines: string[] }[];
+  last_reviewed?: { by: string | null; role: "doctor" | "pharmacist"; at: string } | null;
+  emergency_enabled?: boolean;
 }
 
 export interface Report {
   patient: { id: number; name: string; name_bn: string | null; age: number };
-  bp: { readings: { taken_on: string; systolic: number; diastolic: number }[]; target: { systolic: number; diastolic: number } };
+  bp: { readings: BPReading[]; target: { systolic: number; diastolic: number } };
   doses: { scheduled: number; taken: number; is_demo: boolean; label: string } | null;
   flags: { confirmed_open: number; resolved: number; reviewed: number };
   refills_due: { brand: string; generic: string | null; pills_left: number; days_left: number }[];
@@ -166,4 +189,187 @@ export interface PilotStats {
   households: number;
   medicines?: number;
   proportions: Proportion[];
+}
+
+export interface ModelRef {
+  provider: string;
+  model: string;
+}
+
+export interface ModelTask {
+  chain: ModelRef[];
+  preferred: ModelRef | null;
+  last_used: (ModelRef & { at: number; cached?: boolean }) | null;
+  choosable: boolean;
+}
+
+export interface ModelsInfo {
+  tasks: Record<"vision" | "text" | "explain_bn" | "sathi", ModelTask>;
+  demo_mode: boolean;
+}
+
+export type StepCode =
+  | "EMERGENCY_ACTIVE" | "PHARMACIST_REPLIED" | "RESULTS_READY" | "LOW_CONFIDENCE" | "ITEMS_TO_CONFIRM" | "NO_SCAN"
+  | "READY_TO_SEND" | "SENT_FOR_REVIEW" | "PASSPORT_NOT_SAVED" | "REFILL_DUE" | "ALL_GOOD";
+
+export interface NextStep {
+  code: StepCode;
+  params: Record<string, string | number>;
+  text: string;
+  button: string;
+  route: string;
+  phrased_by: string;
+}
+
+export interface SathiAction {
+  label: string;
+  route: string | null;
+  tel: string | null;
+  question_draft: string | null;
+}
+
+export interface SathiReply {
+  kind: "answer" | "not_in_guide" | "medical_redirect" | "emergency";
+  text: string;
+  guide_ids: string[];
+  actions: SathiAction[];
+  source: string;
+}
+
+export interface Question {
+  id: number;
+  patient_id: number;
+  text: string;
+  created_at: string;
+  reply: string | null;
+  replied_by: string | null;
+  replied_at: string | null;
+  reply_seen_at: string | null;
+  patient?: { id: number; name: string; name_bn: string | null; age: number; is_demo: boolean } | null;
+}
+
+export interface BPReading {
+  taken_on: string;
+  systolic: number;
+  diastolic: number;
+}
+
+export interface BPPhotoReading {
+  systolic: number | null;
+  diastolic: number | null;
+  pulse: number | null;
+  confidence: number;
+  readable: boolean;
+  needs_check: boolean;
+  model: string;
+}
+
+export interface TodayMedicine {
+  id: number;
+  brand: string;
+  generic: string | null;
+  strength: string | null;
+  per_dose: number;
+  purpose: string | null;
+  purpose_bn: string | null;
+}
+
+export interface Today {
+  slots: Record<Slot, TodayMedicine[]>;
+  as_needed: TodayMedicine[];
+  waiting_approval: number;
+  ramadan_status: "requested" | "approved" | null;
+  ramadan: {
+    sehri: TodayMedicine[];
+    iftar: TodayMedicine[];
+    not_in_plan: TodayMedicine[];
+    note: string | null;
+    approved_by: string | null;
+    approved_at: string | null;
+  } | null;
+  patient: { id: number; name: string; name_bn: string | null };
+  demo_label: string | null;
+}
+
+export interface VisitPrep {
+  patient: { id: number; name: string; name_bn: string | null; age: number; conditions: string[] };
+  last_visit_at: string | null;
+  medicines: { brand: string; generic: string | null; strength: string | null; schedule: Slot[]; per_dose: number;
+    prescriber: string | null; purpose: string | null; purpose_bn: string | null }[];
+  changes: { kind: "added" | "stopped"; brand: string; generic: string | null; at: string | null; by: string | null }[];
+  findings: { code: FlagCode; severity: Severity; brands: string[]; note: string | null; explanation_bn: string | null;
+    reviewer: string | null }[];
+  bp: BPReading[];
+  questions: string[];
+  pharmacist_questions: { text: string; reply: string | null; replied_by: string | null }[];
+  allergies: string[];
+  generated_at: string;
+  demo_label: string | null;
+}
+
+export interface CleanupItem {
+  id: number;
+  brand: string;
+  generic: string | null;
+  strength: string | null;
+  expiry: string | null;
+  reason: "expired" | "stopped" | "other";
+  stopped_by: string | null;
+}
+
+export interface EmergencyPage {
+  first_name: string;
+  first_name_en: string;
+  age: number;
+  medicines: { generic: string | null; brand: string; strength: string | null; schedule: Slot[]; per_dose: number;
+    purpose: string | null; purpose_bn: string | null }[];
+  allergies: string[];
+  allergies_confirmed: boolean;
+  emergency_contact: { name: string | null; phone: string } | null;
+  is_demo: boolean;
+}
+
+export interface CaseSummary {
+  summary: { summary: string[]; prescribers: { name: string; medicines: string[] }[]; questions_to_check: string[] } | null;
+  source: string | null;
+  dropped: string | null;
+  collapsed: boolean;
+}
+
+export interface SavingsRow {
+  item_id: number;
+  brand: string;
+  generic: string;
+  strength: string;
+  form: string;
+  tablets_per_day: number;
+  current_mrp_bdt: number;
+  alternative: { brand: string; mrp_bdt: number; pack_source: string };
+  monthly_bdt: number;
+  yearly_bdt: number;
+}
+
+export interface Savings {
+  items: SavingsRow[];
+  total_monthly_bdt: number;
+  total_yearly_bdt: number;
+  notice_bn: string;
+  notice_en: string;
+  price_note: string;
+}
+
+export type ActivityKind =
+  | "scanned" | "sent_for_review" | "finding_confirmed" | "schedule_approved" | "schedule_updated" | "bp_logged"
+  | "pharmacist_replied" | "set_aside" | "visit_done" | "ramadan_requested" | "ramadan_approved" | "ramadan_ended";
+
+export interface ActivityEntry {
+  kind: ActivityKind;
+  n: number | null;
+  created_at: string;
+}
+
+export interface RamadanRequest {
+  patient: { id: number; name: string; name_bn: string | null; age: number; conditions: string[]; is_demo: boolean };
+  requested_at: string;
+  items: { id: number; brand: string; generic: string | null; strength: string | null; schedule: Slot[]; per_dose: number }[];
 }

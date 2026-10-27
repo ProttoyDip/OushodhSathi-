@@ -1,15 +1,22 @@
 "use client";
 
-import { BookUser, Camera, ChevronRight, CircleCheck, Clock, LineChart, ScanLine } from "lucide-react";
+import { Archive, BookUser, Camera, ChevronRight, CircleCheck, Clock, Cpu, LineChart, MessagesSquare, ScanLine, Share2, Stethoscope, Sunrise } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { buttonStyles, FamilyHeader } from "@/components/Chrome";
+import { useEffect, useState } from "react";
+import { buttonStyles, FamilyHeader, familyWidth } from "@/components/Chrome";
+import { FamilyActivity } from "@/components/FamilyActivity";
+import { JudgeBar } from "@/components/JudgeBar";
 import { SeverityBadge } from "@/components/SeverityBadge";
+import { ShareDigest } from "@/components/ShareDigest";
+import { NextStepCard } from "@/components/sathi/NextStepCard";
 import { ErrorState, Skeleton } from "@/components/States";
 import { api } from "@/lib/api";
+import { familyLink } from "@/lib/familyKey";
 import { date, num } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
+import { reveal } from "@/lib/reveal";
 
 export default function FamilyHome() {
   const { id } = useParams<{ id: string }>();
@@ -27,14 +34,18 @@ export default function FamilyHome() {
 
   return (
     <>
+      {p?.is_demo && <JudgeBar pid={pid} />}
       <FamilyHeader demo={p?.is_demo} />
-      <main className="mx-auto w-full max-w-[480px] px-4 pb-12 pt-4">
+      <main className={`mx-auto w-full px-4 pb-12 pt-4 lg:pt-8 ${familyWidth}`}>
         {patient.error ? (
           <ErrorState error={patient.error} onRetry={patient.reload} />
         ) : !p ? (
           <Skeleton lines={3} />
         ) : (
-          <>
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-x-10">
+            <div {...reveal(0)} className="grid gap-6 lg:col-start-1 lg:row-start-1">
+            <NextStepCard pid={pid} />
+            <div>
             {/* the patient, written like the head of a prescription */}
             <section aria-labelledby="patient-name" className="rounded-card border border-rule bg-paper-raised px-5 pb-4 pt-5 shadow-soft">
               <h1 id="patient-name" className="font-bn-display text-[34px] leading-[1.15] text-ink">
@@ -61,9 +72,11 @@ export default function FamilyHome() {
               </Link>
               <p className="mt-2 px-1 text-base text-ink-soft">{t("scanHint")}</p>
             </div>
+            </div>
+            </div>
 
             {/* confirmed results only */}
-            <section aria-labelledby="results-h" className="mt-8">
+            <section {...reveal(90)} aria-labelledby="results-h" className="lg:col-start-2 lg:row-span-2 lg:row-start-1">
               <h2 id="results-h" className="font-bn-display text-[24px] leading-tight">{t("resultsTitle")}</h2>
               <div className="mt-3 rounded-card border border-rule bg-paper-raised p-5">
                 {!s ? (
@@ -111,14 +124,65 @@ export default function FamilyHome() {
             </section>
 
             {/* secondary destinations */}
-            <nav aria-label={t("passport")} className="mt-8 divide-y divide-rule overflow-hidden rounded-card border border-rule bg-paper-raised">
+            <nav {...reveal(180)} aria-label={t("passport")} className="divide-y lg:col-start-1 lg:row-start-2 divide-rule overflow-hidden rounded-card border border-rule bg-paper-raised">
+              <RowLink href={`/p/${pid}/today`} Icon={Sunrise} title={t("today")} hint={t("todayHint")} />
               <RowLink href={`/passport/${pid}`} Icon={BookUser} title={t("passport")} hint={t("passportHint")} />
+              <RowLink href={`/p/${pid}/visit`} Icon={Stethoscope} title={t("visit")} hint={t("visitHint")} />
               <RowLink href={`/p/${pid}/report`} Icon={LineChart} title={t("report")} hint={t("reportHint")} />
+              <RowLink href={`/p/${pid}/questions`} Icon={MessagesSquare} title={t("questions")} hint={t("questionsHint")} />
+              <RowLink href={`/p/${pid}/cleanup`} Icon={Archive} title={t("cleanup")} hint={t("cleanupHint")} />
+              <ShareRow pid={pid} />
+              <RowLink href={`/models?from=/p/${pid}`} Icon={Cpu} title={t("models")} hint={t("modelsHint")} />
             </nav>
-          </>
+
+            {/* for siblings far away: what happened, and a digest for the family group */}
+            <div {...reveal(220)} className="grid gap-6 lg:col-span-2 lg:grid-cols-2 lg:items-start">
+              <FamilyActivity pid={pid} />
+              <ShareDigest pid={pid} />
+            </div>
+          </div>
         )}
       </main>
     </>
+  );
+}
+
+/** The private family link: anyone with it can open this household, so it is shared on purpose. */
+function ShareRow({ pid }: { pid: number }) {
+  const t = useTranslations("home");
+  const [link, setLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  useEffect(() => setLink(familyLink(pid)), [pid]);
+  if (!link) return null; // the demo household has no private link
+
+  async function share() {
+    if (!link) return;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: t("shareTitle"), text: t("shareText"), url: link });
+        return;
+      } catch (e) {
+        if ((e as DOMException).name === "AbortError") return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 3000);
+    } catch {
+      window.prompt(t("shareCopyPrompt"), link);
+    }
+  }
+
+  return (
+    <button type="button" onClick={share} className="flex min-h-[72px] w-full items-center gap-4 px-5 py-3 text-left transition-colors hover:bg-paper-sunk/60">
+      <Share2 aria-hidden size={26} className="shrink-0 text-neel" />
+      <span className="min-w-0 flex-1">
+        <span className="block font-semibold text-ink">{t("share")}</span>
+        <span className="block text-base text-ink-soft" aria-live="polite">{copied ? t("shareCopied") : t("shareHint")}</span>
+      </span>
+      <ChevronRight aria-hidden size={22} className="shrink-0 text-ink-faint" />
+    </button>
   );
 }
 

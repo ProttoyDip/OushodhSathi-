@@ -2,7 +2,7 @@
   "prompt_version": "sathi_bn.v1",
   "intent_prompt": "sathi_intent.v1",
   "mode": "offline (guard + retrieval, no model)",
-  "run_at": "2026-10-27T10:55:38+00:00",
+  "run_at": "2026-10-27T11:13:24+00:00",
   "cases": 80,
   "by_category": {
     "app": {

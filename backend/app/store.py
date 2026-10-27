@@ -80,6 +80,7 @@ ADDED_COLUMNS = {
         "emergency_contact_phone": "TEXT",
         "emergency_token": "TEXT",        # read-only emergency page; the family can revoke it
         "last_visit_at": "TEXT",          # last doctor visit the family marked
+        "visit_questions": "TEXT NOT NULL DEFAULT '[]'",  # the family's questions for the next visit
     },
     "items": {
         "purpose": "TEXT",                # what it is for, written by the reviewing pharmacist
@@ -206,12 +207,14 @@ class Store:
         d = {k: v for k, v in r.items() if k in Patient.model_fields}
         d["conditions"] = json.loads(r["conditions"])
         d["allergies"] = json.loads(r.get("allergies") or "[]")
+        d["visit_questions"] = json.loads(r.get("visit_questions") or "[]")
         d["is_demo"] = bool(r["is_demo"])
         return Patient(**d)
 
     def update_patient(self, pid: int, **fields) -> Patient | None:
-        if "allergies" in fields:
-            fields["allergies"] = json.dumps(fields["allergies"], ensure_ascii=False)
+        for col in ("allergies", "visit_questions"):
+            if col in fields:
+                fields[col] = json.dumps(fields[col], ensure_ascii=False)
         if fields:
             sets = ", ".join(f"{k} = ?" for k in fields)
             self._exec(f"UPDATE patients SET {sets} WHERE id = ?", (*fields.values(), pid))
@@ -253,7 +256,6 @@ class Store:
         d["schedule"] = json.loads(d["schedule"])
         for b in ("confirmed", "stopped", "set_aside"):
             d[b] = bool(d[b])
-        d.pop("created_at")
         return MedicineItem(**d)
 
     def add_item(self, pid: int, item: MedicineItemIn, **match) -> MedicineItem:
@@ -347,13 +349,18 @@ class Store:
         rows = self._all("SELECT * FROM flags WHERE id = ?", (flag_id,))
         return self._flag(rows[0]) if rows else None
 
-    def review_flag(self, flag_id: int, review: ReviewIn, explanation_bn: str | None) -> StoredFlag:
+    def mark_flag_opened(self, flag_id: int) -> None:
+        """First time a reviewer opens a finding: the start of the review-time clock."""
+        self._exec("UPDATE flags SET opened_at = ? WHERE id = ? AND opened_at IS NULL", (now(), flag_id))
+
+    def review_flag(self, flag_id: int, review: ReviewIn, explanation_bn: str | None,
+                    seconds: float | None = None) -> StoredFlag:
         ts = now()
         self._many([
             ("UPDATE flags SET status = ?, reviewer = ?, note = ?, reviewed_at = ?, explanation_bn = ? WHERE id = ?",
              (review.status, review.reviewer, review.note, ts, explanation_bn, flag_id)),
-            ("INSERT INTO reviews (flag_id, status, reviewer, note, created_at) VALUES (?,?,?,?,?)",
-             (flag_id, review.status, review.reviewer, review.note, ts)),
+            ("INSERT INTO reviews (flag_id, status, reviewer, note, created_at, seconds) VALUES (?,?,?,?,?,?)",
+             (flag_id, review.status, review.reviewer, review.note, ts, seconds)),
         ])
         return self.get_flag(flag_id)  # type: ignore[return-value]
 
@@ -367,6 +374,15 @@ class Store:
         ])
         return self.get_flag(flag_id)  # type: ignore[return-value]
 
+    def review_seconds(self) -> list[float]:
+        rows = self._all("SELECT seconds FROM reviews WHERE seconds IS NOT NULL AND status IN ('confirmed', 'dismissed')")
+        return [float(r["seconds"]) for r in rows]
+
+    def reviews_by(self, reviewer: str) -> int:
+        rows = self._all("SELECT COUNT(*) AS n FROM reviews WHERE reviewer = ? AND status IN ('confirmed', 'dismissed')",
+                         (reviewer,))
+        return int(rows[0]["n"]) if rows else 0
+
     def list_reviews(self, pid: int) -> list[dict]:
         return self._all(
             """SELECT r.*, f.code, f.severity, f.evidence FROM reviews r JOIN flags f ON f.id = r.flag_id
@@ -374,16 +390,17 @@ class Store:
         )
 
     # ---- BP readings ----------------------------------------------------
-    def add_bp(self, pid: int, taken_on: str, systolic: int, diastolic: int) -> None:
-        self._exec("INSERT INTO bp_readings (patient_id, taken_on, systolic, diastolic) VALUES (?,?,?,?)",
-                   (pid, taken_on, systolic, diastolic))
+    def add_bp(self, pid: int, taken_on: str, systolic: int, diastolic: int,
+               pulse: int | None = None, source: str = "manual") -> None:
+        self._exec("INSERT INTO bp_readings (patient_id, taken_on, systolic, diastolic, pulse, source) "
+                   "VALUES (?,?,?,?,?,?)", (pid, taken_on, systolic, diastolic, pulse, source))
 
-    def list_bp(self, pid: int, limit: int = 7) -> list[dict]:
-        rows = self._all(
-            "SELECT taken_on, systolic, diastolic FROM bp_readings WHERE patient_id = ? "
-            "ORDER BY taken_on DESC, id DESC LIMIT ?",
-            (pid, limit),
-        )
+    def list_bp(self, pid: int, limit: int = 7, since: str | None = None) -> list[dict]:
+        sql, args = "SELECT taken_on, systolic, diastolic FROM bp_readings WHERE patient_id = ?", [pid]
+        if since:
+            sql += " AND taken_on >= ?"
+            args.append(since)
+        rows = self._all(sql + " ORDER BY taken_on DESC, id DESC LIMIT ?", (*args, limit))
         return list(reversed(rows))
 
     # ---- questions to the pharmacist -----------------------------------

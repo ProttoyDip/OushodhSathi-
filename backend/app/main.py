@@ -26,12 +26,13 @@ from .ratelimit import limit_new_patient, limit_sathi, limit_scan, limit_writes 
 from . import llm_router  # noqa: E402
 from .llm_router import NoProviderAvailable, Router, _env, configured_providers, provider_names  # noqa: E402
 from .models import (  # noqa: E402
-    MedicineItem, MedicineItemIn, MedicineItemPatch, Patient, PatientIn, ReviewIn, RuleItem, StoredFlag,
+    ClinicalPatch, MedicineItem, MedicineItemIn, MedicineItemPatch, Patient, PatientIn, PatientPatch, ReviewIn,
+    RuleItem, StoredFlag,
 )
 from .next_step import StepContext, next_step  # noqa: E402
-from .refills import refills_due  # noqa: E402
+from .refills import counts, refills_due  # noqa: E402
 from .rules import run_rules  # noqa: E402
-from . import sathi  # noqa: E402
+from . import clinical, sathi  # noqa: E402
 from .stats import pilot_stats, proportion  # noqa: E402
 from .store import Store, now  # noqa: E402
 from .tables import load_rule_tables  # noqa: E402
@@ -228,6 +229,11 @@ def _confirm_allowed(store: Store, item: MedicineItem) -> MedicineItem:
 def patch_item(item_id: int, body: MedicineItemPatch, store: Store = Depends(get_store)):
     item = _item_or_404(store, item_id)
     fields = body.model_dump(exclude_unset=True)
+    if fields.get("set_aside") and not (item.stopped or is_expired(item)):
+        # the family puts away only expired strips or what the reviewer stopped; nothing else
+        raise HTTPException(422, "Only expired medicines or ones the pharmacist stopped can be set aside")
+    if any(k in fields and fields[k] != getattr(item, k) for k in ("schedule", "per_dose")):
+        fields.update(schedule_approved_by=None, schedule_approved_at=None)
     if "brand" in fields or "strength" in fields:
         brand = fields.get("brand", item.brand)
         strength = fields.get("strength", item.strength)
@@ -370,7 +376,9 @@ def review_flag(flag_id: int, body: ReviewIn, store: Store = Depends(get_store))
             redact=[patient.name, patient.name_bn or ""] if patient else [],
         )
         log.info("flag %s explanation via %s", flag_id, how)
-    updated = store.review_flag(flag_id, body, explanation)
+    opened = _parse_ts(flag.opened_at) if flag.opened_at else None
+    seconds = (datetime.now(timezone.utc) - opened).total_seconds() if opened else None
+    updated = store.review_flag(flag_id, body, explanation, seconds=seconds)
     return _with_items(store, [updated])[0]
 
 
@@ -396,11 +404,13 @@ SLOTS = ("morning", "noon", "night")
 @app.get("/patients/{pid}/passport", dependencies=[Depends(family_access)])
 def passport(pid: int, store: Store = Depends(get_store)) -> dict:
     p = _patient_or_404(store, pid)
-    items = store.list_items(pid, confirmed_only=True)
+    items = [it for it in store.list_items(pid, confirmed_only=True) if counts(it)]
 
     def entry(it: MedicineItem) -> dict:
         return {"id": it.id, "generic": it.generic, "brand": it.brand, "strength": it.strength,
-                "prescriber": it.prescriber, "needs_review": it.needs_review}
+                "prescriber": it.prescriber, "needs_review": it.needs_review, "per_dose": it.per_dose,
+                "purpose": it.purpose, "purpose_bn": it.purpose_bn, "schedule": it.schedule,
+                "schedule_approved": it.schedule_approved_at is not None}
 
     groups = {slot: [entry(it) for it in items if slot in it.schedule] for slot in SLOTS}
     groups["as_needed"] = [entry(it) for it in items if not it.schedule]
@@ -410,12 +420,23 @@ def passport(pid: int, store: Store = Depends(get_store)) -> dict:
          "reviewed_at": f.reviewed_at}
         for f, f_items in ((f, _with_items(store, [f])[0]["items"]) for f in store.list_flags(pid, statuses=("confirmed",)))
     ]
+    prescribers: dict[str, list[str]] = {}
+    for it in items:
+        prescribers.setdefault(it.prescriber or "", []).append(it.brand)
+    decided = [f for f in store.list_flags(pid, statuses=("confirmed", "dismissed"), active_only=False) if f.reviewed_at]
+    last = max(decided, key=lambda f: _parse_ts(f.reviewed_at)) if decided else None
     return {
         "patient": {"id": p.id, "name": p.name, "name_bn": p.name_bn, "age": p.age,
                     "conditions": p.conditions, "district": p.district},
         "groups": groups,
         "confirmed_notes": notes,
         "medicine_count": len(items),
+        "allergies": p.allergies,
+        "allergies_confirmed_by": p.allergies_confirmed_by,
+        "allergies_confirmed_at": p.allergies_confirmed_at,
+        "prescribers": [{"name": k or None, "medicines": v} for k, v in prescribers.items()],
+        "last_reviewed": {"by": last.reviewer, "role": last.routed_to, "at": last.reviewed_at} if last else None,
+        "emergency_enabled": store.emergency_token(pid) is not None,
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "demo_label": DEMO_LABEL if p.is_demo else None,
     }
@@ -424,7 +445,9 @@ def passport(pid: int, store: Store = Depends(get_store)) -> dict:
 class BPIn(BaseModel):
     systolic: int = Field(ge=60, le=260)
     diastolic: int = Field(ge=30, le=160)
+    pulse: int | None = Field(default=None, ge=30, le=220)
     taken_on: date | None = None
+    source: Literal["manual", "photo"] = "manual"  # photo = read from the monitor, then checked by the family
 
     @model_validator(mode="after")
     def _plausible(self) -> "BPIn":
@@ -447,7 +470,8 @@ def add_bp(pid: int, body: BPIn | None = Body(default=None), systolic: int | Non
             body = BPIn(systolic=systolic, diastolic=diastolic, taken_on=taken_on)  # type: ignore[arg-type]
         except ValidationError as e:
             raise HTTPException(422, e.errors(include_url=False, include_context=False)) from None
-    store.add_bp(pid, (body.taken_on or date.today()).isoformat(), body.systolic, body.diastolic)
+    store.add_bp(pid, (body.taken_on or date.today()).isoformat(), body.systolic, body.diastolic,
+                 pulse=body.pulse, source=body.source)
     return {"ok": True, "readings": store.list_bp(pid)}
 
 
@@ -456,13 +480,8 @@ def weekly_report(pid: int, store: Store = Depends(get_store)) -> dict:
     p = _patient_or_404(store, pid)
     items = store.list_items(pid, confirmed_only=True)
     all_flags = store.list_flags(pid, active_only=False)
-    refills = []
-    for it in items:
-        if it.pills_left is not None and it.doses_per_day:
-            days = it.pills_left / it.doses_per_day
-            if days <= 7:
-                refills.append({"brand": it.brand, "generic": it.generic, "pills_left": it.pills_left,
-                                "days_left": round(days, 1)})
+    refills = [{"brand": it.brand, "generic": it.generic, "pills_left": it.pills_left, "days_left": days}
+               for it, days in refills_due(items, within=7)]
     doses = None
     if p.is_demo:
         scheduled = sum(len(it.schedule) for it in items) * 7
@@ -477,7 +496,7 @@ def weekly_report(pid: int, store: Store = Depends(get_store)) -> dict:
             "resolved": sum(f.status == "confirmed" and not f.active for f in all_flags),
             "reviewed": sum(f.status in ("confirmed", "dismissed") for f in all_flags),
         },
-        "refills_due": sorted(refills, key=lambda r: r["days_left"]),
+        "refills_due": refills,
         "demo_label": DEMO_LABEL if p.is_demo else None,
     }
 
@@ -778,3 +797,247 @@ def eval_sathi() -> list[dict]:
         out.append({k: data.get(k) for k in ("prompt_version", "mode", "run_at", "cases", "by_category",
                                               "leaks", "latency_ms")})
     return out
+
+
+# ---- 6C: AI assist for reviewers, BP photos, passport, emergency page, FHIR -------------
+
+def is_expired(item: MedicineItem, today: date | None = None) -> bool:
+    """Expiry is printed as a month (YYYY-MM): usable to the end of that month."""
+    if not item.expiry:
+        return False
+    try:
+        y, m = (int(x) for x in item.expiry.split("-")[:2])
+    except ValueError:
+        return False
+    t = today or date.today()
+    return (y, m) < (t.year, t.month)
+
+
+@app.patch("/patients/{pid}", dependencies=[Depends(family_access), Depends(limit_writes)])
+def patch_patient(pid: int, body: PatientPatch, store: Store = Depends(get_store)) -> dict:
+    """Allergies, emergency contact and visit questions, entered by the family."""
+    p = _patient_or_404(store, pid)
+    fields = body.model_dump(exclude_unset=True)
+    if "allergies" in fields:
+        fields["allergies"] = [a.strip() for a in fields["allergies"] or [] if a.strip()]
+        if fields["allergies"] != p.allergies:  # a changed list needs the pharmacist again
+            fields.update(allergies_confirmed_by=None, allergies_confirmed_at=None)
+    if "visit_questions" in fields:
+        fields["visit_questions"] = [q.strip() for q in fields["visit_questions"] or [] if q.strip()]
+    updated = store.update_patient(pid, **fields)
+    return {**updated.model_dump(), "demo_label": DEMO_LABEL if updated.is_demo else None}  # type: ignore[union-attr]
+
+
+class ReviewerIn(BaseModel):
+    reviewer: str = Field(min_length=1)
+
+
+@app.post("/patients/{pid}/allergies/confirm", dependencies=[Depends(require_reviewer)])
+def confirm_allergies(pid: int, body: ReviewerIn, store: Store = Depends(get_store)) -> dict:
+    _patient_or_404(store, pid)
+    return store.update_patient(pid, allergies_confirmed_by=body.reviewer, allergies_confirmed_at=now()).model_dump()  # type: ignore[union-attr]
+
+
+@app.patch("/items/{item_id}/clinical", response_model=MedicineItem, dependencies=[Depends(require_reviewer)])
+def clinical_patch(item_id: int, body: ClinicalPatch, store: Store = Depends(get_store)):
+    """What it is for, and stopped: written by the pharmacist or doctor, never by AI."""
+    _item_or_404(store, item_id)
+    fields = body.model_dump(exclude_unset=True, exclude={"reviewer"})
+    if "stopped" in fields:
+        fields.update(stopped_by=body.reviewer if fields["stopped"] else None,
+                      stopped_at=now() if fields["stopped"] else None)
+    return store.update_item(item_id, **fields)
+
+
+@app.post("/patients/{pid}/schedule/approve", dependencies=[Depends(require_reviewer)])
+def approve_schedule(pid: int, body: ReviewerIn, store: Store = Depends(get_store)) -> dict:
+    """The reviewer approves the times on the list. Only approved times reach Today's medicines."""
+    _patient_or_404(store, pid)
+    ts, n = now(), 0
+    for it in store.list_items(pid, confirmed_only=True):
+        if counts(it):
+            store.update_item(it.id, schedule_approved_by=body.reviewer, schedule_approved_at=ts)
+            n += 1
+    return {"approved": n}
+
+
+@app.post("/flags/{flag_id}/opened", status_code=204, dependencies=[Depends(require_reviewer)])
+def flag_opened(flag_id: int, store: Store = Depends(get_store)) -> None:
+    if store.get_flag(flag_id) is None:
+        raise HTTPException(404, "Flag not found")
+    store.mark_flag_opened(flag_id)
+
+
+@app.get("/eval/review-time")
+def review_time(store: Store = Depends(get_store)) -> dict:
+    """Median minutes from opening a finding to deciding it: the cost of a review."""
+    import statistics
+
+    secs = [s for s in store.review_seconds() if 0 < s < 6 * 3600]  # ignore tabs left open for hours
+    return {"reviews": len(secs), "median_seconds": round(statistics.median(secs), 1) if secs else None}
+
+
+@app.get("/patients/{pid}/case-summary", dependencies=[Depends(require_reviewer)])
+def get_case_summary(pid: int, reviewer: str | None = None, store: Store = Depends(get_store)) -> dict:
+    """AI summary for the reviewer, facts only; names are checked against the record."""
+    p = _patient_or_404(store, pid)
+    items = [it for it in store.list_items(pid, confirmed_only=True) if counts(it)]
+    flags = store.list_flags(pid, statuses=("pending_review", "confirmed"))
+    out = clinical.case_summary(p, items, flags, Router(store=store))
+    # automation bias: after a reviewer's first 10 reviews the panel starts collapsed
+    return {**out, "collapsed": bool(reviewer) and store.reviews_by(reviewer) >= 10}
+
+
+@app.post("/patients/{pid}/bp/read", dependencies=[Depends(family_access), Depends(limit_scan)])
+async def read_bp(pid: int, photo: UploadFile = File(...), store: Store = Depends(get_store)) -> dict:
+    """A photo of the BP monitor -> numbers for the family to check and save. Not stored."""
+    _patient_or_404(store, pid)
+    data = await photo.read()
+    if len(data) > MAX_PHOTO_BYTES:
+        raise HTTPException(413, "The photo is too large (12 MB max)")
+    if not configured_providers("vision"):
+        raise HTTPException(503, "No vision model is configured")
+    try:
+        return clinical.read_bp_photo(data, Router(store=store))
+    except NoProviderAvailable as e:
+        raise HTTPException(503, f"Could not read the photo right now ({e})") from e
+    finally:
+        del data
+
+
+@app.post("/patients/{pid}/emergency", dependencies=[Depends(family_access), Depends(limit_writes)])
+def enable_emergency(pid: int, store: Store = Depends(get_store)) -> dict:
+    """Turns on (or renews) the emergency page behind the passport QR. A new link replaces the old."""
+    import secrets
+
+    _patient_or_404(store, pid)
+    token = secrets.token_urlsafe(18)
+    store.update_patient(pid, emergency_token=token)
+    return {"token": token}
+
+
+@app.get("/patients/{pid}/emergency", dependencies=[Depends(family_access)])
+def emergency_status(pid: int, store: Store = Depends(get_store)) -> dict:
+    return {"token": store.emergency_token(pid)}
+
+
+@app.delete("/patients/{pid}/emergency", status_code=204, dependencies=[Depends(family_access)])
+def revoke_emergency(pid: int, store: Store = Depends(get_store)) -> None:
+    store.update_patient(pid, emergency_token=None)
+
+
+@app.get("/emergency/{token}", dependencies=[Depends(limit_writes)])
+def emergency_page(token: str, store: Store = Depends(get_store)) -> dict:
+    """Read-only, no login: medicines, allergies and the emergency contact. First name only."""
+    p = store.patient_by_emergency_token(token) if len(token) >= 16 else None
+    if p is None:
+        raise HTTPException(404, "This emergency link is not active")
+    items = [it for it in store.list_items(p.id, confirmed_only=True) if counts(it)]
+    first = (p.name_bn or p.name).split()[0] if (p.name_bn or p.name) else ""
+    first_en = p.name.split()[0] if p.name else ""
+    return {
+        "first_name": first, "first_name_en": first_en, "age": p.age,
+        "medicines": [{"generic": it.generic, "brand": it.brand, "strength": it.strength, "schedule": it.schedule,
+                       "per_dose": it.per_dose, "purpose": it.purpose, "purpose_bn": it.purpose_bn} for it in items],
+        "allergies": p.allergies, "allergies_confirmed": p.allergies_confirmed_at is not None,
+        "emergency_contact": {"name": p.emergency_contact_name, "phone": p.emergency_contact_phone}
+        if p.emergency_contact_phone else None,
+        "is_demo": p.is_demo,
+    }
+
+
+@app.get("/patients/{pid}/fhir", dependencies=[Depends(family_access)])
+def fhir(pid: int, store: Store = Depends(get_store)) -> dict:
+    """FHIR R4 Bundle: Patient + one MedicationStatement per current medicine. Prepares
+    integration with Bangladesh's Shared Health Record and health ID plans."""
+    p = _patient_or_404(store, pid)
+    items = [it for it in store.list_items(pid, confirmed_only=True) if counts(it)]
+    return clinical.fhir_bundle(p, items)
+
+
+# ---- 6D: today's medicines, doctor visit, clean-up ---------------------------------------
+
+@app.get("/patients/{pid}/today", dependencies=[Depends(family_access)])
+def today(pid: int, store: Store = Depends(get_store)) -> dict:
+    """Today's medicines from the APPROVED plan only. Items whose times the pharmacist has
+    not checked yet are counted, not shown."""
+    p = _patient_or_404(store, pid)
+    items = [it for it in store.list_items(pid, confirmed_only=True) if counts(it)]
+    approved = [it for it in items if it.schedule_approved_at and it.schedule]
+
+    def entry(it: MedicineItem) -> dict:
+        return {"id": it.id, "brand": it.brand, "generic": it.generic, "strength": it.strength,
+                "per_dose": it.per_dose, "purpose": it.purpose, "purpose_bn": it.purpose_bn}
+
+    return {
+        "slots": {slot: [entry(it) for it in approved if slot in it.schedule] for slot in SLOTS},
+        "waiting_approval": sum(1 for it in items if it.schedule and not it.schedule_approved_at),
+        "as_needed": [entry(it) for it in items if not it.schedule],
+        "patient": {"id": p.id, "name": p.name, "name_bn": p.name_bn},
+        "demo_label": DEMO_LABEL if p.is_demo else None,
+    }
+
+
+@app.get("/patients/{pid}/visit", dependencies=[Depends(family_access)])
+def visit_prep(pid: int, store: Store = Depends(get_store)) -> dict:
+    """Before the doctor visit: medicines, what changed since the last visit and who changed
+    it, confirmed findings and notes, recent blood pressure, and the family's questions."""
+    p = _patient_or_404(store, pid)
+    items = store.list_items(pid, confirmed_only=True)
+    since = _parse_ts(p.last_visit_at)
+
+    def after(ts) -> bool:
+        return ts is not None and (since is None or _parse_ts(ts) > since)
+
+    current = [it for it in items if counts(it)]
+    changes = (
+        [{"kind": "added", "brand": it.brand, "generic": it.generic, "at": it.created_at, "by": it.prescriber}
+         for it in current if since is not None and after(it.created_at)]
+        + [{"kind": "stopped", "brand": it.brand, "generic": it.generic, "at": it.stopped_at, "by": it.stopped_by}
+           for it in items if it.stopped and after(it.stopped_at)]
+    )
+    four_weeks = (date.today() - timedelta(days=28)).isoformat()
+    findings = [{**f, "items": [i["brand"] for i in f["items"]]}
+                for f in _with_items(store, store.list_flags(pid, statuses=("confirmed",)))]
+    return {
+        "patient": {"id": p.id, "name": p.name, "name_bn": p.name_bn, "age": p.age, "conditions": p.conditions},
+        "last_visit_at": p.last_visit_at,
+        "medicines": [{"brand": it.brand, "generic": it.generic, "strength": it.strength, "schedule": it.schedule,
+                       "per_dose": it.per_dose, "prescriber": it.prescriber, "purpose": it.purpose,
+                       "purpose_bn": it.purpose_bn} for it in current],
+        "changes": changes,
+        "findings": [{"code": f["code"], "severity": f["severity"], "brands": f["items"], "note": f["note"],
+                      "explanation_bn": f["explanation_bn"], "reviewer": f["reviewer"]} for f in findings],
+        "bp": store.list_bp(pid, limit=60, since=four_weeks),
+        "questions": p.visit_questions,
+        "pharmacist_questions": [{"text": q["text"], "reply": q["reply"], "replied_by": q["replied_by"]}
+                                 for q in store.list_questions(pid)],
+        "allergies": p.allergies,
+        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "demo_label": DEMO_LABEL if p.is_demo else None,
+    }
+
+
+@app.post("/patients/{pid}/visit/done", dependencies=[Depends(family_access), Depends(limit_writes)])
+def visit_done(pid: int, store: Store = Depends(get_store)) -> dict:
+    """After the visit: start counting changes from now; the family scans the new prescription next."""
+    _patient_or_404(store, pid)
+    store.update_patient(pid, last_visit_at=now(), visit_questions=[])
+    return {"next": f"/p/{pid}/scan"}
+
+
+@app.get("/patients/{pid}/cleanup", dependencies=[Depends(family_access)])
+def cleanup(pid: int, store: Store = Depends(get_store)) -> dict:
+    """Strips to set aside so nobody takes them by mistake: expired, or stopped by the reviewer."""
+    _patient_or_404(store, pid)
+    items = store.list_items(pid, confirmed_only=True)
+
+    def entry(it: MedicineItem, reason: str) -> dict:
+        return {"id": it.id, "brand": it.brand, "generic": it.generic, "strength": it.strength,
+                "expiry": it.expiry, "reason": reason, "stopped_by": it.stopped_by}
+
+    todo = [entry(it, "expired" if is_expired(it) else "stopped")
+            for it in items if not it.set_aside and (is_expired(it) or it.stopped)]
+    done = [entry(it, "expired" if is_expired(it) else "stopped" if it.stopped else "other")
+            for it in items if it.set_aside]
+    return {"to_set_aside": todo, "set_aside": done}

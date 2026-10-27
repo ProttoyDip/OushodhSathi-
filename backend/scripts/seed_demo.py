@@ -9,6 +9,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import secrets
 import sys
 from datetime import date
 from pathlib import Path
@@ -16,9 +17,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app import main  # noqa: E402  (loads .env)
-from app.demo import DEMO_BP, DEMO_ITEMS, DEMO_NOTES, DEMO_PATIENT, demo_bp_dates  # noqa: E402
+from app.demo import (  # noqa: E402
+    DEMO_ALLERGIES, DEMO_BP, DEMO_CONTACT, DEMO_ITEMS, DEMO_NOTES, DEMO_PATIENT, DEMO_PURPOSE, demo_bp_dates,
+)
 from app.models import ReviewIn  # noqa: E402
-from app.store import Store  # noqa: E402
+from app.store import Store, now  # noqa: E402
 
 DEMO_REVIEWER = "Demo pharmacist (invented)"
 
@@ -33,6 +36,16 @@ def seed(store: Store, reviewed: bool = False) -> int:
     if not store.list_bp(patient.id):
         for day, (sys_, dia) in zip(demo_bp_dates(date.today()), DEMO_BP):
             store.add_bp(patient.id, day, sys_, dia)
+    # what the demo pharmacist already did: purposes, approved times, allergies confirmed
+    for it in store.list_items(patient.id):
+        purpose, purpose_bn = DEMO_PURPOSE.get(it.brand, (None, None))
+        store.update_item(it.id, purpose=purpose, purpose_bn=purpose_bn,
+                          schedule_approved_by=DEMO_REVIEWER, schedule_approved_at=now())
+    store.update_patient(patient.id, allergies=DEMO_ALLERGIES, allergies_confirmed_by=DEMO_REVIEWER,
+                         allergies_confirmed_at=now(), emergency_contact_name=DEMO_CONTACT[0],
+                         emergency_contact_phone=DEMO_CONTACT[1])
+    if not store.emergency_token(patient.id):
+        store.update_patient(patient.id, emergency_token=secrets.token_urlsafe(18))
     result = main.run_check(patient.id, store)
     if reviewed:
         for f in store.list_flags(patient.id, statuses=("pending_review",)):

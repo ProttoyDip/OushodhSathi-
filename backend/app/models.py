@@ -38,6 +38,7 @@ class Patient(PatientIn):
     last_visit_at: datetime | None = None
     results_seen_at: datetime | None = None
     passport_seen_at: datetime | None = None
+    visit_questions: list[str] = []
 
 
 class PatientPatch(BaseModel):
@@ -46,6 +47,7 @@ class PatientPatch(BaseModel):
     allergies: list[str] | None = Field(default=None, max_length=20)
     emergency_contact_name: str | None = Field(default=None, max_length=80)
     emergency_contact_phone: str | None = Field(default=None, max_length=20, pattern=r"^[0-9+\- ]*$")
+    visit_questions: list[str] | None = Field(default=None, max_length=20)
 
 
 class MedicineItemIn(BaseModel):
@@ -105,6 +107,7 @@ class MedicineItem(MedicineItemIn):
     set_aside: bool = False
     schedule_approved_by: str | None = None
     schedule_approved_at: datetime | None = None
+    created_at: datetime | None = None
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -150,6 +153,7 @@ class StoredFlag(Flag):
     note: str | None = None
     reviewed_at: datetime | None = None
     explanation_bn: str | None = None
+    opened_at: datetime | None = None  # first opened by a reviewer
 
 
 class ReviewIn(BaseModel):

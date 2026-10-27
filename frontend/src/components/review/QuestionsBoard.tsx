@@ -27,7 +27,7 @@ export function QuestionsBoard({ token, reviewer, now, onCount }: {
   }, [token, status], 30000);
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto">
+    <div className="relative min-h-0 flex-1 overflow-y-auto">
       <div className="mx-auto max-w-[860px] px-4 py-6 sm:px-8">
         <RamadanRequests token={token} reviewer={reviewer} now={now} />
         <div className="flex flex-wrap items-end justify-between gap-3">

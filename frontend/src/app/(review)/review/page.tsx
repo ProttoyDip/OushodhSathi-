@@ -318,7 +318,7 @@ function Dashboard({ session, onSignOut }: { session: Session; onSignOut: () => 
             <Segmented label={t("dash.severity")} value={sev} onChange={setSev} options={[["all", t("dash.all")], ["red", t("dash.red")], ["amber", t("dash.amber")]]} />
             <Segmented label={t("dash.route")} value={route} onChange={setRoute} options={[["all", t("dash.everyone")], ["doctor", t("dash.doctor")], ["pharmacist", t("dash.pharmacist")]]} />
           </div>
-          <div role="listbox" aria-label={t("dash.queue")} className="min-h-0 flex-1 overflow-y-auto p-2">
+          <div role="listbox" aria-label={t("dash.queue")} className="relative min-h-0 flex-1 overflow-y-auto p-2">
             {queue.error ? (
               <p className="p-4 text-red">{t("dash.loadError")} {queue.error.message}</p>
             ) : !queue.data ? (
@@ -353,7 +353,7 @@ function Dashboard({ session, onSignOut }: { session: Session; onSignOut: () => 
         <section
           aria-label={t("dash.evidence")}
           className={cx(
-            "min-h-0 overflow-y-auto px-4 py-5 sm:px-8 sm:py-6 xl:block",
+            "relative min-h-0 overflow-y-auto px-4 py-5 sm:px-8 sm:py-6 xl:block",
             view === "evidence" ? "block" : "hidden",
             view === "patient" ? "lg:hidden" : "lg:block",
           )}
@@ -400,7 +400,7 @@ function Dashboard({ session, onSignOut }: { session: Session; onSignOut: () => 
           aria-label={t("dash.patient")}
           tabIndex={0}
           className={cx(
-            "min-h-0 overflow-y-auto border-rule bg-paper-raised/60 px-5 py-6 xl:block xl:border-l",
+            "relative min-h-0 overflow-y-auto border-rule bg-paper-raised/60 px-5 py-6 xl:block xl:border-l",
             view === "patient" ? "block" : "hidden",
           )}
         >

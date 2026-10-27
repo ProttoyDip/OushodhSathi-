@@ -411,14 +411,42 @@ html.reveal-armed:not(.reveal-live) [data-reveal]:not([data-shown]) {
 
 /* ---------- print ---------- */
 @media print {
+  /* Paper is always light, whatever theme the device is in: these selectors match the
+     dark-theme rules' specificity and come later, so they win. */
   :root,
+  :root:not([data-theme="light"]),
   :root[data-theme="dark"] {
+    color-scheme: light;
     --paper: #ffffff;
     --paper-raised: #ffffff;
+    --paper-sunk: #f2f2f2;
     --ink: #000000;
     --ink-soft: #222222;
     --ink-faint: #444444;
     --rule: #999999;
+    --rule-strong: #777777;
+    --foil: #c8cdd6;
+    --foil-hi: #f1f3f7;
+    --foil-lo: #9ea6b4;
+    --foil-ink: #586274;
+    --neel: #2a3b91;
+    --neel-tint: #e4e9f8;
+    --on-neel: #ffffff;
+    --red: #b42318;
+    --red-tint: #fce9e7;
+    --red-line: #f0b9b2;
+    --amber: #b54708;
+    --amber-tint: #fdefe0;
+    --amber-line: #f1c79c;
+    --green: #067647;
+    --green-tint: #e2f3ea;
+    --green-line: #a9d9bf;
+    --shadow-soft: none;
+  }
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000;
   }
   [data-reveal],
   html.reveal-armed [data-reveal]:not([data-shown]) {

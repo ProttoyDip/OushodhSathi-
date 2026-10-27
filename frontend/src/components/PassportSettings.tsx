@@ -49,7 +49,7 @@ export function PassportSettings({ pid, passport, patient, token, onToken, onCha
   }
 
   return (
-    <section aria-labelledby="safety-h" className="no-print mt-8 grid gap-6 rounded-card border border-rule bg-paper-raised p-5">
+    <section aria-labelledby="safety-h" className="no-print mt-6 grid gap-6 rounded-card border border-rule bg-paper-raised p-5">
       <div>
         <h2 id="safety-h" className="font-bn-display text-[24px] leading-tight">{t("safetyTitle")}</h2>
         <p className="mt-1 text-base text-ink-soft">{t("safetyIntro")}</p>
@@ -96,7 +96,7 @@ export function PassportSettings({ pid, passport, patient, token, onToken, onCha
 
       {/* emergency contact */}
       <form
-        className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end"
+        className="grid gap-3 sm:grid-cols-2 sm:items-end lg:grid-cols-1"
         onSubmit={(e) => {
           e.preventDefault();
           run(() => api.patchPatient(pid, { emergency_contact_name: name.trim() || null, emergency_contact_phone: phone.trim() || null }));
@@ -109,7 +109,7 @@ export function PassportSettings({ pid, passport, patient, token, onToken, onCha
           <input value={phone} onChange={(e) => setPhone(e.target.value.replace(/[^0-9+\- ]/g, ""))} maxLength={20}
             inputMode="tel" className={cx(field, "tabular")} autoComplete="off" />
         </label>
-        <button type="submit" className={buttonStyles.secondary}>{t("saveContact")}</button>
+        <button type="submit" className={cx(buttonStyles.secondary, "sm:col-span-2 sm:justify-self-start lg:col-span-1")}>{t("saveContact")}</button>
       </form>
 
       {/* emergency page */}

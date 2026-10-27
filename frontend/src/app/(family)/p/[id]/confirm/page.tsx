@@ -136,7 +136,7 @@ function Confirm() {
         ) : list.length === 0 ? (
           <p className="mt-8 rounded-card border border-rule bg-paper-raised p-5 text-ink-soft">{t("empty")}</p>
         ) : (
-          <ul className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <ul className="mt-6 grid gap-4 md:grid-cols-2">
             {open.map((item, i) => (
               <li key={item.id} style={{ animation: `assemble 240ms var(--ease-out-quint) ${i * 110}ms both` }}>
                 <StripCard item={{ ...item, thumbnail: thumbs[item.id] }}>
@@ -175,7 +175,7 @@ function Confirm() {
               <CircleCheck aria-hidden size={20} className="text-green" />
               {t("alreadyConfirmed")}
             </h2>
-            <ul className="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            <ul className="mt-3 grid gap-3 md:grid-cols-2">
               {done.map((item) => (
                 <li key={item.id} style={{ animation: "settle 220ms var(--ease-out-quint) both" }}>
                   <StripCard item={{ ...item, thumbnail: thumbs[item.id] }} density="compact">
@@ -252,7 +252,7 @@ function DoseTimes({ idPrefix, plan, onChange }: { idPrefix: string; plan: Plan;
     <div className="grid gap-3">
       <div role="group" aria-labelledby={`${idPrefix}-when`}>
         <p id={`${idPrefix}-when`} className="text-base text-ink-soft">{t("whenTaken")}</p>
-        <div className="mt-1.5 grid grid-cols-3 gap-2">
+        <div className="mt-2.5 grid grid-cols-3 gap-2">
           {SLOTS.map((slot) => {
             const on = plan.schedule.includes(slot);
             return (
@@ -262,12 +262,17 @@ function DoseTimes({ idPrefix, plan, onChange }: { idPrefix: string; plan: Plan;
                 aria-pressed={on}
                 onClick={() => toggle(slot)}
                 className={cx(
-                  "press inline-flex h-12 min-w-0 items-center justify-center gap-1 rounded-md border px-1 text-base font-semibold transition-colors duration-150",
-                  on ? "border-neel bg-neel-tint text-neel" : "border-rule-strong text-ink-soft hover:bg-paper-sunk",
+                  "press relative inline-flex h-12 min-w-0 items-center justify-center rounded-md border px-1 text-base font-semibold transition-colors duration-150",
+                  on ? "border-2 border-neel bg-neel-tint text-neel" : "border-rule-strong text-ink-soft hover:bg-paper-sunk",
                 )}
               >
-                {on && <Check aria-hidden size={16} strokeWidth={2.75} className="shrink-0" />}
-                {t(slot)}
+                {/* the tick sits on the corner so the label always has the chip's full width */}
+                {on && (
+                  <span aria-hidden className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-neel text-on-neel shadow-soft">
+                    <Check size={13} strokeWidth={3} />
+                  </span>
+                )}
+                <span className="truncate">{t(slot)}</span>
               </button>
             );
           })}

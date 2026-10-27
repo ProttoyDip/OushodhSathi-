@@ -24,7 +24,7 @@ const SLOT_MSG = { morning: "morning", noon: "noon", night: "night", as_needed: 
  * Must survive black-and-white printing. `url` is the emergency page the QR opens:
  * undefined while loading, null when the family has switched it off.
  */
-export function MedicinePassport({ passport, url }: { passport: Passport; url?: string | null }) {
+export function MedicinePassport({ passport, url, wide = false }: { passport: Passport; url?: string | null; wide?: boolean }) {
   const t = useTranslations("passport");
   const locale = useLocale();
   const [qr, setQr] = useState<string | null>(null);
@@ -43,7 +43,7 @@ export function MedicinePassport({ passport, url }: { passport: Passport; url?: 
   const conditions = p.conditions.map((c) => (t.has(`conditions.${c}`) ? t(`conditions.${c}`) : c)).join(" · ");
 
   return (
-    <article className="passport-card @container relative mx-auto w-full max-w-[148mm] overflow-hidden rounded-card border border-rule-strong bg-paper-raised text-ink shadow-soft print:max-w-none print:rounded-none print:border-0 print:shadow-none">
+    <article className={cx("passport-card @container relative mx-auto w-full max-w-[148mm] overflow-hidden rounded-card border border-rule-strong bg-paper-raised text-ink shadow-soft print:max-w-none print:rounded-none print:border-0 print:shadow-none", wide && "lg:max-w-none")}>
       {/* header */}
       {/* narrow card (phone): patient details stack under the title; wide card (desktop, A5 print): side by side */}
       <header className="flex flex-col gap-3 border-b-2 border-ink px-6 pb-4 pt-6 @md:flex-row @md:items-start @md:justify-between @md:gap-4">
@@ -67,7 +67,7 @@ export function MedicinePassport({ passport, url }: { passport: Passport; url?: 
       </header>
 
       {/* medicines by time of day */}
-      <div className="px-6 py-5">
+      <div className={cx("px-6 py-5", wide && "@min-[40rem]:columns-2 @min-[40rem]:gap-x-10 print:columns-1")}>
         {passport.medicine_count === 0 && <p className="text-lg text-ink-soft">{t("empty")}</p>}
         {SLOTS.map(({ key, Icon }) => {
           const entries = passport.groups[key];

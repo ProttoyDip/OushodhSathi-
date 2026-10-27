@@ -247,7 +247,8 @@
     "emergencyOpen": "Open the page",
     "fhirHint": "For hospital or clinic systems: the medicine list in the international FHIR format.",
     "fhirDownload": "Download (FHIR)",
-    "saved": "Saved."
+    "saved": "Saved.",
+    "printHint": "Prints on A5 in black and white. Take it to every doctor visit."
   },
   "landing": {
     "nav": {

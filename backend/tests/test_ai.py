@@ -119,7 +119,10 @@ def test_model_preference_api(two_providers, client):
     tasks = client.get("/models").json()["tasks"]
     assert tasks["text"]["chain"][0] == {"provider": "openrouter", "model": "first/model"}
     assert "k1" not in json.dumps(tasks)  # names only, never keys
-    r = client.put("/models/preference", json={"kind": "text", "provider": "nararouter", "model": "second/model"})
+    choice = {"kind": "text", "provider": "nararouter", "model": "second/model"}
+    assert client.put("/models/preference", json=choice).status_code == 401  # changes it for everyone: reviewers only
+    client.headers["X-Reviewer-Token"] = "test-token"
+    r = client.put("/models/preference", json=choice)
     assert r.status_code == 200 and r.json()["tasks"]["text"]["chain"][0]["provider"] == "nararouter"
     bad = client.put("/models/preference", json={"kind": "text", "provider": "openrouter", "model": "not/real"})
     assert bad.status_code == 422

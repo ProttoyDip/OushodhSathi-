@@ -70,8 +70,17 @@ export function StripCard({
       </div>
 
       <div className={cx("min-w-0 flex-1", compact ? "p-3 pr-5" : "p-4 pr-6")}>
-        <div className="flex items-start gap-3">
-          <div className="min-w-0 flex-1">
+        {/* the photo floats so the ingredient chip can drop below it when the column is narrow */}
+        <div className="flow-root">
+          {item.thumbnail && (
+            // eslint-disable-next-line @next/next/no-img-element -- short-lived data URL, never stored
+            <img
+              src={item.thumbnail}
+              alt={t("photo", { brand: item.brand })}
+              className={cx("float-right ml-3 mb-2 rounded-md border border-rule object-cover", compact ? "h-12 w-12" : "h-16 w-16")}
+            />
+          )}
+          <div className="min-w-0">
             <h3 className={cx("flex flex-wrap items-baseline gap-x-2 font-semibold leading-tight", compact ? "text-lg" : "text-[22px]")}>
               <span className="break-words">{item.brand}</span>
               {item.strength && (
@@ -82,8 +91,8 @@ export function StripCard({
               {item.generic ? (
                 <span
                   className={cx(
-                    "inline-flex items-center rounded-chip border px-3 font-medium",
-                    compact ? "h-7 text-sm" : "h-8 text-[15px]",
+                    "inline-flex max-w-full items-center rounded-2xl border px-3 py-1 font-medium leading-snug",
+                    compact ? "min-h-7 text-sm" : "min-h-8 text-[15px]",
                     highlight === "red"
                       ? "border-red-line bg-red-tint text-red"
                       : highlight === "amber"
@@ -94,20 +103,12 @@ export function StripCard({
                   {genericName(item.generic, locale)}
                 </span>
               ) : (
-                <span className="inline-flex h-8 items-center gap-1.5 rounded-chip border border-rule px-3 text-[15px] text-ink-soft">
-                  <CircleHelp aria-hidden size={16} /> {t("unknownGeneric")}
+                <span className="inline-flex min-h-8 max-w-full items-center gap-1.5 rounded-2xl border border-rule px-3 py-1 text-[15px] leading-snug text-ink-soft">
+                  <CircleHelp aria-hidden size={16} className="shrink-0" /> {t("unknownGeneric")}
                 </span>
               )}
             </div>
           </div>
-          {item.thumbnail && (
-            // eslint-disable-next-line @next/next/no-img-element -- short-lived data URL, never stored
-            <img
-              src={item.thumbnail}
-              alt={t("photo", { brand: item.brand })}
-              className={cx("shrink-0 rounded-md border border-rule object-cover", compact ? "h-12 w-12" : "h-16 w-16")}
-            />
-          )}
         </div>
 
         <dl className={cx("mt-3 flex flex-wrap gap-x-4 gap-y-1 text-ink-soft", compact ? "text-sm" : "text-base")}>
@@ -148,14 +149,14 @@ export function StripCard({
         {needsCheck && (
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {(low || unknown) && !web && (
-              <span className="inline-flex h-8 items-center gap-1.5 rounded-chip border border-amber-line bg-amber-tint px-3 text-[15px] font-semibold text-amber">
-                <ScanEye aria-hidden size={16} />
+              <span className="inline-flex min-h-8 max-w-full items-center gap-1.5 rounded-2xl border border-amber-line bg-amber-tint px-3 py-1 text-[15px] font-semibold leading-snug text-amber">
+                <ScanEye aria-hidden size={16} className="shrink-0" />
                 {unknown ? t("notFound") : t("checkPlease")}
               </span>
             )}
             {web && (
-              <span className="inline-flex h-8 items-center gap-1.5 rounded-chip border border-amber-line bg-amber-tint px-3 text-[15px] font-semibold text-amber">
-                <Globe aria-hidden size={16} />
+              <span className="inline-flex min-h-8 max-w-full items-center gap-1.5 rounded-2xl border border-amber-line bg-amber-tint px-3 py-1 text-[15px] font-semibold leading-snug text-amber">
+                <Globe aria-hidden size={16} className="shrink-0" />
                 {t("webUnverified")}
               </span>
             )}

@@ -57,7 +57,10 @@ export default async function Landing() {
             <Link href="/p/1" className="press inline-flex min-h-14 items-center gap-2.5 rounded-card bg-neel px-7 text-lg font-semibold text-on-neel shadow-soft transition-colors hover:bg-neel-hover">
               {t("hero.ctaDemo")} <ArrowRight aria-hidden size={20} />
             </Link>
-            <Link href="/review" className="press inline-flex min-h-14 items-center gap-2 rounded-card border border-rule-strong bg-paper-raised px-6 text-lg font-semibold text-ink hover:border-ink-faint">
+            <Link href="/start" className="press inline-flex min-h-14 items-center gap-2 rounded-card border border-rule-strong bg-paper-raised px-6 text-lg font-semibold text-ink hover:border-ink-faint">
+              {t("hero.ctaStart")}
+            </Link>
+            <Link href="/review" className="press inline-flex min-h-14 items-center px-3 text-lg font-medium text-ink-soft underline-offset-4 hover:text-ink hover:underline">
               {t("hero.ctaReviewer")}
             </Link>
           </div>

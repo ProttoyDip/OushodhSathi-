@@ -58,7 +58,8 @@ export default function ScanPage() {
       router.push(`/p/${pid}/confirm${res.mode === "demo" ? "?demo=1" : ""}`);
     } catch (e) {
       setBusy(false);
-      setError(e instanceof ApiError && e.status === 0 ? tc("errorOffline") : t("failed"));
+      setError(e instanceof ApiError && e.status === 0 ? tc("errorOffline")
+        : e instanceof ApiError && e.status === 429 ? tc("errorTooMany") : t("failed"));
     }
   }
 

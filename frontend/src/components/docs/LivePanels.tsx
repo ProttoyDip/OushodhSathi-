@@ -57,7 +57,7 @@ export function LiveStatus() {
         </tbody>
       </table>
       <p className="mt-3 text-[13px] text-ink-faint">{t("footnote")}</p>
-      <Link href="/models" className="mt-3 inline-flex h-11 items-center gap-2 rounded-chip border border-rule px-4 text-[15px] font-medium text-ink hover:border-rule-strong">
+      <Link href="/models?from=/docs" className="mt-3 inline-flex h-11 items-center gap-2 rounded-chip border border-rule px-4 text-[15px] font-medium text-ink hover:border-rule-strong">
         <Cpu aria-hidden size={16} /> {tm("title")}
       </Link>
     </div>

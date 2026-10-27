@@ -15,11 +15,12 @@ import { StripCard } from "@/components/StripCard";
 import { api, ApiError } from "@/lib/api";
 import { cx, date, genericName, since } from "@/lib/format";
 import type { AuditEntry, Flag, MedicineItem, ReviewQueue } from "@/lib/types";
+import { REVIEWER_SESSION, type ReviewerSession } from "@/lib/reviewer";
 import { useApi } from "@/lib/useApi";
 
-const SESSION = "oushodh:reviewer";
+const SESSION = REVIEWER_SESSION;
 
-type Session = { token: string; name: string };
+type Session = ReviewerSession;
 type Toast = { flag: Flag; status: "confirmed" | "dismissed"; until: number };
 
 export default function ReviewPage() {
@@ -237,7 +238,7 @@ function Dashboard({ session, onSignOut }: { session: Session; onSignOut: () => 
         </dl>
         <div className="ml-auto flex items-center gap-2 sm:gap-3">
           <span className="hidden max-w-[260px] truncate whitespace-nowrap text-sm text-ink-soft 2xl:inline">{t.rich("dash.signedIn", { name: session.name, b: (c) => <strong className="font-semibold text-ink">{c}</strong> })}</span>
-          <Link href="/models" title={t("dash.models")} aria-label={t("dash.models")} className="hidden h-10 sm:inline-flex min-w-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-chip border border-rule px-2.5 text-sm font-medium text-ink-soft hover:text-ink">
+          <Link href="/models?from=/review" title={t("dash.models")} aria-label={t("dash.models")} className="hidden h-10 sm:inline-flex min-w-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-chip border border-rule px-2.5 text-sm font-medium text-ink-soft hover:text-ink">
             <Cpu aria-hidden size={16} /> <span className="hidden 2xl:inline">{t("dash.models")}</span>
           </Link>
           <ThemeToggle className="h-10 w-10" />

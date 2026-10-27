@@ -2,11 +2,10 @@
 # New → Blueprint → pick this repo. Secrets marked `sync: false` are entered in the
 # Render dashboard, never committed.
 #
-# Free plan: no persistent disk and no pre-deploy step, so SQLite is a local file that
-# resets when the instance restarts, and the invented demo household is re-seeded on
-# start. To keep reviews and the audit trail across restarts, switch to `plan: starter`,
-# add the `disk` block below and set OUSHODH_DB=/var/data/oushodh.db:
-#   disk: { name: oushodh-data, mountPath: /var/data, sizeGB: 1 }
+# Free plan: no persistent disk. Set DATABASE_URL to a free Supabase Postgres (session
+# pooler, see docs/DEPLOY.md) and households, reviews and the audit trail survive restarts.
+# Without it the API falls back to a local SQLite file that resets on every restart.
+# The invented demo household is seeded on start only when the database is empty.
 services:
   - type: web
     name: oushodhsathi-api
@@ -32,6 +31,23 @@ services:
         sync: false              # optional, e.g. ^https://oushodhsathi-.*\.vercel\.app$ for previews
       - key: REVIEWER_TOKEN
         generateValue: true
+      - key: DATABASE_URL
+        sync: false              # postgresql://oushodh_app.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres?sslmode=require
+      # abuse limits per client IP (defaults shown); photo reading spends AI credits
+      - key: SCAN_LIMIT_PER_IP
+        value: "10"              # scans per hour
+      - key: SCAN_LIMIT_GLOBAL
+        value: "200"             # scans per day, all visitors together
+      - key: PATIENT_LIMIT_PER_IP
+        value: "5"               # new households per hour
+      - key: WRITE_LIMIT_PER_IP
+        value: "120"             # item, check and BP writes per hour
+      - key: NVIDIA_API_KEY
+        sync: false
+      - key: NVIDIA_MODEL
+        sync: false
+      - key: NVIDIA_VISION_MODEL
+        sync: false
       - key: OPENROUTER_API_KEY
         sync: false
       - key: OPENROUTER_VISION_MODEL

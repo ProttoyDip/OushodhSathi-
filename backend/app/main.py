@@ -5,16 +5,16 @@ import hmac
 import logging
 import os
 import threading
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
 import httpx
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, File, Header, HTTPException, Query, UploadFile
+from fastapi import Body, Depends, FastAPI, File, Header, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ValidationError, model_validator
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
@@ -22,6 +22,7 @@ from . import prompts  # noqa: E402
 from .agent import read_shelf, resolve_brand  # noqa: E402
 from .demo import DEMO_ITEMS, DEMO_LABEL  # noqa: E402
 from .explain import explain_flag  # noqa: E402
+from .guard import limit_new_patient, limit_scan, limit_writes  # noqa: E402
 from . import llm_router  # noqa: E402
 from .llm_router import NoProviderAvailable, Router, _env, configured_providers, provider_names  # noqa: E402
 from .models import (  # noqa: E402
@@ -70,12 +71,45 @@ def reviewer_token() -> str | None:
     return "demo-reviewer" if demo_mode() else None
 
 
+def _same(given: str | None, expected: str | None) -> bool:
+    return bool(given and expected) and hmac.compare_digest(given.encode(), expected.encode())  # type: ignore[union-attr]
+
+
 def require_reviewer(x_reviewer_token: str | None = Header(default=None)) -> None:
     expected = reviewer_token()
     if not expected:
         raise HTTPException(503, "REVIEWER_TOKEN is not configured on the server")
-    if not x_reviewer_token or not hmac.compare_digest(x_reviewer_token, expected):
+    if not _same(x_reviewer_token, expected):
         raise HTTPException(401, "Reviewer token required")
+
+
+def family_access(
+    pid: int,
+    x_family_key: str | None = Header(default=None),
+    x_reviewer_token: str | None = Header(default=None),
+    store: Store = Depends(get_store),
+) -> None:
+    """A household opens with its private family link (X-Family-Key) or a reviewer token.
+    The invented demo household stays open. Anything else is 'not found', so ids cannot be probed."""
+    p = store.get_patient(pid)
+    if p is None or not (p.is_demo or _same(x_reviewer_token, reviewer_token())
+                         or _same(x_family_key, store.family_key(pid))):
+        raise HTTPException(404, "Patient not found")
+
+
+def item_access(
+    item_id: int,
+    x_family_key: str | None = Header(default=None),
+    x_reviewer_token: str | None = Header(default=None),
+    store: Store = Depends(get_store),
+) -> None:
+    item = store.get_item(item_id)
+    if item is None:
+        raise HTTPException(404, "Item not found")
+    try:
+        family_access(item.patient_id, x_family_key, x_reviewer_token, store)
+    except HTTPException:
+        raise HTTPException(404, "Item not found") from None
 
 
 def _patient_or_404(store: Store, pid: int) -> Patient:
@@ -142,29 +176,35 @@ def health(store: Store = Depends(get_store)) -> dict:
 
 # ---- patients and items ---------------------------------------------------------------
 
-@app.get("/patients", response_model=list[Patient])
-def list_patients(store: Store = Depends(get_store)):
-    return store.list_patients()
+@app.get("/patients", dependencies=[Depends(require_reviewer)])
+def list_patients(store: Store = Depends(get_store)) -> list[dict]:
+    """Reviewer only. Includes each household's family key so a lost link can be re-shared."""
+    return [{**p.model_dump(mode="json"), "family_key": store.family_key(p.id)} for p in store.list_patients()]
 
 
-@app.post("/patients", response_model=Patient, status_code=201)
-def create_patient(body: PatientIn, store: Store = Depends(get_store)):
-    return store.create_patient(body)
+@app.post("/patients", status_code=201, dependencies=[Depends(limit_new_patient)])
+def create_patient(body: PatientIn, store: Store = Depends(get_store)) -> dict:
+    """Creates a household. The response carries its private family key: keep it, it opens the household."""
+    if body.is_demo:
+        raise HTTPException(422, "Demo households are created by the seed script only")
+    p = store.create_patient(body)
+    return {**p.model_dump(mode="json"), "family_key": store.family_key(p.id)}
 
 
-@app.get("/patients/{pid}")
+@app.get("/patients/{pid}", dependencies=[Depends(family_access)])
 def get_patient(pid: int, store: Store = Depends(get_store)) -> dict:
     p = _patient_or_404(store, pid)
     return {**p.model_dump(), "demo_label": DEMO_LABEL if p.is_demo else None}
 
 
-@app.get("/patients/{pid}/items", response_model=list[MedicineItem])
+@app.get("/patients/{pid}/items", response_model=list[MedicineItem], dependencies=[Depends(family_access)])
 def list_items(pid: int, store: Store = Depends(get_store)):
     _patient_or_404(store, pid)
     return store.list_items(pid)
 
 
-@app.post("/patients/{pid}/items", response_model=MedicineItem, status_code=201)
+@app.post("/patients/{pid}/items", response_model=MedicineItem, status_code=201,
+          dependencies=[Depends(family_access), Depends(limit_writes)])
 def add_item(pid: int, body: MedicineItemIn, confirmed: bool = False, store: Store = Depends(get_store)):
     _patient_or_404(store, pid)
     match = resolve_brand(body.brand, body.strength, store)
@@ -180,7 +220,8 @@ def _confirm_allowed(store: Store, item: MedicineItem) -> MedicineItem:
     return store.update_item(item.id, confirmed=True)  # type: ignore[return-value]
 
 
-@app.patch("/items/{item_id}", response_model=MedicineItem)
+@app.patch("/items/{item_id}", response_model=MedicineItem,
+           dependencies=[Depends(item_access), Depends(limit_writes)])
 def patch_item(item_id: int, body: MedicineItemPatch, store: Store = Depends(get_store)):
     item = _item_or_404(store, item_id)
     fields = body.model_dump(exclude_unset=True)
@@ -194,7 +235,7 @@ def patch_item(item_id: int, body: MedicineItemPatch, store: Store = Depends(get
     return store.update_item(item_id, **fields)
 
 
-@app.delete("/items/{item_id}", status_code=204)
+@app.delete("/items/{item_id}", status_code=204, dependencies=[Depends(item_access), Depends(limit_writes)])
 def delete_item(item_id: int, store: Store = Depends(get_store)) -> None:
     _item_or_404(store, item_id)
     store.delete_item(item_id)
@@ -221,7 +262,7 @@ def _notify_red_flags(pid: int, new_red: list[StoredFlag]) -> None:
     threading.Thread(target=send, daemon=True).start()
 
 
-@app.post("/patients/{pid}/check")
+@app.post("/patients/{pid}/check", dependencies=[Depends(family_access), Depends(limit_writes)])
 def run_check(pid: int, store: Store = Depends(get_store)) -> dict:
     """Runs the deterministic rules on CONFIRMED items. New flags start as pending_review."""
     patient = _patient_or_404(store, pid)
@@ -249,7 +290,7 @@ def _review_state(store: Store, pid: int) -> str:
     return "in_review" if store.list_flags(pid, statuses=("pending_review",)) else "reviewed"
 
 
-@app.get("/patients/{pid}/status")
+@app.get("/patients/{pid}/status", dependencies=[Depends(family_access)])
 def family_status(pid: int, store: Store = Depends(get_store)) -> dict:
     """Family-safe status: says whether a review is in progress, never what is pending."""
     p = _patient_or_404(store, pid)
@@ -263,7 +304,7 @@ def family_status(pid: int, store: Store = Depends(get_store)) -> dict:
 
 # ---- flags and review -----------------------------------------------------------------
 
-@app.get("/patients/{pid}/flags")
+@app.get("/patients/{pid}/flags", dependencies=[Depends(family_access)])
 def list_flags(
     pid: int,
     view: Literal["family", "reviewer"] = Query("family"),
@@ -349,7 +390,7 @@ def audit_trail(pid: int, store: Store = Depends(get_store)) -> list[dict]:
 SLOTS = ("morning", "noon", "night")
 
 
-@app.get("/patients/{pid}/passport")
+@app.get("/patients/{pid}/passport", dependencies=[Depends(family_access)])
 def passport(pid: int, store: Store = Depends(get_store)) -> dict:
     p = _patient_or_404(store, pid)
     items = store.list_items(pid, confirmed_only=True)
@@ -377,15 +418,37 @@ def passport(pid: int, store: Store = Depends(get_store)) -> dict:
     }
 
 
-@app.post("/patients/{pid}/bp", status_code=201)
-def add_bp(pid: int, systolic: int, diastolic: int, taken_on: str | None = None,
+class BPIn(BaseModel):
+    systolic: int = Field(ge=60, le=260)
+    diastolic: int = Field(ge=30, le=160)
+    taken_on: date | None = None
+
+    @model_validator(mode="after")
+    def _plausible(self) -> "BPIn":
+        if self.systolic <= self.diastolic:
+            raise ValueError("The top number (systolic) must be higher than the bottom number (diastolic)")
+        # one day of slack: the server runs on UTC, families are up to 14 hours ahead of it
+        if self.taken_on and self.taken_on > date.today() + timedelta(days=1):
+            raise ValueError("The date cannot be in the future")
+        return self
+
+
+@app.post("/patients/{pid}/bp", status_code=201, dependencies=[Depends(family_access), Depends(limit_writes)])
+def add_bp(pid: int, body: BPIn | None = Body(default=None), systolic: int | None = None,
+           diastolic: int | None = None, taken_on: str | None = None,
            store: Store = Depends(get_store)) -> dict:
+    """JSON body {systolic, diastolic, taken_on?}; query parameters still work for automations."""
     _patient_or_404(store, pid)
-    store.add_bp(pid, taken_on or date.today().isoformat(), systolic, diastolic)
-    return {"ok": True}
+    if body is None:
+        try:
+            body = BPIn(systolic=systolic, diastolic=diastolic, taken_on=taken_on)  # type: ignore[arg-type]
+        except ValidationError as e:
+            raise HTTPException(422, e.errors(include_url=False, include_context=False)) from None
+    store.add_bp(pid, (body.taken_on or date.today()).isoformat(), body.systolic, body.diastolic)
+    return {"ok": True, "readings": store.list_bp(pid)}
 
 
-@app.get("/patients/{pid}/report")
+@app.get("/patients/{pid}/report", dependencies=[Depends(family_access)])
 def weekly_report(pid: int, store: Store = Depends(get_store)) -> dict:
     p = _patient_or_404(store, pid)
     items = store.list_items(pid, confirmed_only=True)
@@ -418,7 +481,7 @@ def weekly_report(pid: int, store: Store = Depends(get_store)) -> dict:
 
 # ---- scan -----------------------------------------------------------------------------
 
-@app.post("/patients/{pid}/scan")
+@app.post("/patients/{pid}/scan", dependencies=[Depends(family_access), Depends(limit_scan)])
 async def scan(pid: int, photos: list[UploadFile] = File(...), store: Store = Depends(get_store)) -> dict:
     """Photos -> shelf agent -> unconfirmed items. Photos stay in memory and are discarded
     after this request; thumbnails come back once as base64 and are never stored."""
@@ -532,7 +595,7 @@ def models() -> dict:
     return {"tasks": out, "demo_mode": demo_mode()}
 
 
-@app.put("/models/preference")
+@app.put("/models/preference", dependencies=[Depends(require_reviewer)])
 def set_model_preference(body: ModelPreference, store: Store = Depends(get_store)) -> dict:
     import json
 

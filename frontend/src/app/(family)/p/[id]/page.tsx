@@ -1,13 +1,15 @@
 "use client";
 
-import { BookUser, Camera, ChevronRight, CircleCheck, Clock, Cpu, LineChart, ScanLine } from "lucide-react";
+import { BookUser, Camera, ChevronRight, CircleCheck, Clock, Cpu, LineChart, ScanLine, Share2 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
 import { buttonStyles, FamilyHeader, familyWidth } from "@/components/Chrome";
 import { SeverityBadge } from "@/components/SeverityBadge";
 import { ErrorState, Skeleton } from "@/components/States";
 import { api } from "@/lib/api";
+import { familyLink } from "@/lib/familyKey";
 import { date, num } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
 import { reveal } from "@/lib/reveal";
@@ -117,12 +119,52 @@ export default function FamilyHome() {
             <nav {...reveal(180)} aria-label={t("passport")} className="divide-y lg:col-start-1 lg:row-start-2 divide-rule overflow-hidden rounded-card border border-rule bg-paper-raised">
               <RowLink href={`/passport/${pid}`} Icon={BookUser} title={t("passport")} hint={t("passportHint")} />
               <RowLink href={`/p/${pid}/report`} Icon={LineChart} title={t("report")} hint={t("reportHint")} />
-              <RowLink href="/models" Icon={Cpu} title={t("models")} hint={t("modelsHint")} />
+              <ShareRow pid={pid} />
+              <RowLink href={`/models?from=/p/${pid}`} Icon={Cpu} title={t("models")} hint={t("modelsHint")} />
             </nav>
           </div>
         )}
       </main>
     </>
+  );
+}
+
+/** The private family link: anyone with it can open this household, so it is shared on purpose. */
+function ShareRow({ pid }: { pid: number }) {
+  const t = useTranslations("home");
+  const [link, setLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  useEffect(() => setLink(familyLink(pid)), [pid]);
+  if (!link) return null; // the demo household has no private link
+
+  async function share() {
+    if (!link) return;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: t("shareTitle"), text: t("shareText"), url: link });
+        return;
+      } catch (e) {
+        if ((e as DOMException).name === "AbortError") return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 3000);
+    } catch {
+      window.prompt(t("shareCopyPrompt"), link);
+    }
+  }
+
+  return (
+    <button type="button" onClick={share} className="flex min-h-[72px] w-full items-center gap-4 px-5 py-3 text-left transition-colors hover:bg-paper-sunk/60">
+      <Share2 aria-hidden size={26} className="shrink-0 text-neel" />
+      <span className="min-w-0 flex-1">
+        <span className="block font-semibold text-ink">{t("share")}</span>
+        <span className="block text-base text-ink-soft" aria-live="polite">{copied ? t("shareCopied") : t("shareHint")}</span>
+      </span>
+      <ChevronRight aria-hidden size={22} className="shrink-0 text-ink-faint" />
+    </button>
   );
 }
 

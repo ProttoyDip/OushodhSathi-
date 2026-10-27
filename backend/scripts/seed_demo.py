@@ -55,7 +55,5 @@ if __name__ == "__main__":
         print("Database already has patients; not seeding.")
         sys.exit(0)
     if args.reset:
-        store.db.close()
-        Path(store.path).unlink(missing_ok=True)
-        store = Store()
+        store.reset()
     seed(store, reviewed=args.reviewed)

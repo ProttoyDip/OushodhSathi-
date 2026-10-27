@@ -1,12 +1,14 @@
 "use client";
 
-import { CircleCheck, Cpu, Languages, ScanText, Search, ShieldCheck } from "lucide-react";
+import { CircleCheck, Cpu, Languages, Lock, ScanText, Search, ShieldCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import { FamilyHeader, familyWidth } from "@/components/Chrome";
 import { ErrorState, Skeleton } from "@/components/States";
 import { api } from "@/lib/api";
 import { cx } from "@/lib/format";
+import { reviewerSession } from "@/lib/reviewer";
 import type { ModelRef, ModelsInfo, ModelTask } from "@/lib/types";
 import { useApi } from "@/lib/useApi";
 import { reveal } from "@/lib/reveal";
@@ -29,14 +31,31 @@ const TASKS = [
 const refKey = (r: ModelRef) => `${r.provider}|${r.model}`;
 const same = (a: ModelRef | null | undefined, b: ModelRef) => !!a && a.provider === b.provider && a.model === b.model;
 
-/** Which AI models the app uses, in which order, what answered last — and the user's choice. */
+/** Back goes where the visitor came from; only a same-site path is accepted (no open redirect). */
+function backTarget(from: string | null): string {
+  return from && from.startsWith("/") && !from.startsWith("//") && !from.includes("\\") ? from : "/";
+}
+
 export default function ModelsPage() {
+  return (
+    <Suspense>
+      <Models />
+    </Suspense>
+  );
+}
+
+/** Which AI models the app uses, in which order, what answered last — and the user's choice. */
+function Models() {
   const t = useTranslations("models");
+  const back = backTarget(useSearchParams().get("from"));
   const info = useApi(() => api.models(), [], 30000);
+  // choosing a model changes it for every family, so only a signed-in reviewer may
+  const [token, setToken] = useState<string | null>(null);
+  useEffect(() => setToken(reviewerSession()?.token ?? null), []);
 
   return (
     <>
-      <FamilyHeader back="/" />
+      <FamilyHeader back={back} />
       <main className={`mx-auto w-full px-4 pb-16 pt-4 lg:pt-8 ${familyWidth}`}>
         <h1 className="font-bn-display text-[32px] leading-[1.2] lg:text-[40px]">{t("title")}</h1>
         <p className="mt-2 max-w-[70ch] text-ink-soft">{t("intro")}</p>
@@ -55,7 +74,7 @@ export default function ModelsPage() {
         ) : (
           <div className="mt-8 grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-3 lg:items-start">
             {TASKS.map(({ key, Icon }, i) => (
-              <TaskCard key={key} index={i} kind={key} Icon={Icon} task={info.data!.tasks[key]} onChange={(d) => info.setData(d)} />
+              <TaskCard key={key} index={i} kind={key} Icon={Icon} task={info.data!.tasks[key]} token={token} onChange={(d) => info.setData(d)} />
             ))}
           </div>
         )}
@@ -64,22 +83,23 @@ export default function ModelsPage() {
   );
 }
 
-function TaskCard({ index, kind, Icon, task, onChange }: {
+function TaskCard({ index, kind, Icon, task, token, onChange }: {
   index: number;
   kind: "vision" | "text" | "explain_bn";
   Icon: typeof ScanText;
   task: ModelTask;
+  token: string | null;
   onChange: (d: ModelsInfo) => void;
 }) {
   const t = useTranslations("models");
   const [state, setState] = useState<"idle" | "saving" | "saved" | "failed">("idle");
 
   async function choose(value: string) {
-    if (kind === "explain_bn") return;
+    if (kind === "explain_bn" || !token) return;
     setState("saving");
     try {
       const [provider, ...rest] = value.split("|");
-      onChange(await api.setModel(kind, value === "auto" ? null : { provider, model: rest.join("|") }));
+      onChange(await api.setModel(token, kind, value === "auto" ? null : { provider, model: rest.join("|") }));
       setState("saved");
     } catch {
       setState("failed");
@@ -140,7 +160,12 @@ function TaskCard({ index, kind, Icon, task, onChange }: {
           : t("never")}
       </p>
 
-      {task.choosable && task.chain.length > 0 ? (
+      {task.choosable && task.chain.length > 0 && !token ? (
+        <p className="mt-4 flex items-start gap-2 border-t border-rule pt-4 text-[13px] text-ink-soft">
+          <Lock aria-hidden size={14} className="mt-0.5 shrink-0" />
+          {t("chooseReviewerOnly")}
+        </p>
+      ) : task.choosable && task.chain.length > 0 ? (
         <div className="mt-4 border-t border-rule pt-4">
           <label htmlFor={`choose-${kind}`} className="text-base font-semibold text-ink">{t("choose")}</label>
           <select

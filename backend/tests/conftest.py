@@ -21,6 +21,9 @@ def _isolated_env(monkeypatch):
     monkeypatch.setattr(llm_router, "_preferred", {})
     monkeypatch.setenv("REVIEWER_TOKEN", "test-token")
     monkeypatch.setenv("DEMO_MODE", "true")
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    from app import guard
+    guard.windows.reset()
 
 
 @pytest.fixture

@@ -11,7 +11,7 @@
 [![Next.js 15](https://img.shields.io/badge/Next.js-15-0E1530)](frontend/package.json)
 [![Congress 2026 · HealthSphere AI](https://img.shields.io/badge/Congress%202026-HealthSphere%20AI-8F9BD6)](#acknowledgements)
 
-**Live demo:** <https://oushodhsathi.vercel.app> · **Docs:** [/docs](https://oushodhsathi.vercel.app/docs) · **Walkthrough:** [/demo](https://oushodhsathi.vercel.app/demo) · **Demo video:** _YouTube link added after upload_ · **Reviewer login:** [/review](https://oushodhsathi.vercel.app/review) asks for a name and a reviewer token; judges get the live token in the submission's Judge Access Note (locally, the quick start uses `demo-reviewer`). The hosted API runs on Render's free plan: it sleeps when idle, so the first request can take up to a minute, and demo data resets on restart.
+**Live demo:** <https://oushodhsathi.vercel.app> · **Docs:** [/docs](https://oushodhsathi.vercel.app/docs) · **Walkthrough:** [/demo](https://oushodhsathi.vercel.app/demo) · **Demo video:** _YouTube link added after upload_ · **Reviewer login:** [/review](https://oushodhsathi.vercel.app/review) asks for a name and a reviewer token; judges get the live token in the submission's Judge Access Note (locally, the quick start uses `demo-reviewer`). The hosted API runs on Render's free plan: it sleeps when idle, so the first request can take up to a minute. Data lives in a free Supabase Postgres, so households and reviews survive restarts. **Try it with your own family:** [/start](https://oushodhsathi.vercel.app/start) creates a private household that opens only with its family link.
 
 <p align="center">
   <img src="docs/video/hero.gif" width="1200" alt="The /demo walkthrough: a messy shelf of medicine strips is scanned, the list assembles itself, and Napa and Ace snap together under a red bracket labelled 'both are paracetamol'.">
@@ -81,6 +81,8 @@ All screenshots use the invented demo household of Rahima Begum, 68, Cumilla.
 
 These rules live in [`AGENTS.md`](AGENTS.md) and bind every coding agent that works on this repository.
 
+The public deployment is locked down as well. Each real household opens only with its private family link (a random key, checked in the API; anything else is "not found", so ids cannot be guessed). Photo reading is rate-limited per visitor and per day, because it spends AI credits. Only a signed-in reviewer can change which AI model everyone uses.
+
 ## Architecture
 
 ```mermaid
@@ -95,7 +97,7 @@ flowchart TB
     BM["Brand matcher<br/>exact → fuzzy ≥ 88"]
     WL["Tavily / Perplexity<br/>unknown-brand lookup"]
     RE["Rules engine<br/>deterministic, no AI"]
-    DB[("SQLite<br/>items · flags · reviews · cache")]
+    DB[("Postgres (Supabase) or SQLite<br/>households · items · flags · reviews · cache")]
     N8N["n8n automations<br/>weekly report · doctor alert · refill reminder"]
     MCP["MCP server<br/>read-only tools"]
 
@@ -110,7 +112,7 @@ flowchart TB
     MCP -.->|calls the same modules| BM & RE
 ```
 
-SQLite is enough for the prototype and lives on a persistent disk when deployed ([`render.yaml`](render.yaml)).
+Locally the API uses a SQLite file. Hosted, it uses a free Supabase Postgres in a private schema (`DATABASE_URL`), so data survives restarts of the free Render instance; the same SQL runs on both ([`backend/app/store.py`](backend/app/store.py), [`docs/DEPLOY.md`](docs/DEPLOY.md)).
 
 ## AI approach
 
@@ -131,19 +133,19 @@ Prompts are versioned files: [`extract_strip.v1`](backend/app/prompts/extract_st
 
 - **Extraction accuracy: evaluation in progress.** [`eval/run_eval.py`](eval/run_eval.py) scores the vision model against labelled photos of real Bangladeshi strips (cut strips, Bangla text, blur) and writes `eval/results_<prompt>.json`. No results have been recorded yet, so no accuracy number is claimed here. See [`eval/README.md`](eval/README.md) to add photos.
 - **Pilot: not started.** Each consenting household becomes one row in [`eval/pilot.csv`](eval/pilot.csv); the `/docs` page reports proportions with 95% Wilson confidence intervals from that file only. Demo data is never counted.
-- **Tests: 53 passing** (`pytest` in `backend/`), covering the rules engine, the family-view safety gate, router fallback and free-model probing, model choice, the explanation and Bangla-quality guards, and the statistics. CI runs them on every push, with the frontend lint and build.
+- **Tests: 71 passing** (`pytest` in `backend/`), covering the rules engine, the family-view safety gate, private household links, rate limits, blood-pressure validation, the database layer on SQLite and Postgres, router fallback and free-model probing, model choice, the explanation and Bangla-quality guards, and the statistics. CI runs them on every push, with the frontend lint and build.
 
 ## Tech stack
 
 | Layer | Tools |
 | --- | --- |
 | Frontend | Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 4, next-intl (Bangla + English), motion, Recharts, lucide-react |
-| Backend | Python 3.12+, FastAPI, Pydantic 2, Pydantic-AI, RapidFuzz, httpx, SQLite |
+| Backend | Python 3.12+, FastAPI, Pydantic 2, Pydantic-AI, RapidFuzz, httpx, SQLite / Postgres (psycopg 3) |
 | AI | NVIDIA API (Nemotron), OpenRouter (free models), OpenAI-compatible fallback routers, Ollama (`qwen2.5:3b`), Tavily, Perplexity Agent API |
 | Automation | n8n workflows (JSON in [`automations/`](automations)) |
 | Agent interface | MCP server on the official `mcp` Python SDK |
 | Testing and CI | pytest, ESLint, GitHub Actions |
-| Hosting | Render (API, persistent disk) and Vercel (frontend), see [`docs/DEPLOY.md`](docs/DEPLOY.md) |
+| Hosting | Render (API, free plan), Supabase (Postgres, free) and Vercel (frontend), see [`docs/DEPLOY.md`](docs/DEPLOY.md) |
 
 ## Quick start
 

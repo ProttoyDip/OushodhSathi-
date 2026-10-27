@@ -14,9 +14,11 @@
     "retry": "Try again",
     "errorGeneric": "Something went wrong. Please try again in a moment.",
     "errorOffline": "Can't reach the server. Check the internet connection and try again.",
-    "errorNotFound": "We couldn't find this patient.",
+    "errorNotFound": "We couldn't find this household. Open it with the family link you were sent.",
     "safety": "Do not stop or change any medicine without talking to the doctor.",
-    "years": "{age} years"
+    "years": "{age} years",
+    "cancel": "Cancel",
+    "errorTooMany": "Too many tries from here just now. Please wait a little and try again."
   },
   "severity": {
     "red": "Doctor review",
@@ -68,7 +70,13 @@
     "countRed": "{count} · doctor reviewed",
     "countAmber": "{count} · pharmacist reviewed",
     "models": "AI models",
-    "modelsHint": "Which models read and explain"
+    "modelsHint": "Which models read and explain",
+    "share": "Share with family",
+    "shareHint": "Send the private link so others can see this list",
+    "shareCopied": "Link copied. Anyone with it can open this household.",
+    "shareTitle": "OushodhSathi",
+    "shareText": "Our family's medicine list on OushodhSathi (private link):",
+    "shareCopyPrompt": "Copy this private link:"
   },
   "scan": {
     "title": "Photograph the medicines",
@@ -111,7 +119,15 @@
     "addManual": "Add a medicine by name",
     "add": "Add",
     "alreadyConfirmed": "Already confirmed",
-    "readBy": "Read by {model}"
+    "readBy": "Read by {model}",
+    "whenTaken": "When is it taken?",
+    "morning": "Morning",
+    "noon": "Noon",
+    "night": "Night",
+    "asNeeded": "Only when needed",
+    "asNeededHint": "None chosen: listed as \"only when needed\".",
+    "pillsLeft": "Pills left (optional)",
+    "editTimes": "Edit times"
   },
   "status": {
     "title": "A pharmacist or doctor is reviewing",
@@ -154,7 +170,15 @@
     "flagsReviewed": "Reviewed in total",
     "refillsTitle": "Running out soon",
     "refillDays": "About {days} days left",
-    "refillsNone": "Nothing runs out this week."
+    "refillsNone": "Nothing runs out this week.",
+    "bpAdd": "Add a blood pressure reading",
+    "bpTop": "Top number",
+    "bpBottom": "Bottom number",
+    "bpDate": "Date",
+    "bpSave": "Save reading",
+    "bpSaving": "Saving…",
+    "bpSaved": "Reading saved.",
+    "bpInvalid": "Please check the numbers: the top number is usually 60–260, the bottom 30–160, and the top is always higher."
   },
   "passport": {
     "title": "Medicine passport",
@@ -179,7 +203,8 @@
     "conditions": {
       "hypertension": "High blood pressure",
       "type 2 diabetes": "Type 2 diabetes"
-    }
+    },
+    "qrPrivate": "The QR code is this household's private link. Anyone who scans it can open the list, so show it only to people you trust, such as your doctor."
   },
   "landing": {
     "nav": {
@@ -197,7 +222,8 @@
       "ctaDemo": "See the demo",
       "ctaReviewer": "Reviewer dashboard",
       "demoNote": "The demo opens the invented household of Rahima Begum, 68, Cumilla.",
-      "replay": "Replay the demo animation"
+      "replay": "Replay the demo animation",
+      "ctaStart": "Start for your family"
     },
     "how": {
       "title": "How it works",
@@ -514,7 +540,8 @@
     "templates": "If no model answers, fixed, pre-checked Bangla templates are used.",
     "fixedNote": "The order for explanations is fixed: on your computer first, then the cloud.",
     "checking": "Checking which free models answer… the first time can take a few seconds.",
-    "local": "on this computer"
+    "local": "on this computer",
+    "chooseReviewerOnly": "Choosing a model changes it for every family, so only a signed-in pharmacist or doctor can do it."
   },
   "demo": {
     "keys": "→ next · ← back",
@@ -626,5 +653,23 @@
       "BEERS_65": "Beers list, age 65+",
       "EXPIRED": "Expired or expiring strip"
     }
+  },
+  "start": {
+    "title": "Add a family member",
+    "intro": "Make a private medicine list for the person whose medicines you look after. It takes a minute.",
+    "nameBn": "Name in Bangla",
+    "nameBnPlaceholder": "e.g. রহিমা বেগম",
+    "nameEn": "Name in English",
+    "nameEnPlaceholder": "e.g. Rahima Begum",
+    "nameHint": "One of the two is enough.",
+    "age": "Age",
+    "district": "District (optional)",
+    "districtPlaceholder": "e.g. Cumilla",
+    "conditions": "Long-term conditions (optional)",
+    "create": "Create the list",
+    "creating": "Creating…",
+    "privateTitle": "Private to your family",
+    "privateBody": "This list opens only on this phone and through its private link. The name is never sent to an AI model.",
+    "privateShare": "Afterwards, use \"Share with family\" on the home screen to send the link to brothers, sisters or a carer."
   }
 }

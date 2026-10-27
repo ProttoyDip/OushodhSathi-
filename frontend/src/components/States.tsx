@@ -7,7 +7,7 @@ import { buttonStyles } from "./Chrome";
 
 export function ErrorState({ error, onRetry }: { error: ApiError; onRetry?: () => void }) {
   const t = useTranslations("common");
-  const message = error.status === 0 ? t("errorOffline") : error.status === 404 ? t("errorNotFound") : t("errorGeneric");
+  const message = error.status === 0 ? t("errorOffline") : error.status === 404 ? t("errorNotFound") : error.status === 429 ? t("errorTooMany") : t("errorGeneric");
   return (
     <div role="alert" className="rounded-card border border-rule bg-paper-raised p-5">
       <CloudOff aria-hidden size={28} className="text-ink-soft" />

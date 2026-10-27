@@ -11,7 +11,7 @@
 [![Next.js 15](https://img.shields.io/badge/Next.js-15-0E1530)](frontend/package.json)
 [![Congress 2026 · HealthSphere AI](https://img.shields.io/badge/Congress%202026-HealthSphere%20AI-8F9BD6)](#acknowledgements)
 
-**Live demo:** _link added after deploy ([how](docs/DEPLOY.md))_ · **Docs:** the `/docs` page of the app · **Demo video:** _YouTube link added after upload_ · **Reviewer login:** the dashboard at `/review` asks for a name and the `REVIEWER_TOKEN` from `backend/.env` (the quick start sets it to `demo-reviewer`)
+**Live demo:** <https://oushodhsathi.vercel.app> · **Docs:** [/docs](https://oushodhsathi.vercel.app/docs) · **Walkthrough:** [/demo](https://oushodhsathi.vercel.app/demo) · **Demo video:** _YouTube link added after upload_ · **Reviewer login:** [/review](https://oushodhsathi.vercel.app/review) asks for a name and a reviewer token; judges get the live token in the submission's Judge Access Note (locally, the quick start uses `demo-reviewer`). The hosted API runs on Render's free plan: it sleeps when idle, so the first request can take up to a minute, and demo data resets on restart.
 
 <p align="center">
   <img src="docs/video/hero.gif" width="1200" alt="The /demo walkthrough: a messy shelf of medicine strips is scanned, the list assembles itself, and Napa and Ace snap together under a red bracket labelled 'both are paracetamol'.">

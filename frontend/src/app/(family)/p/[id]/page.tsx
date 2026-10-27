@@ -6,7 +6,10 @@ import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { buttonStyles, FamilyHeader, familyWidth } from "@/components/Chrome";
+import { FamilyActivity } from "@/components/FamilyActivity";
+import { JudgeBar } from "@/components/JudgeBar";
 import { SeverityBadge } from "@/components/SeverityBadge";
+import { ShareDigest } from "@/components/ShareDigest";
 import { NextStepCard } from "@/components/sathi/NextStepCard";
 import { ErrorState, Skeleton } from "@/components/States";
 import { api } from "@/lib/api";
@@ -31,6 +34,7 @@ export default function FamilyHome() {
 
   return (
     <>
+      {p?.is_demo && <JudgeBar pid={pid} />}
       <FamilyHeader demo={p?.is_demo} />
       <main className={`mx-auto w-full px-4 pb-12 pt-4 lg:pt-8 ${familyWidth}`}>
         {patient.error ? (
@@ -130,6 +134,12 @@ export default function FamilyHome() {
               <ShareRow pid={pid} />
               <RowLink href={`/models?from=/p/${pid}`} Icon={Cpu} title={t("models")} hint={t("modelsHint")} />
             </nav>
+
+            {/* for siblings far away: what happened, and a digest for the family group */}
+            <div {...reveal(220)} className="grid gap-6 lg:col-span-2 lg:grid-cols-2 lg:items-start">
+              <FamilyActivity pid={pid} />
+              <ShareDigest pid={pid} />
+            </div>
           </div>
         )}
       </main>

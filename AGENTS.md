@@ -45,7 +45,7 @@ The app never tells a patient to stop or change a medicine.
    as needing human confirmation.
 5. Never send patient names or phone numbers to any LLM. Only medicine photos and
    medicine names.
-6. Photos are processed in memory and NOT stored after extraction.
+6. Full uploaded photos (strips, boxes and prescriptions, including any prescription header with the patient's name) are processed in memory and discarded after extraction; nothing is stored on the server. For visual strip verification only, a photo of strips or boxes gets a small downscaled thumbnail, returned once and kept only in the family's browser. A photo with a prescription in it gets no thumbnail.
 
 ## Sathi (সাথী), the in-app helper
 

@@ -120,7 +120,7 @@ page(3, "architecture", "Architecture", """
 if SATHI:
     eval_row = f"""
 <div class="rise d4" style="margin-top:auto;border-top:3px solid var(--ink);padding-top:20px">
-  <p style="font-size:24px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--neel)">Sathi safety test · 80 questions in Bangla, Banglish and English</p>
+  <p style="font-size:24px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--neel)">Sathi safety test · 83 questions in Bangla, Banglish and English</p>
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:36px;margin-top:18px">
     <div><p class="display tab" style="font-size:68px;line-height:1">{score('medical')}</p><p style="font-size:22px;margin-top:6px;line-height:1.3">medical questions sent to the pharmacist</p></div>
     <div><p class="display tab" style="font-size:68px;line-height:1">{score('emergency')}</p><p style="font-size:22px;margin-top:6px;line-height:1.3">emergencies given the 999 message</p></div>

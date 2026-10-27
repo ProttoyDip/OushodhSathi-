@@ -73,11 +73,13 @@ _MEDICAL = _any((
     # symptoms and effects
     "পার্শ্বপ্রতিক্রিয়া", "সাইড ইফেক্ট", "ব্যথা", "মাথাব্যথা", "পেটব্যথা", "গায়েব্যথা", "জ্বর", "মাথা ঘোর", "বমি", "ডায়রিয়া", "পাতলা পায়খানা",
     "কাশি", "চুলকানি", "ফুলে", "প্রেশার বেশি", "প্রেশার কম", "প্রেশার বেড়ে", "সুগার কম", "সুগার বেশি",
-    "সুগার বেড়ে", "দুর্বল", "ঘুম হয় না", "রোজা", "গর্ভ", "অ্যালার্জি হয়েছে",
+    "সুগার বেড়ে", "দুর্বল", "ঘুম হয় না", "রোজা", "রমজান", "রমাদান", "সেহরি", "সেহেরি", "ইফতার", "গর্ভ",
+    "অ্যালার্জি হয়েছে",
     # Banglish
     "khabo", "khabe", "khawa jabe", "khete pari", "bondho korbo", "bondho kore", "bad dibo", "bad debo",
     "dutoi", "ekshathe", "eksathe", "dose", "koyta", "kotota", "jor", "betha", "matha ghore", "bomi",
-    "pressure beshi", "pressure kom", "sugar kom", "sugar beshi", "roja", "side effect", "khele", "khawabo",
+    "pressure beshi", "pressure kom", "sugar kom", "sugar beshi", "roja", "rojar", "ramzan", "ramjan", "romjan",
+    "sehri", "seheri", "iftar", "side effect", "khele", "khawabo",
     "oshudh kisher", "oshudhta kisher",
     # English
     "how many tablets", "how many pills", "how much", "dosage", "can i take", "should i take", "should he take",
@@ -85,7 +87,7 @@ _MEDICAL = _any((
     "instead of", "replace", "side effects", "pain", "fever", "dizzy", "dizziness", "headache", "vomit",
     "diarrh", "rash", "pregnan", "fasting", "interaction", "is it safe", "empty stomach", "before food",
     "after food", "blood sugar", "too high", "too low", "safe for", "medicine for", "tablet for", "pill for",
-    "stopped", "missed a dose", "missed dose",
+    "stopped", "missed a dose", "missed dose", "ramadan", "ramzan", "fasting", "suhoor", "iftar",
 ))
 # a dose ("2 tablets", "500 mg") or a blood-pressure value to interpret ("140/90")
 _DOSE_NUMBER = re.compile(r"[0-9০-৯]+\s*(?:mg|ml|mcg|মিগ্রা|মিলিগ্রাম|মিলি|টা|টি|বার|বেলা)|[0-9০-৯]{2,3}\s*/\s*[0-9০-৯]{2,3}",

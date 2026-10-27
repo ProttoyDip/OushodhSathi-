@@ -765,6 +765,21 @@
       "save": "Save",
       "markStopped": "Mark as stopped",
       "stoppedBy": "Stopped by {name}"
+    },
+    "ramadan": {
+      "title": "Ramadan plans to review ({n})",
+      "intro": "The family asked for a fasting plan. Choose sehri and/or iftar for each medicine and add a note. Nothing changes for the family until you approve.",
+      "asked": "asked {time} ago",
+      "medicine": "Medicine",
+      "now": "Now",
+      "sehri": "Sehri",
+      "iftar": "Iftar",
+      "slotFor": "{slot} for {brand}",
+      "note": "Your note to the family",
+      "notePh": "For example: what to watch for, and when to check sugar.",
+      "unplaced": "{n, plural, one {# medicine has} other {# medicines have}} no slot: the family will see it as \"not in the Ramadan plan\".",
+      "approve": "Approve the Ramadan plan",
+      "failed": "The plan was not saved. Please try again."
     }
   },
   "start": {
@@ -880,7 +895,17 @@
     "nothing": "Nothing at this time",
     "tablets": "{count, plural, one {# tablet} other {# tablets}}",
     "waiting": "{count, plural, one {# medicine's times are} other {# medicines' times are}} waiting for the pharmacist to check. They will appear here after that.",
-    "fromPlan": "Only times approved by a pharmacist or doctor are shown. Change nothing without asking them."
+    "fromPlan": "Only times approved by a pharmacist or doctor are shown. Change nothing without asking them.",
+    "sehri": "Sehri",
+    "iftar": "Iftar",
+    "ramadanOn": "Ramadan plan approved by the pharmacist or doctor",
+    "clinicianNote": "Note from {name}:",
+    "notInPlan": "Not in the Ramadan plan — ask the pharmacist about these",
+    "ramadanEnd": "Ramadan is over: back to the usual times",
+    "ramadanTitle": "Fasting in Ramadan?",
+    "ramadanBody": "Ask the pharmacist or doctor to plan the medicines around sehri and iftar. Nothing changes here until they approve a plan.",
+    "ramadanAsk": "Ask for a Ramadan plan",
+    "ramadanWaiting": "Request sent. Today's medicines stay as they are until a pharmacist or doctor approves a Ramadan plan."
   },
   "visit": {
     "title": "Before the doctor visit",
@@ -926,5 +951,52 @@
     "undo": "Put back",
     "expired": "Expired {date}",
     "stopped": "Stopped by {name}"
+  },
+  "savings": {
+    "title": "Same medicine, lower price",
+    "none": "No lower-price brand of exactly the same medicine, strength and form was found.",
+    "perYear": "a year ({month} a month), if the pharmacist agrees",
+    "perTablet": "{now} → {other} a tablet",
+    "saves": "{month} a month · {year} a year",
+    "ask": "Ask the pharmacist",
+    "question": "Can we switch to the lower-MRP brand of {generic} ({alt})? We now take {brand}.",
+    "sent": "Sent to the pharmacist.",
+    "seeQuestions": "See your questions",
+    "failed": "Could not send. Please try again.",
+    "priceNote": "Demo reference prices — verify the MRP at the pharmacy. Only the same generic, strength and form are compared."
+  },
+  "activity": {
+    "title": "What happened",
+    "kind": {
+      "scanned": "{count, plural, one {# medicine scanned} other {# medicines scanned}}",
+      "sent_for_review": "{count, plural, one {# medicine sent for checking} other {# medicines sent for checking}}",
+      "finding_confirmed": "{count, plural, one {Pharmacist confirmed # safety finding} other {Pharmacist confirmed # safety findings}}",
+      "schedule_approved": "Schedule approved by the pharmacist",
+      "schedule_updated": "Schedule updated",
+      "bp_logged": "Blood pressure added",
+      "pharmacist_replied": "Pharmacist answered a question",
+      "set_aside": "A strip was set aside",
+      "visit_done": "Doctor visit done",
+      "ramadan_requested": "Ramadan plan requested",
+      "ramadan_approved": "Ramadan plan approved",
+      "ramadan_ended": "Back to the usual schedule"
+    }
+  },
+  "digest": {
+    "title": "Share with the family (WhatsApp / Copy)",
+    "body": "A short Bangla and English summary for the family group: confirmed findings, the approved schedule, possible savings and the read-only emergency link.",
+    "whatsapp": "Send on WhatsApp",
+    "copy": "Copy",
+    "copied": "Copied",
+    "failed": "Could not prepare the summary. Please try again."
+  },
+  "judge": {
+    "label": "Demo & judges",
+    "family": "Family view",
+    "reviewer": "Reviewer queue",
+    "passport": "Passport",
+    "docs": "Docs",
+    "reset": "Reset demo household",
+    "failed": "Reset failed"
   }
 }

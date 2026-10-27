@@ -1,6 +1,7 @@
 import type {
   AuditEntry, BPPhotoReading, CaseSummary, CleanupItem, EmergencyPage, EvalResult, FamilyStatus, Flag, Health, MedicineItem,
-  ModelsInfo, NextStep, Passport, Patient, PilotStats, Question, Report, ReviewQueue, SathiReply, Today, VisitPrep,
+  ActivityEntry, ModelsInfo, NextStep, Passport, Patient, PilotStats, Question, RamadanRequest, Report, ReviewQueue,
+  SathiReply, Savings, Today, VisitPrep,
 } from "./types";
 import { familyKey } from "./familyKey";
 
@@ -102,6 +103,11 @@ export const api = {
     return request<BPPhotoReading>(`/patients/${id}/bp/read`, { method: "POST", body: fd, pid: id });
   },
   today: (id: number) => request<Today>(`/patients/${id}/today`, { pid: id }),
+  savings: (id: number) => request<Savings>(`/patients/${id}/savings`, { pid: id }),
+  activity: (id: number) => request<ActivityEntry[]>(`/patients/${id}/activity`, { pid: id }),
+  ramadanRequest: (id: number) => request<{ ramadan_status: string | null }>(`/patients/${id}/ramadan-request`, { method: "POST", pid: id }),
+  ramadanEnd: (id: number) => request<void>(`/patients/${id}/ramadan`, { method: "DELETE", pid: id }),
+  demoReset: () => request<{ patient_id: number; confirmed: number; pending: number; ms: number }>("/demo/reset", { method: "POST" }),
   visit: (id: number) => request<VisitPrep>(`/patients/${id}/visit`, { pid: id }),
   visitDone: (id: number) => request<{ next: string }>(`/patients/${id}/visit/done`, { method: "POST", pid: id }),
   cleanup: (id: number) => request<{ to_set_aside: CleanupItem[]; set_aside: CleanupItem[] }>(`/patients/${id}/cleanup`, { pid: id }),
@@ -129,6 +135,9 @@ export const api = {
     request<{ approved: number }>(`/patients/${id}/schedule/approve`, { method: "POST", body: json({ reviewer }), token }),
   confirmAllergies: (token: string, id: number, reviewer: string) =>
     request<Patient>(`/patients/${id}/allergies/confirm`, { method: "POST", body: json({ reviewer }), token }),
+  ramadanRequests: (token: string) => request<RamadanRequest[]>("/ramadan/requests", { token }),
+  ramadanApprove: (token: string, id: number, body: { reviewer: string; note: string; items: { item_id: number; slots: ("sehri" | "iftar")[] }[] }) =>
+    request<Today>(`/patients/${id}/ramadan-approve`, { method: "POST", body: json(body), token }),
   reviewTime: () => request<{ reviews: number; median_seconds: number | null }>("/eval/review-time"),
   sathiEval: () => request<{ prompt_version: string; mode: string; run_at: string; cases: number;
     by_category: Record<string, { n: number; correct: number; rate: number; target: number }>; leaks: string[];

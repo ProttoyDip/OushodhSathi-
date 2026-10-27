@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 import { BPTrend } from "@/components/BPTrend";
+import { SavingsCard } from "@/components/SavingsCard";
 import { buttonStyles, FamilyHeader, familyWidth } from "@/components/Chrome";
 import { ErrorState, Skeleton } from "@/components/States";
 import { api, ApiError } from "@/lib/api";
@@ -62,6 +63,8 @@ export default function ReportPage() {
                 </ul>
               )}
             </section>
+
+            <div {...reveal(120)} className="lg:col-span-2"><SavingsCard pid={pid} /></div>
 
             <section {...reveal(140)} aria-labelledby="flags-h" className="rounded-card border border-rule bg-paper-raised p-5">
               <h2 id="flags-h" className="font-semibold">{t("flagsTitle")}</h2>

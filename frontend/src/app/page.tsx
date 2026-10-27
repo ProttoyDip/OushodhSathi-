@@ -1,6 +1,7 @@
 import { ArrowRight, BookOpen, ExternalLink, ShieldCheck, Stethoscope } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { WarmUp } from "@/components/JudgeBar";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Wordmark } from "@/components/BrandMark";
 import { LangToggle, ThemeToggle } from "@/components/Chrome";
@@ -29,6 +30,7 @@ export default async function Landing() {
 
   return (
     <div className="min-h-dvh">
+      <WarmUp />
       <nav aria-label="Main" className="mx-auto flex max-w-[1200px] items-center justify-between gap-3 px-5 py-4 sm:px-8">
         <Link href="/" title={t("nav.home")} className="shrink-0"><Wordmark /></Link>
         <div className="flex items-center gap-1 sm:gap-2">

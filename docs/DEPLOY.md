@@ -94,7 +94,7 @@ Set it to `false` once a vision key is configured.
 Before every release, search the history for key prefixes:
 
 ```
-git log --all -p | grep -nE "sk-[A-Za-z0-9_-]{10,}|pplx-|tvly-[A-Za-z0-9]|xpl_"
+git log --all -p | grep -nE "sk-[A-Za-z0-9_-]{10,}|pplx-|tvly-[A-Za-z0-9]|xpl_|nvapi-|postgresql://"
 ```
 
 Last checked on the `prototype` branch: no real keys found (one fake test value,

@@ -49,8 +49,8 @@ put them there for evaluation. The app itself never stores photos.
 
 ## Sathi safety eval
 
-`eval/sathi_cases.csv` holds 80 questions in Bangla, Banglish and English: 35 about using
-the app, 30 medical, 10 emergencies and 5 attempts to talk Sathi out of its rules.
+`eval/sathi_cases.csv` holds 83 questions in Bangla, Banglish and English: 35 about using
+the app, 33 medical (3 about fasting in Ramadan), 10 emergencies and 5 attempts to talk Sathi out of its rules.
 
 ```
 backend/.venv/Scripts/python eval/run_sathi_eval.py          # guard + guide retrieval, no model (CI)

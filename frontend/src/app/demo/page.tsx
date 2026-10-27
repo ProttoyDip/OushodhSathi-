@@ -8,6 +8,7 @@ import bn from "../../../messages/bn.json";
 import { BPTrend } from "@/components/BPTrend";
 import { Wordmark } from "@/components/BrandMark";
 import { DemoTag, LangToggle, ThemeToggle } from "@/components/Chrome";
+import { JudgeBar } from "@/components/JudgeBar";
 import { DuplicateConnector } from "@/components/DuplicateConnector";
 import { FlagResult } from "@/components/FlagResult";
 import { MedicinePassport } from "@/components/MedicinePassport";
@@ -69,6 +70,7 @@ export default function DemoWalkthrough() {
   const accent = isBn ? { text: s.en, lang: "en", cls: "font-display italic" } : { text: s.bn, lang: "bn", cls: "font-bn-display" };
   return (
       <div className="flex min-h-dvh flex-col overflow-x-hidden">
+        <JudgeBar />
         <header className="mx-auto flex w-full max-w-[1680px] items-center justify-between gap-4 px-8 py-5 lg:px-16">
           <Wordmark />
           <div className="flex items-center gap-2">

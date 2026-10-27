@@ -1,14 +1,15 @@
 "use client";
 
-import { Clock, Moon, Pill, Printer, Sun, Sunrise, Volume2 } from "lucide-react";
+import { Clock, Moon, MoonStar, NotebookPen, Pill, Printer, Sun, Sunrise, Sunset, Volume2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { buttonStyles, FamilyHeader, familyWidth } from "@/components/Chrome";
+import { RamadanSafetyCard } from "@/components/RamadanSafetyCard";
 import { useVoice } from "@/components/sathi/speech";
 import { ErrorState, Skeleton } from "@/components/States";
 import { api } from "@/lib/api";
-import { cx, genericName } from "@/lib/format";
+import { cx, date, genericName } from "@/lib/format";
 import { reveal } from "@/lib/reveal";
 import { loadThumbs } from "@/lib/thumbs";
 import type { Slot, TodayMedicine } from "@/lib/types";
@@ -18,6 +19,11 @@ const SLOTS: { key: Slot; Icon: typeof Sun; tone: string }[] = [
   { key: "morning", Icon: Sunrise, tone: "text-amber" },
   { key: "noon", Icon: Sun, tone: "text-amber" },
   { key: "night", Icon: Moon, tone: "text-neel" },
+];
+// an approved Ramadan plan: before dawn and at sunset
+const FAST_SLOTS: { key: "sehri" | "iftar"; Icon: typeof Sun; tone: string }[] = [
+  { key: "sehri", Icon: MoonStar, tone: "text-neel" },
+  { key: "iftar", Icon: Sunset, tone: "text-amber" },
 ];
 const BN_COUNT = ["", "একটি", "দুটি", "তিনটি", "চারটি", "পাঁচটি", "ছয়টি", "সাতটি", "আটটি", "নয়টি", "দশটি"];
 const EN_COUNT = ["", "one tablet", "two tablets", "three tablets", "four tablets", "five tablets", "six tablets",
@@ -36,14 +42,13 @@ export default function TodayPage() {
   useEffect(() => setThumbs(loadThumbs(pid)), [pid]);
   const d = today.data;
 
-  const spoken = d
-    ? SLOTS.filter(({ key }) => d.slots[key].length).map(({ key }) => {
-        const meds = d.slots[key].map((m) => (locale === "bn"
-          ? `${m.brand} ${BN_COUNT[m.per_dose] ?? m.per_dose}`
-          : `${m.brand}, ${EN_COUNT[m.per_dose] ?? `${m.per_dose} tablets`}`)).join(locale === "bn" ? ", " : "; ");
-        return `${tp(key)}: ${meds}।`;
-      }).join(" ")
-    : "";
+  const ramadan = d?.ramadan ?? null;
+  const say = (label: string, list: TodayMedicine[]) => `${label}: ${list.map((m) => (locale === "bn"
+    ? `${m.brand} ${BN_COUNT[m.per_dose] ?? m.per_dose}`
+    : `${m.brand}, ${EN_COUNT[m.per_dose] ?? `${m.per_dose} tablets`}`)).join(locale === "bn" ? ", " : "; ")}।`;
+  const spoken = !d ? "" : ramadan
+    ? FAST_SLOTS.filter(({ key }) => ramadan[key].length).map(({ key }) => say(t(key), ramadan[key])).join(" ")
+    : SLOTS.filter(({ key }) => d.slots[key].length).map(({ key }) => say(tp(key), d.slots[key])).join(" ");
 
   return (
     <>
@@ -74,6 +79,47 @@ export default function TodayPage() {
                 <Clock aria-hidden size={20} className="mt-0.5 shrink-0" /> {t("waiting", { count: d.waiting_approval })}
               </p>
             )}
+            {ramadan ? (
+              <>
+                <p className="mt-5 inline-flex items-center gap-2 rounded-chip bg-neel-tint px-4 py-1.5 font-semibold text-neel">
+                  <MoonStar aria-hidden size={18} /> {t("ramadanOn")}
+                </p>
+                <div className="mt-4 grid gap-5 lg:grid-cols-2 print:grid-cols-1">
+                  {FAST_SLOTS.map(({ key, Icon, tone }, i) => (
+                    <section key={key} {...reveal(i * 90)} aria-labelledby={`slot-${key}`}
+                      className="break-inside-avoid rounded-card border border-rule bg-paper-raised p-5 print:border-2 print:border-ink">
+                      <h2 id={`slot-${key}`} className="flex items-center gap-3">
+                        <Icon aria-hidden size={52} strokeWidth={1.75} className={cx("shrink-0 print:text-ink", tone)} />
+                        <span className="font-bn-display text-[30px] leading-none">{t(key)}</span>
+                      </h2>
+                      {ramadan[key].length === 0 ? <p className="mt-4 text-ink-faint">{t("nothing")}</p> : (
+                        <ul className="mt-4 grid gap-3">
+                          {ramadan[key].map((m) => <Row key={m.id} m={m} thumb={thumbs[m.id]} locale={locale} />)}
+                        </ul>
+                      )}
+                    </section>
+                  ))}
+                </div>
+                {ramadan.note && (
+                  <p className="mt-5 flex items-start gap-2 rounded-card border border-rule bg-paper-raised p-4">
+                    <NotebookPen aria-hidden size={20} className="mt-1 shrink-0 text-neel" />
+                    <span><b className="font-semibold">{t("clinicianNote", { name: ramadan.approved_by ?? "" })}</b> {ramadan.note}
+                      {ramadan.approved_at && <span className="block text-[15px] text-ink-faint">{date(ramadan.approved_at, locale)}</span>}</span>
+                  </p>
+                )}
+                {ramadan.not_in_plan.length > 0 && (
+                  <section aria-labelledby="not-in-plan" className="mt-5 rounded-card border border-dashed border-amber-line p-5">
+                    <h2 id="not-in-plan" className="font-semibold text-amber">{t("notInPlan")}</h2>
+                    <ul className="mt-3 grid gap-3">
+                      {ramadan.not_in_plan.map((m) => <Row key={m.id} m={m} thumb={thumbs[m.id]} locale={locale} />)}
+                    </ul>
+                  </section>
+                )}
+                <div className="mt-5"><RamadanSafetyCard /></div>
+                <button type="button" onClick={async () => { await api.ramadanEnd(pid); today.reload(); }}
+                  className={cx(buttonStyles.quiet, "no-print mt-3 px-2")}>{t("ramadanEnd")}</button>
+              </>
+            ) : (
             <div className="mt-6 grid gap-5 lg:grid-cols-3 print:grid-cols-1 print:gap-3">
               {SLOTS.map(({ key, Icon, tone }, i) => (
                 <section key={key} {...reveal(i * 90)} aria-labelledby={`slot-${key}`}
@@ -92,6 +138,7 @@ export default function TodayPage() {
                 </section>
               ))}
             </div>
+            )}
             {d.as_needed.length > 0 && (
               <section aria-labelledby="as-needed" className="mt-5 break-inside-avoid rounded-card border border-dashed border-rule-strong p-5">
                 <h2 id="as-needed" className="flex items-center gap-3 font-bn-display text-[24px]">
@@ -103,6 +150,7 @@ export default function TodayPage() {
               </section>
             )}
             <p className="mt-6 text-[15px] text-ink-faint">{t("fromPlan")}</p>
+            {!ramadan && <RamadanRequest pid={pid} status={d.ramadan_status} onChange={today.reload} />}
           </>
         )}
       </main>
@@ -171,5 +219,27 @@ function ListenSchedule({ text }: { text: string }) {
     >
       <Volume2 aria-hidden size={22} /> {speaking ? t("stop") : t("listen")}
     </button>
+  );
+}
+
+/** The family can ask for a fasting plan. Nothing changes until a pharmacist or doctor approves one. */
+function RamadanRequest({ pid, status, onChange }: { pid: number; status: "requested" | "approved" | null; onChange: () => void }) {
+  const t = useTranslations("today");
+  const [busy, setBusy] = useState(false);
+  return (
+    <section aria-labelledby="ramadan-h" className="no-print mt-8 rounded-card border border-rule bg-paper-raised p-5">
+      <h2 id="ramadan-h" className="flex items-center gap-2 font-semibold"><MoonStar aria-hidden size={20} className="text-neel" /> {t("ramadanTitle")}</h2>
+      {status === "requested" ? (
+        <p className="mt-2 text-ink-soft" role="status">{t("ramadanWaiting")}</p>
+      ) : (
+        <>
+          <p className="mt-2 text-ink-soft">{t("ramadanBody")}</p>
+          <button type="button" disabled={busy} className={cx(buttonStyles.secondary, "mt-3")}
+            onClick={async () => { setBusy(true); try { await api.ramadanRequest(pid); onChange(); } finally { setBusy(false); } }}>
+            <MoonStar aria-hidden size={18} /> {t("ramadanAsk")}
+          </button>
+        </>
+      )}
+    </section>
   );
 }

@@ -109,7 +109,7 @@ and a clinician confirms every flag.
 
 24
 00:02:22,000 --> 00:02:30,000
-In our 80-question safety test, Sathi sent all 30 medical questions
+In our 83-question safety test, Sathi sent all 33 medical questions
 to a pharmacist, and every emergency to 999.
 
 25

@@ -278,6 +278,15 @@ export interface Today {
   slots: Record<Slot, TodayMedicine[]>;
   as_needed: TodayMedicine[];
   waiting_approval: number;
+  ramadan_status: "requested" | "approved" | null;
+  ramadan: {
+    sehri: TodayMedicine[];
+    iftar: TodayMedicine[];
+    not_in_plan: TodayMedicine[];
+    note: string | null;
+    approved_by: string | null;
+    approved_at: string | null;
+  } | null;
   patient: { id: number; name: string; name_bn: string | null };
   demo_label: string | null;
 }
@@ -325,4 +334,42 @@ export interface CaseSummary {
   source: string | null;
   dropped: string | null;
   collapsed: boolean;
+}
+
+export interface SavingsRow {
+  item_id: number;
+  brand: string;
+  generic: string;
+  strength: string;
+  form: string;
+  tablets_per_day: number;
+  current_mrp_bdt: number;
+  alternative: { brand: string; mrp_bdt: number; pack_source: string };
+  monthly_bdt: number;
+  yearly_bdt: number;
+}
+
+export interface Savings {
+  items: SavingsRow[];
+  total_monthly_bdt: number;
+  total_yearly_bdt: number;
+  notice_bn: string;
+  notice_en: string;
+  price_note: string;
+}
+
+export type ActivityKind =
+  | "scanned" | "sent_for_review" | "finding_confirmed" | "schedule_approved" | "schedule_updated" | "bp_logged"
+  | "pharmacist_replied" | "set_aside" | "visit_done" | "ramadan_requested" | "ramadan_approved" | "ramadan_ended";
+
+export interface ActivityEntry {
+  kind: ActivityKind;
+  n: number | null;
+  created_at: string;
+}
+
+export interface RamadanRequest {
+  patient: { id: number; name: string; name_bn: string | null; age: number; conditions: string[]; is_demo: boolean };
+  requested_at: string;
+  items: { id: number; brand: string; generic: string | null; strength: string | null; schedule: Slot[]; per_dose: number }[];
 }

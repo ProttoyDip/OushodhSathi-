@@ -9,6 +9,7 @@ import { buttonStyles, LangToggle, ThemeToggle } from "@/components/Chrome";
 import { FamilyKeyFromUrl } from "@/components/FamilyKeyFromUrl";
 import { MedicinePassport } from "@/components/MedicinePassport";
 import { PassportSettings } from "@/components/PassportSettings";
+import { ShareDigest } from "@/components/ShareDigest";
 import { ErrorState, Skeleton } from "@/components/States";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/useApi";
@@ -61,6 +62,7 @@ export default function PassportPage() {
                 {t("print")}
               </button>
               <p className="mt-2 px-1 text-base text-ink-soft">{t("printHint")}</p>
+              <ShareDigest pid={pid} className="mt-6" />
               {/* remount once the patient loads so the contact fields start filled in */}
               <PassportSettings
                 key={patient.data ? "loaded" : "loading"}

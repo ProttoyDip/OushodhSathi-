@@ -18,7 +18,7 @@ from .models import Flag, MedicineItem, MedicineItemIn, Patient, PatientIn, Revi
 
 DEFAULT_DB = Path(__file__).resolve().parent.parent / "oushodh.db"
 
-TABLES = ("sathi_events", "questions", "bp_readings", "reviews", "flags", "items", "cache", "patients")
+TABLES = ("activity", "sathi_events", "questions", "bp_readings", "reviews", "flags", "items", "cache", "patients")
 
 # {id}: auto-increment key, {ref}: foreign key column, {real}: floating point
 SCHEMA = """
@@ -61,6 +61,10 @@ CREATE TABLE IF NOT EXISTS questions (
   text TEXT NOT NULL, created_at TEXT NOT NULL,
   reply TEXT, replied_by TEXT, replied_at TEXT, reply_seen_at TEXT
 );
+CREATE TABLE IF NOT EXISTS activity (
+  id {id}, patient_id {ref} NOT NULL REFERENCES patients(id), kind TEXT NOT NULL, n INTEGER,
+  created_at TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS sathi_events (
   id {id}, patient_id {ref}, kind TEXT NOT NULL, lang TEXT, guide_ids TEXT,
   latency_ms INTEGER, created_at TEXT NOT NULL
@@ -81,6 +85,11 @@ ADDED_COLUMNS = {
         "emergency_token": "TEXT",        # read-only emergency page; the family can revoke it
         "last_visit_at": "TEXT",          # last doctor visit the family marked
         "visit_questions": "TEXT NOT NULL DEFAULT '[]'",  # the family's questions for the next visit
+        "ramadan_status": "TEXT",          # requested | approved (empty: no Ramadan plan)
+        "ramadan_requested_at": "TEXT",
+        "ramadan_note": "TEXT",            # the clinician's note with the approved plan
+        "ramadan_approved_by": "TEXT",
+        "ramadan_approved_at": "TEXT",
     },
     "items": {
         "purpose": "TEXT",                # what it is for, written by the reviewing pharmacist
@@ -92,6 +101,7 @@ ADDED_COLUMNS = {
         "per_dose": "INTEGER NOT NULL DEFAULT 1",   # tablets each time
         "schedule_approved_by": "TEXT",
         "schedule_approved_at": "TEXT",
+        "ramadan_slots": "TEXT NOT NULL DEFAULT '[]'",  # sehri / iftar, set only by a reviewer
     },
     "flags": {"opened_at": "TEXT"},       # first opened by a reviewer: review-time evidence
     "reviews": {"seconds": "{real}"},     # opened -> decided
@@ -254,6 +264,7 @@ class Store:
     def _item(self, r: dict) -> MedicineItem:
         d = dict(r)
         d["schedule"] = json.loads(d["schedule"])
+        d["ramadan_slots"] = json.loads(d.get("ramadan_slots") or "[]")
         for b in ("confirmed", "stopped", "set_aside"):
             d[b] = bool(d[b])
         return MedicineItem(**d)
@@ -289,8 +300,9 @@ class Store:
     def update_item(self, item_id: int, **fields) -> MedicineItem | None:
         if not fields:
             return self.get_item(item_id)
-        if "schedule" in fields:
-            fields["schedule"] = json.dumps(fields["schedule"])
+        for col in ("schedule", "ramadan_slots"):
+            if col in fields:
+                fields[col] = json.dumps(fields[col])
         for b in ("confirmed", "stopped", "set_aside"):
             if b in fields:
                 fields[b] = int(bool(fields[b]))
@@ -429,6 +441,29 @@ class Store:
     def mark_replies_seen(self, pid: int) -> None:
         self._exec("UPDATE questions SET reply_seen_at = ? WHERE patient_id = ? AND reply IS NOT NULL "
                    "AND reply_seen_at IS NULL", (now(), pid))
+
+    # ---- activity: anonymised milestones for the family (a kind and a count, never names) --
+    def log_activity(self, pid: int, kind: str, n: int | None = None) -> None:
+        self._exec("INSERT INTO activity (patient_id, kind, n, created_at) VALUES (?,?,?,?)", (pid, kind, n, now()))
+
+    def list_activity(self, pid: int, limit: int = 30) -> list[dict]:
+        return self._all("SELECT kind, n, created_at FROM activity WHERE patient_id = ? "
+                         "ORDER BY created_at DESC, id DESC LIMIT ?", (pid, limit))
+
+    def reset_household(self, pid: int) -> None:
+        """Back to an empty household (the demo reset). The patient row and its keys stay."""
+        self._many([
+            ("DELETE FROM reviews WHERE flag_id IN (SELECT id FROM flags WHERE patient_id = ?)", (pid,)),
+            ("DELETE FROM flags WHERE patient_id = ?", (pid,)),
+            ("DELETE FROM items WHERE patient_id = ?", (pid,)),
+            ("DELETE FROM bp_readings WHERE patient_id = ?", (pid,)),
+            ("DELETE FROM questions WHERE patient_id = ?", (pid,)),
+            ("DELETE FROM sathi_events WHERE patient_id = ?", (pid,)),
+            ("DELETE FROM activity WHERE patient_id = ?", (pid,)),
+            ("UPDATE patients SET last_checked_at = NULL, results_seen_at = NULL, passport_seen_at = NULL, "
+             "visit_questions = '[]', last_visit_at = NULL, ramadan_status = NULL, ramadan_requested_at = NULL, "
+             "ramadan_note = NULL, ramadan_approved_by = NULL, ramadan_approved_at = NULL WHERE id = ?", (pid,)),
+        ])
 
     # ---- Sathi events (anonymised: kind, language and guide ids, never the text) --
     def log_sathi_event(self, pid: int | None, kind: str, lang: str, guide_ids: list[str], latency_ms: int) -> None:

@@ -33,6 +33,8 @@ from .next_step import StepContext, next_step  # noqa: E402
 from .refills import counts, refills_due  # noqa: E402
 from .rules import run_rules  # noqa: E402
 from . import clinical, sathi  # noqa: E402
+from .demo_seed import demo_patient_id, seed_demo  # noqa: E402
+from .savings import find_savings  # noqa: E402
 from .stats import pilot_stats, proportion  # noqa: E402
 from .store import Store, now  # noqa: E402
 from .tables import load_rule_tables  # noqa: E402
@@ -234,6 +236,10 @@ def patch_item(item_id: int, body: MedicineItemPatch, store: Store = Depends(get
         raise HTTPException(422, "Only expired medicines or ones the pharmacist stopped can be set aside")
     if any(k in fields and fields[k] != getattr(item, k) for k in ("schedule", "per_dose")):
         fields.update(schedule_approved_by=None, schedule_approved_at=None)
+        if item.confirmed:
+            store.log_activity(item.patient_id, "schedule_updated", 1)
+    if fields.get("set_aside") and not item.set_aside:
+        store.log_activity(item.patient_id, "set_aside", 1)
     if "brand" in fields or "strength" in fields:
         brand = fields.get("brand", item.brand)
         strength = fields.get("strength", item.strength)
@@ -281,6 +287,7 @@ def run_check(pid: int, store: Store = Depends(get_store)) -> dict:
     flags = run_rules(rule_items, patient.age, load_rule_tables(), date.today())
     stored = store.sync_flags(pid, flags)
     store.mark_checked(pid)
+    store.log_activity(pid, "sent_for_review", len(confirmed))
     new = [f for f in stored if f.key not in before]
     _notify_red_flags(pid, [f for f in new if f.severity == "red"])
     return {
@@ -379,6 +386,8 @@ def review_flag(flag_id: int, body: ReviewIn, store: Store = Depends(get_store))
     opened = _parse_ts(flag.opened_at) if flag.opened_at else None
     seconds = (datetime.now(timezone.utc) - opened).total_seconds() if opened else None
     updated = store.review_flag(flag_id, body, explanation, seconds=seconds)
+    if body.status == "confirmed":
+        store.log_activity(flag.patient_id, "finding_confirmed", 1)
     return _with_items(store, [updated])[0]
 
 
@@ -472,6 +481,7 @@ def add_bp(pid: int, body: BPIn | None = Body(default=None), systolic: int | Non
             raise HTTPException(422, e.errors(include_url=False, include_context=False)) from None
     store.add_bp(pid, (body.taken_on or date.today()).isoformat(), body.systolic, body.diastolic,
                  pulse=body.pulse, source=body.source)
+    store.log_activity(pid, "bp_logged", 1)
     return {"ok": True, "readings": store.list_bp(pid)}
 
 
@@ -543,6 +553,7 @@ async def scan(pid: int, photos: list[UploadFile] = File(...), store: Store = De
     for s in outcome.items:
         item = store.add_item(pid, s.item, **s.match)
         saved.append({**item.model_dump(), "thumbnail": s.thumbnail})
+    store.log_activity(pid, "scanned", len(saved))
     return {"items": saved, "mode": "live", "model_id": outcome.model_id,
             "needs_review": outcome.needs_review, "warnings": outcome.warnings}
 
@@ -780,7 +791,9 @@ class ReplyIn(BaseModel):
 def reply_question(qid: int, body: ReplyIn, store: Store = Depends(get_store)) -> dict:
     if store.get_question(qid) is None:
         raise HTTPException(404, "Question not found")
-    return store.reply_question(qid, body.reply.strip(), body.reviewer.strip())
+    q = store.reply_question(qid, body.reply.strip(), body.reviewer.strip())
+    store.log_activity(q["patient_id"], "pharmacist_replied", 1)
+    return q
 
 
 @app.get("/eval/sathi")
@@ -858,6 +871,7 @@ def approve_schedule(pid: int, body: ReviewerIn, store: Store = Depends(get_stor
         if counts(it):
             store.update_item(it.id, schedule_approved_by=body.reviewer, schedule_approved_at=ts)
             n += 1
+    store.log_activity(pid, "schedule_approved", n)
     return {"approved": n}
 
 
@@ -969,10 +983,22 @@ def today(pid: int, store: Store = Depends(get_store)) -> dict:
         return {"id": it.id, "brand": it.brand, "generic": it.generic, "strength": it.strength,
                 "per_dose": it.per_dose, "purpose": it.purpose, "purpose_bn": it.purpose_bn}
 
+    # Only a reviewer-APPROVED Ramadan plan changes today's medicines; a request never does
+    ramadan = None
+    if p.ramadan_status == "approved":
+        ramadan = {
+            "sehri": [entry(it) for it in items if "sehri" in it.ramadan_slots],
+            "iftar": [entry(it) for it in items if "iftar" in it.ramadan_slots],
+            # nothing disappears silently: medicines the plan does not place are listed
+            "not_in_plan": [entry(it) for it in items if it.schedule and not it.ramadan_slots],
+            "note": p.ramadan_note, "approved_by": p.ramadan_approved_by, "approved_at": p.ramadan_approved_at,
+        }
     return {
         "slots": {slot: [entry(it) for it in approved if slot in it.schedule] for slot in SLOTS},
         "waiting_approval": sum(1 for it in items if it.schedule and not it.schedule_approved_at),
         "as_needed": [entry(it) for it in items if not it.schedule],
+        "ramadan_status": p.ramadan_status,
+        "ramadan": ramadan,
         "patient": {"id": p.id, "name": p.name, "name_bn": p.name_bn},
         "demo_label": DEMO_LABEL if p.is_demo else None,
     }
@@ -1023,6 +1049,7 @@ def visit_done(pid: int, store: Store = Depends(get_store)) -> dict:
     """After the visit: start counting changes from now; the family scans the new prescription next."""
     _patient_or_404(store, pid)
     store.update_patient(pid, last_visit_at=now(), visit_questions=[])
+    store.log_activity(pid, "visit_done")
     return {"next": f"/p/{pid}/scan"}
 
 
@@ -1041,3 +1068,100 @@ def cleanup(pid: int, store: Store = Depends(get_store)) -> dict:
     done = [entry(it, "expired" if is_expired(it) else "stopped" if it.stopped else "other")
             for it in items if it.set_aside]
     return {"to_set_aside": todo, "set_aside": done}
+
+
+# ---- Prompt 11: savings, Ramadan, family activity, demo reset ---------------------------
+
+@app.get("/patients/{pid}/savings", dependencies=[Depends(family_access)])
+def savings(pid: int, store: Store = Depends(get_store)) -> dict:
+    """Same generic, same strength, same form, lower demo reference price. Never switches a brand."""
+    _patient_or_404(store, pid)
+    items = store.list_items(pid, confirmed_only=True)
+    duplicate_ids = {i for f in store.list_flags(pid, statuses=("pending_review", "confirmed"))
+                     if f.code in ("DUPLICATE_GENERIC", "THERAPEUTIC_DUPLICATION") for i in f.item_ids}
+    return find_savings(items, duplicate_ids)
+
+
+@app.post("/patients/{pid}/ramadan-request", dependencies=[Depends(family_access), Depends(limit_writes)])
+def ramadan_request(pid: int, store: Store = Depends(get_store)) -> dict:
+    """The family asks for a fasting review. Nothing changes until a reviewer approves a plan."""
+    p = _patient_or_404(store, pid)
+    if p.ramadan_status != "approved":
+        store.update_patient(pid, ramadan_status="requested", ramadan_requested_at=now())
+        store.log_activity(pid, "ramadan_requested")
+    return {"ramadan_status": store.get_patient(pid).ramadan_status}  # type: ignore[union-attr]
+
+
+@app.delete("/patients/{pid}/ramadan", status_code=204, dependencies=[Depends(family_access)])
+def ramadan_end(pid: int, store: Store = Depends(get_store)) -> None:
+    """End of Ramadan (or a withdrawn request): back to the usual approved times."""
+    _patient_or_404(store, pid)
+    for it in store.list_items(pid):
+        if it.ramadan_slots:
+            store.update_item(it.id, ramadan_slots=[])
+    store.update_patient(pid, ramadan_status=None, ramadan_requested_at=None, ramadan_note=None,
+                         ramadan_approved_by=None, ramadan_approved_at=None)
+    store.log_activity(pid, "ramadan_ended")
+
+
+@app.get("/ramadan/requests", dependencies=[Depends(require_reviewer)])
+def ramadan_requests(store: Store = Depends(get_store)) -> list[dict]:
+    """Fasting reviews waiting for a pharmacist or doctor, oldest first."""
+    out = []
+    for p in store.list_patients():
+        if p.ramadan_status != "requested":
+            continue
+        items = [it for it in store.list_items(p.id, confirmed_only=True) if counts(it)]
+        out.append({"patient": {"id": p.id, "name": p.name, "name_bn": p.name_bn, "age": p.age,
+                                "conditions": p.conditions, "is_demo": p.is_demo},
+                    "requested_at": p.ramadan_requested_at,
+                    "items": [{"id": it.id, "brand": it.brand, "generic": it.generic, "strength": it.strength,
+                               "schedule": it.schedule, "per_dose": it.per_dose} for it in items]})
+    return sorted(out, key=lambda r: str(r["requested_at"]))
+
+
+class RamadanItem(BaseModel):
+    item_id: int
+    slots: list[Literal["sehri", "iftar"]] = []
+
+
+class RamadanApproval(BaseModel):
+    reviewer: str = Field(min_length=1)
+    note: str = Field(min_length=2, max_length=1000)
+    items: list[RamadanItem]
+
+
+@app.post("/patients/{pid}/ramadan-approve", dependencies=[Depends(require_reviewer)])
+def ramadan_approve(pid: int, body: RamadanApproval, store: Store = Depends(get_store)) -> dict:
+    """A pharmacist or doctor maps each medicine to sehri and/or iftar, with a note.
+    Medicines left without a slot are shown to the family as "not in the Ramadan plan"."""
+    _patient_or_404(store, pid)
+    own = {it.id: it for it in store.list_items(pid, confirmed_only=True)}
+    for entry in body.items:
+        if entry.item_id not in own:
+            raise HTTPException(422, f"Item {entry.item_id} is not a confirmed medicine of this household")
+    chosen = {e.item_id: sorted(set(e.slots), key=["sehri", "iftar"].index) for e in body.items}
+    for item_id, it in own.items():
+        store.update_item(item_id, ramadan_slots=chosen.get(item_id, []))
+    store.update_patient(pid, ramadan_status="approved", ramadan_note=body.note.strip(),
+                         ramadan_approved_by=body.reviewer.strip(), ramadan_approved_at=now())
+    store.log_activity(pid, "ramadan_approved")
+    return today(pid, store)
+
+
+@app.get("/patients/{pid}/activity", dependencies=[Depends(family_access)])
+def activity(pid: int, limit: int = Query(20, ge=1, le=100), store: Store = Depends(get_store)) -> list[dict]:
+    """What happened in this household, for siblings far away: kinds and counts only."""
+    _patient_or_404(store, pid)
+    return store.list_activity(pid, limit)
+
+
+@app.post("/demo/reset", dependencies=[Depends(limit_writes)])
+def demo_reset(store: Store = Depends(get_store)) -> dict:
+    """Fresh demo household for the next judge: some findings confirmed for the family view,
+    some pending for the reviewer queue. Touches only the invented demo household."""
+    import time
+
+    started = time.perf_counter()
+    result = seed_demo(store, "judge")
+    return {**result, "ms": round((time.perf_counter() - started) * 1000)}

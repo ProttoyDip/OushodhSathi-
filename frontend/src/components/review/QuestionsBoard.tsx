@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { cx, date, since } from "@/lib/format";
 import type { Question } from "@/lib/types";
 import { useApi } from "@/lib/useApi";
+import { RamadanRequests } from "./RamadanRequests";
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -28,6 +29,7 @@ export function QuestionsBoard({ token, reviewer, now, onCount }: {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
       <div className="mx-auto max-w-[860px] px-4 py-6 sm:px-8">
+        <RamadanRequests token={token} reviewer={reviewer} now={now} />
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="text-xl font-semibold text-ink">{t("title")}</h2>

@@ -40,7 +40,7 @@ claimed anywhere. Every product screen shows "Demo household — invented data".
 | 1:53–1:59 | Demo · Ask a person | `demo-12-ask-a-person` | "Ace কি বন্ধ করে দেব?" → sent to the pharmacist → a person replies | "…and when Nusrat asks 'Should Ma stop Ace?', Sathi doesn't guess. It sends the question to the pharmacist." |
 | 1:59–2:05 | Demo · Doctor visit | `demo-13-doctor-visit` | One printable page: what changed, questions, BP | "Before every visit, one page shows what changed, and who changed it." |
 | 2:05–2:15 | Scene 03 | `03-architecture` | Photo → vision → brand → rules → clinician → family | "AI does perception: a vision model reads cut strips and prescriptions; unknown brands must cite a source." |
-| 2:15–2:30 | Scene 04 | `04-ai-approach` | What models do / never do; Sathi test 30/30, 10/10, 5/5, 34/35 | "Rules and humans do judgement: a deterministic engine checks every list, and a clinician confirms every flag. In our eighty-question safety test, Sathi sent all thirty medical questions to a pharmacist, and every emergency to 999." |
+| 2:15–2:30 | Scene 04 | `04-ai-approach` | What models do / never do; Sathi test 33/33, 10/10, 5/5, 34/35 | "Rules and humans do judgement: a deterministic engine checks every list, and a clinician confirms every flag. In our eighty-three-question safety test, Sathi sent all thirty-three medical questions to a pharmacist, and every emergency to 999." |
 | 2:30–2:40 | Scene 05 | `05-families` | Six tiles: Sathi, Today, Emergency QR, visit, set aside, BP photo | "It's built for parents who can't read, and children far away." |
 | 2:40–2:50 | Scene 06 | `06-impact` | Families abroad pay; pilot (honest); next steps | "Families abroad pay; parents stay safe. We are now recruiting our first pilot families, and will publish results only when they are real." |
 | 2:50–2:58 | Scene 07 | `07-close` | "Build locally, protect globally" and the passport card | "OushodhSathi. Build locally, protect globally." |
@@ -69,7 +69,7 @@ claimed anywhere. Every product screen shows "Demo household — invented data".
 >
 > AI does perception: a vision model reads cut strips and prescriptions, and unknown brands must
 > cite a source. Rules and humans do judgement: a deterministic engine checks every list, and a
-> clinician confirms every flag. In our eighty-question safety test, Sathi sent all thirty
+> clinician confirms every flag. In our eighty-three-question safety test, Sathi sent all thirty-three
 > medical questions to a pharmacist, and every emergency to 999.
 >
 > It's built for parents who can't read, and children far away. Families abroad pay; parents

@@ -39,6 +39,11 @@ class Patient(PatientIn):
     results_seen_at: datetime | None = None
     passport_seen_at: datetime | None = None
     visit_questions: list[str] = []
+    ramadan_status: Literal["requested", "approved"] | None = None
+    ramadan_requested_at: datetime | None = None
+    ramadan_note: str | None = None
+    ramadan_approved_by: str | None = None
+    ramadan_approved_at: datetime | None = None
 
 
 class PatientPatch(BaseModel):
@@ -108,6 +113,7 @@ class MedicineItem(MedicineItemIn):
     schedule_approved_by: str | None = None
     schedule_approved_at: datetime | None = None
     created_at: datetime | None = None
+    ramadan_slots: list[Literal["sehri", "iftar"]] = []
 
     @computed_field  # type: ignore[prop-decorator]
     @property

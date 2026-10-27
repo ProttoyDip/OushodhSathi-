@@ -17,6 +17,7 @@ import { cx, date, genericName, since } from "@/lib/format";
 import type { AuditEntry, Flag, ReviewQueue } from "@/lib/types";
 import { REVIEWER_SESSION, type ReviewerSession } from "@/lib/reviewer";
 import { useApi } from "@/lib/useApi";
+import { JudgeBar } from "@/components/JudgeBar";
 import { CaseSummaryPanel } from "@/components/review/CaseSummaryPanel";
 import { ClinicalEditor } from "@/components/review/ClinicalEditor";
 import { QuestionsBoard } from "@/components/review/QuestionsBoard";
@@ -113,6 +114,7 @@ function Login({ onSignIn }: { onSignIn: (s: Session) => void }) {
 function Dashboard({ session, onSignOut }: { session: Session; onSignOut: () => void }) {
   const t = useTranslations("review");
   const queue = useApi<ReviewQueue>(() => api.queue(session.token), [session.token], 20000);
+  const health = useApi(() => api.health(), []);
   const [sev, setSev] = useState<"all" | "red" | "amber">("all");
   const [route, setRoute] = useState<"all" | "doctor" | "pharmacist">("all");
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -230,6 +232,8 @@ function Dashboard({ session, onSignOut }: { session: Session; onSignOut: () => 
   return (
     // pinned to the window: header stays put, and queue, evidence and patient each scroll on their own
     <div className="flex h-dvh flex-col overflow-hidden">
+      {/* the queue answers fast; /health can be slow, so either one is enough to show the bar */}
+      {(health.data?.demo_mode || queue.data?.flags.some((f) => f.patient?.is_demo)) && <JudgeBar className="shrink-0" />}
       <header className="flex h-16 shrink-0 items-center gap-3 border-b border-rule bg-paper-raised px-4 sm:px-6 lg:gap-5">
         <Link href="/" title={t("backToSite")} className="shrink-0 rounded-md">
           <BrandMark size={30} className="sm:hidden" />

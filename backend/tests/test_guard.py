@@ -77,6 +77,16 @@ def test_scan_is_rate_limited_per_ip(client, monkeypatch):
     assert client.post(f"/patients/{pid}/scan", files=[PHOTO], headers=h2).status_code == 200
 
 
+def test_forged_forwarded_for_does_not_reset_the_limit_behind_cloudflare(client, monkeypatch):
+    monkeypatch.setenv("SCAN_LIMIT_PER_IP", "1")
+    pid, key = household(client)
+    codes = [client.post(f"/patients/{pid}/scan", files=[PHOTO],
+                         headers={"X-Family-Key": key, "CF-Connecting-IP": "203.0.113.9",
+                                  "X-Forwarded-For": f"10.9.9.{i}"}).status_code
+             for i in range(2)]
+    assert codes == [200, 429]
+
+
 def test_scan_has_a_global_daily_ceiling(client, monkeypatch):
     monkeypatch.setenv("SCAN_LIMIT_GLOBAL", "2")
     pid, key = household(client)

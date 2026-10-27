@@ -1,7 +1,7 @@
 """Abuse guards for the public deployment: in-memory sliding-window rate limits.
 
 One Render instance serves the API, so process memory is enough; limits reset on restart.
-Keyed by client IP (first X-Forwarded-For entry behind Render's proxy).
+Keyed by client IP: CF-Connecting-IP on Render, else the first X-Forwarded-For entry.
 """
 from __future__ import annotations
 
@@ -49,6 +49,11 @@ windows = SlidingWindow()
 
 
 def client_ip(request: Request) -> str:
+    # Render sits behind Cloudflare, which overwrites CF-Connecting-IP; the first
+    # X-Forwarded-For entry can be set by the client, so it is only a fallback elsewhere.
+    cf = request.headers.get("cf-connecting-ip")
+    if cf:
+        return cf.strip()
     fwd = request.headers.get("x-forwarded-for")
     if fwd:
         return fwd.split(",")[0].strip()

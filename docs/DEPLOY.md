@@ -52,7 +52,8 @@ entered in the provider's dashboard.
 
 ### Abuse limits
 
-Rate limits are kept in memory per client IP (first `X-Forwarded-For` entry), which is
+Rate limits are kept in memory per client IP (`CF-Connecting-IP`, which Cloudflare sets in
+front of Render and clients cannot forge; elsewhere the first `X-Forwarded-For` entry), which is
 enough for the single free instance; they reset on restart. Defaults: 10 scans per IP per
 hour, 200 scans per day overall, 5 new households per IP per hour, 120 writes per IP per
 hour. Over the limit the API answers `429`.

@@ -22,15 +22,18 @@ from . import prompts  # noqa: E402
 from .agent import read_shelf, resolve_brand  # noqa: E402
 from .demo import DEMO_ITEMS, DEMO_LABEL  # noqa: E402
 from .explain import explain_flag  # noqa: E402
-from .guard import limit_new_patient, limit_scan, limit_writes  # noqa: E402
+from .ratelimit import limit_new_patient, limit_sathi, limit_scan, limit_writes  # noqa: E402
 from . import llm_router  # noqa: E402
 from .llm_router import NoProviderAvailable, Router, _env, configured_providers, provider_names  # noqa: E402
 from .models import (  # noqa: E402
     MedicineItem, MedicineItemIn, MedicineItemPatch, Patient, PatientIn, ReviewIn, RuleItem, StoredFlag,
 )
+from .next_step import StepContext, next_step  # noqa: E402
+from .refills import refills_due  # noqa: E402
 from .rules import run_rules  # noqa: E402
+from . import sathi  # noqa: E402
 from .stats import pilot_stats, proportion  # noqa: E402
-from .store import Store  # noqa: E402
+from .store import Store, now  # noqa: E402
 from .tables import load_rule_tables  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -608,3 +611,169 @@ def set_model_preference(body: ModelPreference, store: Store = Depends(get_store
         store.cache_set(f"pref:model:{body.kind}", "{}")
     llm_router.set_preferred(body.kind, body.provider, body.model)
     return models()
+
+
+# ---- Sathi: next step, app guide, bridge to humans --------------------------------------
+
+def _parse_ts(value) -> datetime | None:
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    return datetime.fromisoformat(str(value))
+
+
+def step_context(store: Store, pid: int) -> StepContext:
+    p = _patient_or_404(store, pid)
+    items = store.list_items(pid)
+    unconfirmed = [i for i in items if not i.confirmed]
+    confirmed = [i for i in items if i.confirmed]
+    last_emergency = _parse_ts(store.last_sathi_event(pid, "emergency"))
+    unread = sum(1 for q in store.list_questions(pid) if q["reply"] and not q["reply_seen_at"])
+    state = _review_state(store, pid)
+    seen = _parse_ts(p.results_seen_at)
+    confirmed_flags = store.list_flags(pid, statuses=("confirmed",))
+    unseen = [f for f in confirmed_flags if f.reviewed_at and (seen is None or _parse_ts(f.reviewed_at) > seen)]
+    # when the review finished: the last decision, or the check itself when nothing was found
+    decided = [_parse_ts(f.reviewed_at) for f in store.list_flags(pid, statuses=("confirmed", "dismissed"))
+               if f.reviewed_at]
+    done_at = max(decided) if decided else _parse_ts(p.last_checked_at)
+    finished_unseen = state == "reviewed" and done_at is not None and (seen is None or done_at > seen)
+    last_check = _parse_ts(p.last_checked_at)
+    newest_confirmed = _parse_ts(store.newest_item_at(pid, confirmed_only=True))
+    return StepContext(
+        emergency_recent=bool(last_emergency and last_emergency > datetime.now(timezone.utc) - timedelta(hours=24)),
+        unread_replies=unread,
+        unseen_results=len(unseen),
+        results_ready=bool(unseen) or finished_unseen,
+        unconfirmed=len(unconfirmed),
+        unconfirmed_need_check=sum(1 for i in unconfirmed if i.needs_review),
+        any_items=bool(items),
+        ready_to_send=bool(confirmed) and (last_check is None
+                                           or (newest_confirmed is not None and newest_confirmed > last_check)),
+        in_review=state == "in_review",
+        reviewed=state == "reviewed",
+        passport_seen=p.passport_seen_at is not None,
+        refills=[(it.brand, days) for it, days in refills_due(confirmed)],
+    )
+
+
+@app.get("/patients/{pid}/next-step", dependencies=[Depends(family_access)])
+def get_next_step(pid: int, lang: Literal["bn", "en"] = "bn", phrase: bool = False,
+                  store: Store = Depends(get_store)) -> dict:
+    """The one thing to do next. Chosen by a state machine; with phrase=true the AI may
+    reword the sentence (numbers and names are checked against the state)."""
+    step = next_step(step_context(store, pid), pid)
+    text, how = (sathi.phrase_next_step(step, lang, Router(store=store)) if phrase
+                 else (step.text_bn if lang == "bn" else step.text_en, "fixed"))
+    return {**step.to_dict(), "text": text, "button": step.button_bn if lang == "bn" else step.button_en,
+            "phrased_by": how}
+
+
+class AskIn(BaseModel):
+    patient_id: int
+    question: str = Field(min_length=1, max_length=500)
+    lang: Literal["bn", "en"] = "bn"
+
+
+def _notify_emergency(pid: int) -> None:
+    """n8n alert so the family contact and a reviewer hear about it. Ids only."""
+    url = _env("N8N_ALERT_WEBHOOK")
+    if not url:
+        return
+
+    def send() -> None:
+        try:
+            httpx.post(url, timeout=5, json={"patient_id": pid, "event": "sathi_emergency"})
+        except httpx.HTTPError as e:
+            log.warning("n8n emergency alert failed: %s", type(e).__name__)
+
+    threading.Thread(target=send, daemon=True).start()
+
+
+@app.post("/assistant/ask", dependencies=[Depends(limit_sathi)])
+def assistant_ask(body: AskIn, x_family_key: str | None = Header(default=None),
+                  x_reviewer_token: str | None = Header(default=None), store: Store = Depends(get_store)) -> dict:
+    family_access(body.patient_id, x_family_key, x_reviewer_token, store)
+    patient = _patient_or_404(store, body.patient_id)
+    state = next_step(step_context(store, body.patient_id), body.patient_id).code
+    reply, ms = sathi.timed(sathi.ask, body.question, body.lang, body.patient_id, Router(store=store),
+                            state=state, redact=[patient.name, patient.name_bn or ""])
+    # AGENTS.md: every refusal and redirect is logged, anonymised (no text)
+    store.log_sathi_event(body.patient_id, reply.kind, body.lang, reply.guide_ids, ms)
+    if reply.kind == "emergency":
+        _notify_emergency(body.patient_id)
+    return reply.model_dump()
+
+
+class QuestionIn(BaseModel):
+    text: str = Field(min_length=2, max_length=1000)
+
+
+@app.post("/patients/{pid}/questions", status_code=201,
+          dependencies=[Depends(family_access), Depends(limit_writes)])
+def ask_pharmacist(pid: int, body: QuestionIn, store: Store = Depends(get_store)) -> dict:
+    """A family question for the reviewing pharmacist. Answered by a person, never by AI."""
+    _patient_or_404(store, pid)
+    return store.add_question(pid, body.text.strip())
+
+
+@app.get("/patients/{pid}/questions", dependencies=[Depends(family_access)])
+def family_questions(pid: int, store: Store = Depends(get_store)) -> list[dict]:
+    return store.list_questions(pid)
+
+
+@app.post("/patients/{pid}/questions/seen", status_code=204, dependencies=[Depends(family_access)])
+def questions_seen(pid: int, store: Store = Depends(get_store)) -> None:
+    store.mark_replies_seen(pid)
+
+
+class SeenIn(BaseModel):
+    what: Literal["results", "passport"]
+
+
+@app.post("/patients/{pid}/seen", status_code=204, dependencies=[Depends(family_access)])
+def mark_seen(pid: int, body: SeenIn, store: Store = Depends(get_store)) -> None:
+    """The family opened results or the passport; moves the next step along."""
+    store.update_patient(pid, **{f"{body.what}_seen_at": now()})
+
+
+@app.get("/questions", dependencies=[Depends(require_reviewer)])
+def reviewer_questions(status: Literal["open", "all"] = "open", store: Store = Depends(get_store)) -> dict:
+    qs = store.list_questions(open_only=status == "open")
+    patients = {p.id: p for p in store.list_patients()}
+    rows = []
+    for q in qs:
+        p = patients.get(q["patient_id"])
+        rows.append({**q, "patient": {"id": p.id, "name": p.name, "name_bn": p.name_bn, "age": p.age,
+                                      "is_demo": p.is_demo} if p else None})
+    rows.sort(key=lambda q: q["created_at"])  # oldest first: the 1-2 day target
+    return {"questions": rows, "open": len(store.list_questions(open_only=True))}
+
+
+class ReplyIn(BaseModel):
+    reply: str = Field(min_length=2, max_length=2000)
+    reviewer: str = Field(min_length=1)
+
+
+@app.post("/questions/{qid}/reply", dependencies=[Depends(require_reviewer)])
+def reply_question(qid: int, body: ReplyIn, store: Store = Depends(get_store)) -> dict:
+    if store.get_question(qid) is None:
+        raise HTTPException(404, "Question not found")
+    return store.reply_question(qid, body.reply.strip(), body.reviewer.strip())
+
+
+@app.get("/eval/sathi")
+def eval_sathi() -> list[dict]:
+    """Summaries of eval/sathi_results_*.json, read by /docs and the README."""
+    import json
+
+    out = []
+    for f in sorted(EVAL_DIR.glob("sathi_results_*.json")):
+        try:
+            data = json.loads(f.read_text(encoding="utf-8"))
+        except ValueError:
+            continue
+        out.append({k: data.get(k) for k in ("prompt_version", "mode", "run_at", "cases", "by_category",
+                                              "leaks", "latency_ms")})
+    return out

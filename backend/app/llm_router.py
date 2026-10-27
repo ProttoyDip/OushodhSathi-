@@ -19,7 +19,9 @@ import httpx
 
 log = logging.getLogger("oushodh.router")
 
-Task = Literal["vision", "text", "explain_bn"]
+Task = Literal["vision", "text", "explain_bn", "sathi"]
+# Bangla writing for families: local Ollama first (private), and the global model choice does not apply
+LOCAL_FIRST = ("explain_bn", "sathi")
 OPENROUTER_BASE = "https://openrouter.ai/api/v1"
 NVIDIA_BASE = "https://integrate.api.nvidia.com/v1"  # NVIDIA API catalog (build.nvidia.com)
 FALLTHROUGH_STATUS = {408, 409, 425, 429} | set(range(500, 600))
@@ -166,12 +168,12 @@ def configured_providers(task: Task, client: httpx.Client | None = None) -> list
     ollama_model = _env("OLLAMA_VISION_MODEL") if task == "vision" else _env("OLLAMA_MODEL")
     if (base := _env("OLLAMA_BASE_URL")) and ollama_model and _env("OLLAMA_DISABLED").lower() not in ("1", "true"):
         ollama = Provider("ollama", base.rstrip("/"), "ollama", ollama_model)
-        if task == "explain_bn":
+        if task in LOCAL_FIRST:
             out.insert(0, ollama)  # private and local first for Bangla explanations
         else:
             out.append(ollama)
     # the user's chosen model goes first; the rest of the chain stays as the fallback
-    if (pref := _preferred.get(kind)) and task != "explain_bn":
+    if (pref := _preferred.get(kind)) and task not in LOCAL_FIRST:
         chosen = [p for p in out if (p.name, p.model) == pref]
         out = chosen + [p for p in out if (p.name, p.model) != pref]
     return out
@@ -187,7 +189,7 @@ def provider_names(task: Task) -> list[str]:
     names += [p.lower() for p in ("NARAROUTER", "EXPLAB", "AGENTROUTER")
               if _env(f"{p}_BASE_URL") and _env(f"{p}_API_KEY") and router_model(p, task)]
     if _env("OLLAMA_BASE_URL") and (_env("OLLAMA_VISION_MODEL") if task == "vision" else _env("OLLAMA_MODEL")):
-        names.insert(0 if task == "explain_bn" else len(names), "ollama")
+        names.insert(0 if task in LOCAL_FIRST else len(names), "ollama")
     return names
 
 

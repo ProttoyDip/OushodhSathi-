@@ -22,8 +22,8 @@ def _isolated_env(monkeypatch):
     monkeypatch.setenv("REVIEWER_TOKEN", "test-token")
     monkeypatch.setenv("DEMO_MODE", "true")
     monkeypatch.delenv("DATABASE_URL", raising=False)
-    from app import guard
-    guard.windows.reset()
+    from app import ratelimit
+    ratelimit.windows.reset()
 
 
 @pytest.fixture

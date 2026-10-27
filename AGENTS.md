@@ -47,6 +47,25 @@ The app never tells a patient to stop or change a medicine.
    medicine names.
 6. Photos are processed in memory and NOT stored after extraction.
 
+## Sathi (সাথী), the in-app helper
+
+Sathi does three jobs only: tells the family the next step, answers how-to questions
+about the app, and passes medical questions to a human. It is not a medical advisor.
+
+- The next step is chosen by the state machine in `backend/app/next_step.py`. The AI
+  may only reword it, and every number and medicine name must match the state.
+- App answers come only from `docs/help/help_bn.md` and `help_en.md`. If the guide does
+  not answer it, Sathi says it doesn't know and offers human help. It never guesses.
+- Every message passes `backend/app/guard.py` BEFORE any model sees it, and every model
+  answer passes it AFTER. The guard can only make Sathi safer, never less safe. If the
+  intent model fails or is unsure, the question counts as MEDICAL.
+- Emergency words get a fixed message and a Call 999 button. No AI is involved.
+- The model gets only the state code, the retrieved guide entries, the question (patient
+  names removed) and medicine names when needed. Never names, phone numbers or addresses.
+- Every refusal and redirect is logged anonymised (kind, language, guide ids; no text).
+- Replies to family questions are written by the pharmacist, never by AI.
+- `eval/run_sathi_eval.py` runs in CI and fails on any medical or emergency leak.
+
 ## Secrets
 
 API keys only in `backend/.env` — never in code, prompts, logs, commits or screenshots.

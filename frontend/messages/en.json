@@ -340,7 +340,7 @@
       "hGuard": "Guardrail",
       "r1": {
         "task": "Read photos",
-        "model": "Free OpenRouter vision model (auto-picked: price 0, image input, largest context), then NARAROUTER → EXPLAB → AGENTROUTER",
+        "model": "NVIDIA API Nemotron VL first; then free OpenRouter vision models (tested before use), NARAROUTER → EXPLAB → AGENTROUTER",
         "why": "Cut strips, glare and Bangla text need a vision model; free models keep it affordable",
         "guard": "Typed Pydantic output, one retry, then needs-review; confidence < 0.75 always shown for a human check"
       },

@@ -254,3 +254,15 @@ def test_text_only_router_stays_out_of_photo_reading(two_providers, monkeypatch)
     monkeypatch.setenv("NARAROUTER_VISION_MODEL", "seeing/model")
     vision = {p.name: p.model for p in llm_router.configured_providers("vision")}
     assert vision["nararouter"] == "seeing/model"
+
+
+
+def test_nvidia_leads_with_its_own_vision_model(two_providers, monkeypatch):
+    monkeypatch.setenv("NVIDIA_API_KEY", "nv")
+    monkeypatch.setenv("NVIDIA_MODEL", "nvidia/text-model")
+    monkeypatch.setenv("NVIDIA_VISION_MODEL", "nvidia/vl-model")
+    vision = [(p.name, p.model) for p in llm_router.configured_providers("vision")]
+    text = [(p.name, p.model) for p in llm_router.configured_providers("text")]
+    assert vision[0] == ("nvidia", "nvidia/vl-model") and text[0] == ("nvidia", "nvidia/text-model")
+    assert llm_router.configured_providers("text")[0].base_url == llm_router.NVIDIA_BASE
+    assert llm_router.provider_names("vision")[0] == "nvidia"

@@ -1,6 +1,6 @@
 """The one place that talks to language models. Every provider is OpenAI-compatible.
 
-Order per task: OpenRouter -> NARAROUTER -> EXPLAB -> AGENTROUTER -> Ollama (local).
+Order per task: NVIDIA -> OpenRouter -> NARAROUTER -> EXPLAB -> AGENTROUTER -> Ollama (local).
 Bangla explanations go to Ollama first (private, local) with cloud as fallback.
 Responses are cached in SQLite by SHA-256 of (task, model, messages).
 Never logs API keys or photo bytes.
@@ -21,6 +21,7 @@ log = logging.getLogger("oushodh.router")
 
 Task = Literal["vision", "text", "explain_bn"]
 OPENROUTER_BASE = "https://openrouter.ai/api/v1"
+NVIDIA_BASE = "https://integrate.api.nvidia.com/v1"  # NVIDIA API catalog (build.nvidia.com)
 FALLTHROUGH_STATUS = {408, 409, 425, 429} | set(range(500, 600))
 
 
@@ -149,6 +150,10 @@ def router_model(prefix: str, task: Task) -> str:
 def configured_providers(task: Task, client: httpx.Client | None = None) -> list[Provider]:
     kind = "vision" if task == "vision" else "text"
     out: list[Provider] = []
+    # NVIDIA's own API leads: in testing it read cut strips correctly where the free
+    # OpenRouter copies did not, and wrote clean Bangla. NVIDIA_VISION_MODEL for photos.
+    if (key := _env("NVIDIA_API_KEY")) and (model := router_model("NVIDIA", task)):
+        out.append(Provider("nvidia", (_env("NVIDIA_BASE_URL") or NVIDIA_BASE).rstrip("/"), key, model))
     if key := _env("OPENROUTER_API_KEY"):
         env_model = _env("OPENROUTER_VISION_MODEL" if kind == "vision" else "OPENROUTER_TEXT_MODEL")
         models = ([env_model] if env_model else []) + pick_free_openrouter_models(kind, key, client)
@@ -175,6 +180,8 @@ def configured_providers(task: Task, client: httpx.Client | None = None) -> list
 def provider_names(task: Task) -> list[str]:
     """For /health: names only, never keys. Does not trigger model auto-pick."""
     names = []
+    if _env("NVIDIA_API_KEY") and router_model("NVIDIA", task):
+        names.append("nvidia")
     if _env("OPENROUTER_API_KEY"):
         names.append("openrouter")
     names += [p.lower() for p in ("NARAROUTER", "EXPLAB", "AGENTROUTER")

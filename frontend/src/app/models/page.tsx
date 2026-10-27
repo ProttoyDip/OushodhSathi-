@@ -13,6 +13,7 @@ import { reveal } from "@/lib/reveal";
 
 // Provider names are proper nouns: shown as-is in both languages.
 const PROVIDER: Record<string, string> = {
+  nvidia: "NVIDIA",
   openrouter: "OpenRouter",
   nararouter: "NARAROUTER",
   explab: "Experimental Lab",

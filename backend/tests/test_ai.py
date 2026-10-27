@@ -244,3 +244,13 @@ def test_malformed_llm_bangla_falls_back_to_template(two_providers):
     router = _router(lambda r: _reply("নাপা এবং আেস দুটির মধ্যে একই উপাদান প্যারাসিটামোল আছে।"))
     text, how = explain_flag(_flag(), ITEMS, "seen", router)
     assert how == "template" and text == template(_flag(), ITEMS)
+
+
+
+def test_text_only_router_stays_out_of_photo_reading(two_providers, monkeypatch):
+    monkeypatch.setenv("NARAROUTER_VISION_MODEL", "none")
+    assert [p.name for p in llm_router.configured_providers("vision")] == ["openrouter"]
+    assert [p.name for p in llm_router.configured_providers("text")] == ["openrouter", "nararouter"]
+    monkeypatch.setenv("NARAROUTER_VISION_MODEL", "seeing/model")
+    vision = {p.name: p.model for p in llm_router.configured_providers("vision")}
+    assert vision["nararouter"] == "seeing/model"

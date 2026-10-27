@@ -134,6 +134,18 @@ def pick_free_openrouter_model(kind: Literal["vision", "text"], client: httpx.Cl
     return models[0] if models else None
 
 
+def router_model(prefix: str, task: Task) -> str:
+    """Model a fallback router uses for a task. For photos, <PREFIX>_VISION_MODEL wins when
+    set; "none" keeps a text-only router out of the photo-reading chain."""
+    if task == "vision":
+        vision = _env(f"{prefix}_VISION_MODEL")
+        if vision.lower() in ("none", "-", "off"):
+            return ""
+        if vision:
+            return vision
+    return _env(f"{prefix}_MODEL")
+
+
 def configured_providers(task: Task, client: httpx.Client | None = None) -> list[Provider]:
     kind = "vision" if task == "vision" else "text"
     out: list[Provider] = []
@@ -143,7 +155,7 @@ def configured_providers(task: Task, client: httpx.Client | None = None) -> list
         for m in dict.fromkeys(models):  # keep order, drop repeats
             out.append(Provider("openrouter", OPENROUTER_BASE, key, m))
     for prefix in ("NARAROUTER", "EXPLAB", "AGENTROUTER"):
-        base, key, model = _env(f"{prefix}_BASE_URL"), _env(f"{prefix}_API_KEY"), _env(f"{prefix}_MODEL")
+        base, key, model = _env(f"{prefix}_BASE_URL"), _env(f"{prefix}_API_KEY"), router_model(prefix, task)
         if base and key and model:
             out.append(Provider(prefix.lower(), base.rstrip("/"), key, model))
     ollama_model = _env("OLLAMA_VISION_MODEL") if task == "vision" else _env("OLLAMA_MODEL")
@@ -166,7 +178,7 @@ def provider_names(task: Task) -> list[str]:
     if _env("OPENROUTER_API_KEY"):
         names.append("openrouter")
     names += [p.lower() for p in ("NARAROUTER", "EXPLAB", "AGENTROUTER")
-              if _env(f"{p}_BASE_URL") and _env(f"{p}_API_KEY") and _env(f"{p}_MODEL")]
+              if _env(f"{p}_BASE_URL") and _env(f"{p}_API_KEY") and router_model(p, task)]
     if _env("OLLAMA_BASE_URL") and (_env("OLLAMA_VISION_MODEL") if task == "vision" else _env("OLLAMA_MODEL")):
         names.insert(0 if task == "explain_bn" else len(names), "ollama")
     return names

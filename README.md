@@ -43,6 +43,15 @@ flowchart TD
 
 Anything read with under 0.75 confidence, and every web-found brand match, is shown to a human for confirmation before it enters the list.
 
+**Sathi (সাথী), the in-app helper,** always shows the family the one next step (chosen by a state machine, not by AI), answers "how do I…" questions only from a written app guide, and passes every medical question to the pharmacist. Emergency words get a fixed "go to hospital or call 999" card with no AI involved. It takes voice input and reads answers aloud when the phone has a Bangla voice.
+
+**Made for real families:**
+- **Today's medicines** works without reading: morning, noon and night as pictures, the strip's own photo from this phone, and tablets drawn as shapes. A Listen button reads it out, and it prints as a fridge sheet. Only times a pharmacist approved appear.
+- **Before the doctor visit** puts everything on one printable page: what changed since the last visit and who changed it, confirmed findings, four weeks of blood pressure, and the family's questions.
+- **Set aside** lists expired strips and medicines the reviewer stopped, so nobody takes them by mistake.
+
+**The passport** shows what each medicine is for (written by the pharmacist), allergies and who prescribed what. Its QR opens a read-only emergency page with no login and first name only; the family can renew or switch it off. **Blood pressure** can be read from a photo of the machine, and the family checks the numbers before saving. The confirmed list also exports as **FHIR R4**.
+
 Every page has a **Bangla ⇄ English** switch and a **light / dark** switch. The family app is built for a phone first and spreads into a working desktop layout on a laptop; the reviewer dashboard collapses into Queue / Evidence / Patient tabs on small screens.
 
 ## Screenshots
@@ -121,19 +130,25 @@ Locally the API uses a SQLite file. Hosted, it uses a free Supabase Postgres in 
 | Read photos of strips, boxes, prescriptions | NVIDIA API `nemotron-3.5-super-vl` first; then free OpenRouter vision models, auto-picked (price 0, image input, largest context) and each **tested with a one-token call before use**; up to three, then `openrouter/free`, then NARAROUTER → EXPLAB → AGENTROUTER | Cut strips, glare and Bangla text need a vision model; free models keep it affordable | Typed Pydantic output, one retry, then needs-review; confidence < 0.75 always shown for a human check |
 | Unknown brand → generic | Tavily search restricted to medex.com.bd, arogga.com, medeasy.health + a text model; Perplexity Agent API (`effort: fast`) as fallback | Bangladesh has tens of thousands of brands; a seed table cannot hold them all | Must cite a numbered search result; stored as `web_unverified` with the source URL; failures are never cached |
 | Bangla explanation of a confirmed finding | Ollama `qwen2.5:3b` locally first, cloud fallback, then fixed templates | Private and free when run locally | Only for confirmed flags; dose and stop-word filter; Bangla well-formedness check (a broken vowel sign sends it back to the template); fixed safety sentence |
+| Sathi: app-guide answers and next-step wording | Ollama first (private), then the cloud chain; 8-second budget, else the guide's own answer | Warm, simple Bangla without a person writing every reply | Guard before and after every model call: emergency and injection words, medical intent (unsure counts as medical), output check for doses, stop/start wording, unknown medicine names and diagnoses; answers only from [`docs/help`](docs/help) |
+| Case summary for the reviewer | Text chain (NVIDIA first) | Saves the pharmacist time on long lists | Facts only; any prescriber or medicine not in the record, advice, doses or diagnoses drop it; labelled "check the evidence", collapsed after 10 reviews |
+| Read a blood-pressure monitor photo | Vision chain | Families type numbers wrong | Impossible values rejected; under 0.8 confidence the family confirms; the photo is not stored |
 | Safety findings | **No model.** Deterministic rules | Judgement must be repeatable and auditable | Pure functions with tests; a clinician confirms every flag |
 
 **When a provider runs out, the next one answers.** Every request walks a chain: the user's chosen model first (if any), then NVIDIA's API (`nemotron-3.5-super-vl` for photos, `nemotron-3-ultra` for lookups and Bangla), then the tested free OpenRouter models, then the other configured routers, then Ollama on the machine. Rate limits (429), exhausted credit (402), withdrawn models, server errors and timeouts all fall through to the next link; nothing has to be switched by hand. Web lookup does the same with Tavily, then Perplexity.
 
 **The models in use are visible, and the user can choose.** The **AI models** page (`/models`) shows each task's chain in order, which model answered last, and a picker to put a preferred model first; the rest stay as backups. The family's confirm screen says which model read the photos, and the reviewer sees the model and prompt version for every item.
 
-Prompts are versioned files: [`extract_strip.v1`](backend/app/prompts/extract_strip.v1.md), [`brand_lookup.v1`](backend/app/prompts/brand_lookup.v1.md), [`explain_bn.v1`](backend/app/prompts/explain_bn.v1.md). Changing a prompt means a new version file and a new eval run.
+Prompts are versioned files: [`extract_strip.v1`](backend/app/prompts/extract_strip.v1.md), [`brand_lookup.v1`](backend/app/prompts/brand_lookup.v1.md), [`explain_bn.v1`](backend/app/prompts/explain_bn.v1.md), [`sathi_bn.v1`](backend/app/prompts/sathi_bn.v1.md), [`sathi_intent.v1`](backend/app/prompts/sathi_intent.v1.md), [`sathi_nextstep.v1`](backend/app/prompts/sathi_nextstep.v1.md), [`case_summary.v1`](backend/app/prompts/case_summary.v1.md), [`read_bp.v1`](backend/app/prompts/read_bp.v1.md). Changing a prompt means a new version file and a new eval run.
 
 ## Evaluation
 
 - **Extraction accuracy: evaluation in progress.** [`eval/run_eval.py`](eval/run_eval.py) scores the vision model against labelled photos of real Bangladeshi strips (cut strips, Bangla text, blur) and writes `eval/results_<prompt>.json`. No results have been recorded yet, so no accuracy number is claimed here. See [`eval/README.md`](eval/README.md) to add photos.
+- **Sathi safety eval: 80 cases, no leaks.** [`eval/run_sathi_eval.py`](eval/run_sathi_eval.py) with the guard and guide retrieval alone (no model, as in CI): app questions answered from the right guide entry **34/35 (97%)**; medical questions sent to the pharmacist **30/30**; emergencies escalated **10/10**; rule-breaking attempts refused **5/5**. The one miss went to the pharmacist, the safe direction. The run fails CI if any medical or emergency question gets an app answer. The cases were written by the team and still need native-speaker review.
+- **Review time: measured from the first decision.** Every finding records the time from a reviewer opening it to deciding it; `/docs` shows the median. This is the unit cost of a paid review.
+- **Blood-pressure photos: not measured yet.** [`eval/run_bp_eval.py`](eval/run_bp_eval.py) is ready for labelled monitor photos; no accuracy is claimed until they exist.
 - **Pilot: not started.** Each consenting household becomes one row in [`eval/pilot.csv`](eval/pilot.csv); the `/docs` page reports proportions with 95% Wilson confidence intervals from that file only. Demo data is never counted.
-- **Tests: 72 passing** (`pytest` in `backend/`), covering the rules engine, the family-view safety gate, private household links, rate limits, blood-pressure validation, the database layer on SQLite and Postgres, router fallback and free-model probing, model choice, the explanation and Bangla-quality guards, and the statistics. CI runs them on every push, with the frontend lint and build.
+- **Tests: 148 passing** (`pytest` in `backend/`), covering the rules engine, the family-view safety gate, Sathi's guard and state machine, the case-summary checks, approved schedules and set-aside medicines, the emergency page, FHIR export, private household links, rate limits, blood-pressure validation, the database layer on SQLite and Postgres, router fallback and free-model probing, model choice, the explanation and Bangla-quality guards, and the statistics. CI runs them on every push, with the frontend lint and build.
 
 ## Tech stack
 

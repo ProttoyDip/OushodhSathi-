@@ -144,3 +144,48 @@ export function EvalPanel() {
     </table>
   );
 }
+
+/** Sathi's safety eval: the real numbers from eval/sathi_results_*.json. */
+export function SathiEvalPanel() {
+  const t = useTranslations("docs.live");
+  const runs = useApi(() => api.sathiEval(), []);
+  const r = runs.data?.[runs.data.length - 1];
+  if (!r) return <div className="h-24 rounded-card bg-paper-sunk" style={{ animation: "breathe 1.6s ease-in-out infinite" }} />;
+  return (
+    <div>
+      <table className="w-full border-collapse text-left text-[15px]">
+        <thead className="text-ink-faint">
+          <tr className="border-b border-rule-strong">
+            <th className="py-2 font-medium">{t("sathiCategory")}</th><th className="font-medium">{t("sathiResult")}</th><th className="font-medium">{t("sathiTarget")}</th>
+          </tr>
+        </thead>
+        <tbody className="tabular">
+          {Object.entries(r.by_category).map(([cat, s]) => (
+            <tr key={cat} className="border-b border-rule">
+              <td className="py-2.5 font-medium">{t(`sathiCat.${cat}`)}</td>
+              <td>{s.correct} / {s.n} · <b className={s.rate >= s.target ? "text-green" : "text-red"}>{pct(s.rate)}</b></td>
+              <td className="text-ink-soft">{pct(s.target)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="mt-2 text-[13px] text-ink-faint">{t("sathiMeta", { cases: r.cases, mode: r.mode, version: r.prompt_version, leaks: r.leaks.length })}</p>
+    </div>
+  );
+}
+
+/** Median minutes from opening a finding to deciding it: the cost of a pharmacist review. */
+export function ReviewTimePanel() {
+  const t = useTranslations("docs.live");
+  const rt = useApi(() => api.reviewTime(), []);
+  if (!rt.data) return <div className="h-16 rounded-card bg-paper-sunk" style={{ animation: "breathe 1.6s ease-in-out infinite" }} />;
+  const { reviews, median_seconds } = rt.data;
+  return (
+    <div className="rounded-card border border-rule bg-paper-raised p-5">
+      <p className="!mt-0 tabular font-display text-[34px] leading-none text-ink">
+        {median_seconds == null ? "—" : median_seconds < 90 ? t("seconds", { n: Math.round(median_seconds) }) : t("minutes", { n: (median_seconds / 60).toFixed(1) })}
+      </p>
+      <p className="mt-1 text-ink-soft">{reviews ? t("reviewTimeBody", { n: reviews }) : t("reviewTimeNone")}</p>
+    </div>
+  );
+}

@@ -1,9 +1,9 @@
 "use client";
 
-import { Check, FlaskConical, PackageOpen, Plus } from "lucide-react";
+import { Camera, Check, FlaskConical, Loader2, PackageOpen, Plus } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { BPTrend } from "@/components/BPTrend";
 import { buttonStyles, FamilyHeader, familyWidth } from "@/components/Chrome";
 import { ErrorState, Skeleton } from "@/components/States";
@@ -115,7 +115,31 @@ function BPForm({ pid, onSaved }: { pid: number; onSaved: (readings: Report["bp"
   const [open, setOpen] = useState(false);
   const [sys, setSys] = useState("");
   const [dia, setDia] = useState("");
+  const [pulse, setPulse] = useState("");
   const [day, setDay] = useState(today);
+  // a photo of the machine fills the numbers in; the family always checks them before saving
+  const [photo, setPhoto] = useState<"idle" | "reading" | "read" | "check" | "unreadable">("idle");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function readPhoto(file: File) {
+    setPhoto("reading");
+    setMessage(null);
+    try {
+      const r = await api.readBP(pid, file);
+      if (!r.readable || r.systolic == null || r.diastolic == null) {
+        setPhoto("unreadable");
+        return;
+      }
+      setSys(String(r.systolic));
+      setDia(String(r.diastolic));
+      setPulse(r.pulse != null ? String(r.pulse) : "");
+      setPhoto(r.needs_check ? "check" : "read");
+    } catch (err) {
+      setPhoto("idle");
+      const status = err instanceof ApiError ? err.status : 0;
+      setMessage({ kind: "error", text: status === 429 ? tc("errorTooMany") : t("bpPhotoFailed") });
+    }
+  }
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const field = "tabular mt-1 block h-12 w-full rounded-md border border-rule-strong bg-paper px-3 text-lg text-ink";
@@ -143,10 +167,15 @@ function BPForm({ pid, onSaved }: { pid: number; onSaved: (readings: Report["bp"
         }
         setBusy(true);
         try {
-          const res = await api.addBP(pid, { systolic: s, diastolic: d, taken_on: day || undefined });
+          const res = await api.addBP(pid, {
+            systolic: s, diastolic: d, pulse: pulse ? Number(pulse) : undefined, taken_on: day || undefined,
+            source: photo === "read" || photo === "check" ? "photo" : "manual",
+          });
           onSaved(res.readings);
           setSys("");
           setDia("");
+          setPulse("");
+          setPhoto("idle");
           setOpen(false);
           setMessage({ kind: "ok", text: t("bpSaved") });
         } catch (err) {
@@ -157,7 +186,18 @@ function BPForm({ pid, onSaved }: { pid: number; onSaved: (readings: Report["bp"
         }
       }}
     >
-      <div className="grid grid-cols-2 gap-3">
+      <div className="rounded-md border border-dashed border-rule-strong p-3">
+        <input ref={fileRef} type="file" accept="image/*" capture="environment" className="sr-only" tabIndex={-1} aria-hidden
+          onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) readPhoto(f); }} />
+        <button type="button" disabled={photo === "reading"} onClick={() => fileRef.current?.click()} className={cx(buttonStyles.quiet, "px-2")}>
+          {photo === "reading" ? <Loader2 aria-hidden size={20} className="animate-spin motion-reduce:animate-none" /> : <Camera aria-hidden size={20} />}
+          {photo === "reading" ? t("bpPhotoReading") : t("bpPhoto")}
+        </button>
+        <p className="px-2 text-[15px] text-ink-soft" aria-live="polite">
+          {photo === "read" ? t("bpPhotoRead") : photo === "check" ? t("bpPhotoCheck") : photo === "unreadable" ? t("bpPhotoUnreadable") : t("bpPhotoHint")}
+        </p>
+      </div>
+      <div className="grid grid-cols-3 gap-3">
         <label className="text-base text-ink-soft">
           {t("bpTop")}
           <input required inputMode="numeric" type="number" min={60} max={260} value={sys} onChange={(e) => setSys(e.target.value)} className={field} placeholder="140" />
@@ -165,6 +205,10 @@ function BPForm({ pid, onSaved }: { pid: number; onSaved: (readings: Report["bp"
         <label className="text-base text-ink-soft">
           {t("bpBottom")}
           <input required inputMode="numeric" type="number" min={30} max={160} value={dia} onChange={(e) => setDia(e.target.value)} className={field} placeholder="90" />
+        </label>
+        <label className="text-base text-ink-soft">
+          {t("bpPulse")}
+          <input inputMode="numeric" type="number" min={30} max={220} value={pulse} onChange={(e) => setPulse(e.target.value)} className={field} placeholder="72" />
         </label>
       </div>
       <label className="text-base text-ink-soft">

@@ -8,9 +8,9 @@ import { useEffect, useState } from "react";
 import { buttonStyles, LangToggle, ThemeToggle } from "@/components/Chrome";
 import { FamilyKeyFromUrl } from "@/components/FamilyKeyFromUrl";
 import { MedicinePassport } from "@/components/MedicinePassport";
+import { PassportSettings } from "@/components/PassportSettings";
 import { ErrorState, Skeleton } from "@/components/States";
 import { api } from "@/lib/api";
-import { familyLink } from "@/lib/familyKey";
 import { useApi } from "@/lib/useApi";
 
 export default function PassportPage() {
@@ -19,12 +19,18 @@ export default function PassportPage() {
   const t = useTranslations("passport");
   const tc = useTranslations("common");
   const passport = useApi(() => api.passport(pid), [pid]);
+  const patient = useApi(() => api.patient(pid), [pid]);
   useEffect(() => {
     if (passport.data) api.seen(pid, "passport").catch(() => {});
   }, [pid, passport.data]);
-  const [url, setUrl] = useState<string>();
-  // the QR opens this household's own passport: a private link when this browser holds the family key
-  useEffect(() => setUrl(familyLink(pid, `/passport/${pid}`) ?? `${window.location.origin}/passport/${pid}`), [pid]);
+  // the QR opens the read-only emergency page: undefined while loading, null when switched off
+  const [token, setToken] = useState<string | null>();
+  useEffect(() => {
+    api.emergencyToken(pid).then((r) => setToken(r.token)).catch(() => setToken(null));
+  }, [pid]);
+  const [origin, setOrigin] = useState("");
+  useEffect(() => setOrigin(window.location.origin), []);
+  const url = token === undefined || !origin ? undefined : token ? `${origin}/e/${token}` : null;
 
   return (
     <div className="min-h-dvh text-[18px]">
@@ -48,11 +54,20 @@ export default function PassportPage() {
         ) : (
           <>
             <MedicinePassport passport={passport.data} url={url} />
-            {url?.includes("key=") && <p className="no-print mt-4 text-base text-ink-soft">{t("qrPrivate")}</p>}
             <button type="button" onClick={() => window.print()} className={`${buttonStyles.primary} no-print mt-6`}>
               <Printer aria-hidden size={22} />
               {t("print")}
             </button>
+            {/* remount once the patient loads so the contact fields start filled in */}
+            <PassportSettings
+              key={patient.data ? "loaded" : "loading"}
+              pid={pid}
+              passport={passport.data}
+              patient={patient.data}
+              token={token}
+              onToken={setToken}
+              onChanged={passport.reload}
+            />
           </>
         )}
       </main>

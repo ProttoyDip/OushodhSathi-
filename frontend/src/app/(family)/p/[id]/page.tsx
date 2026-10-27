@@ -1,6 +1,6 @@
 "use client";
 
-import { BookUser, Camera, ChevronRight, CircleCheck, Clock, Cpu, LineChart, MessagesSquare, ScanLine, Share2 } from "lucide-react";
+import { Archive, BookUser, Camera, ChevronRight, CircleCheck, Clock, Cpu, LineChart, MessagesSquare, ScanLine, Share2, Stethoscope, Sunrise } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -121,9 +121,12 @@ export default function FamilyHome() {
 
             {/* secondary destinations */}
             <nav {...reveal(180)} aria-label={t("passport")} className="divide-y lg:col-start-1 lg:row-start-2 divide-rule overflow-hidden rounded-card border border-rule bg-paper-raised">
+              <RowLink href={`/p/${pid}/today`} Icon={Sunrise} title={t("today")} hint={t("todayHint")} />
               <RowLink href={`/passport/${pid}`} Icon={BookUser} title={t("passport")} hint={t("passportHint")} />
+              <RowLink href={`/p/${pid}/visit`} Icon={Stethoscope} title={t("visit")} hint={t("visitHint")} />
               <RowLink href={`/p/${pid}/report`} Icon={LineChart} title={t("report")} hint={t("reportHint")} />
               <RowLink href={`/p/${pid}/questions`} Icon={MessagesSquare} title={t("questions")} hint={t("questionsHint")} />
+              <RowLink href={`/p/${pid}/cleanup`} Icon={Archive} title={t("cleanup")} hint={t("cleanupHint")} />
               <ShareRow pid={pid} />
               <RowLink href={`/models?from=/p/${pid}`} Icon={Cpu} title={t("models")} hint={t("modelsHint")} />
             </nav>

@@ -5,7 +5,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 import { Wordmark } from "@/components/BrandMark";
 import { LangToggle, ThemeToggle } from "@/components/Chrome";
-import { EvalPanel, LiveStatus, PilotPanel } from "@/components/docs/LivePanels";
+import { EvalPanel, LiveStatus, PilotPanel, ReviewTimePanel, SathiEvalPanel } from "@/components/docs/LivePanels";
 import { reveal } from "@/lib/reveal";
 
 export const metadata: Metadata = { title: "Docs — pitch, whitepaper, system status" };
@@ -104,10 +104,17 @@ export default async function Docs() {
             {SAFETY.map((k) => <li key={k}>{t(`safety.${k}`)}</li>)}
           </ol>
           <p>{t("safety.pdpo")}</p>
+          <p>{t("safety.fhir")}</p>
 
           <h2 id="evaluation">{t("toc.evaluation")}</h2>
           <p>{t("evaluation.intro")}</p>
           <div {...reveal(0)} className="mt-5"><EvalPanel /></div>
+          <h3>{t("evaluation.sathiTitle")}</h3>
+          <p>{t("evaluation.sathiIntro")}</p>
+          <div {...reveal(0)} className="mt-5"><SathiEvalPanel /></div>
+          <h3>{t("evaluation.reviewTitle")}</h3>
+          <p>{t("evaluation.reviewIntro")}</p>
+          <div {...reveal(0)} className="mt-5"><ReviewTimePanel /></div>
           <p>{t("evaluation.tests")}</p>
           <h3>{t("evaluation.pilotTitle")}</h3>
           <p>{t("evaluation.pilotIntro")}</p>

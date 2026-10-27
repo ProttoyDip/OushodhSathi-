@@ -103,11 +103,11 @@ function SathiHelper({ pid }: { pid: number }) {
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-expanded={open}
-        aria-label={t("open")}
         className={cx("no-print press fixed right-4 z-30 h-14 w-14 items-center justify-center rounded-full shadow-soft ring-4 ring-paper", open ? "hidden" : "flex")}
         style={{ bottom: "calc(var(--sathi-offset, 20px) + env(safe-area-inset-bottom))" }}
       >
         <SathiMark size={56} />
+        <span className="sr-only">{t("open")}</span>
       </button>
 
       {open && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { Moon, Pill, Sun, Sunrise } from "lucide-react";
+import { AlertTriangle, Moon, Pill, Stethoscope, Sun, Sunrise } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import QRCode from "qrcode";
 import { useEffect, useState } from "react";
@@ -20,16 +20,21 @@ const SLOT_MSG = { morning: "morning", noon: "noon", night: "night", as_needed: 
 
 /**
  * A5 printable card. Generic names large (what any doctor reads), brand small
- * (what is printed on the strip). Must survive black-and-white printing.
+ * (what is printed on the strip), what each is for (written by the pharmacist).
+ * Must survive black-and-white printing. `url` is the emergency page the QR opens:
+ * undefined while loading, null when the family has switched it off.
  */
-export function MedicinePassport({ passport, url }: { passport: Passport; url?: string }) {
+export function MedicinePassport({ passport, url }: { passport: Passport; url?: string | null }) {
   const t = useTranslations("passport");
   const locale = useLocale();
   const [qr, setQr] = useState<string | null>(null);
   const p = passport.patient;
 
   useEffect(() => {
-    if (!url) return;
+    if (!url) {
+      setQr(null);
+      return;
+    }
     QRCode.toString(url, { type: "svg", margin: 0, errorCorrectionLevel: "M", color: { dark: "#000000", light: "#ffffff" } })
       .then(setQr)
       .catch(() => setQr(null));
@@ -76,13 +81,46 @@ export function MedicinePassport({ passport, url }: { passport: Passport; url?: 
               </h2>
               <ul className="mt-2 grid gap-2 pl-[26px]">
                 {entries.map((e) => (
-                  <Entry key={`${key}-${e.id}`} e={e} needsCheck={t("needsCheck")} />
+                  <Entry key={`${key}-${e.id}`} e={e} needsCheck={t("needsCheck")} forLabel={t("purpose")} />
                 ))}
               </ul>
             </section>
           );
         })}
       </div>
+
+      {/* allergies and prescribers: what a doctor in an emergency needs first */}
+      {(passport.allergies !== undefined || passport.prescribers?.length) && (
+        <section className="grid gap-4 break-inside-avoid border-t border-rule px-6 py-4 @md:grid-cols-2">
+          {passport.allergies !== undefined && (
+            <div>
+              <h2 className="flex items-center gap-1.5 text-[15px] font-semibold uppercase tracking-[0.06em] text-ink-soft">
+                <AlertTriangle aria-hidden size={15} /> {t("allergies")}
+              </h2>
+              <p className="mt-1 text-[17px] font-semibold">
+                {passport.allergies.length ? passport.allergies.join(", ") : <span className="font-normal text-ink-soft">{t("allergiesNone")}</span>}
+              </p>
+              {passport.allergies.length > 0 && (
+                <p className="text-[13px] text-ink-faint">
+                  {passport.allergies_confirmed_by ? t("allergiesConfirmed", { name: passport.allergies_confirmed_by }) : t("allergiesUnconfirmed")}
+                </p>
+              )}
+            </div>
+          )}
+          {!!passport.prescribers?.length && (
+            <div>
+              <h2 className="flex items-center gap-1.5 text-[15px] font-semibold uppercase tracking-[0.06em] text-ink-soft">
+                <Stethoscope aria-hidden size={15} /> {t("prescribers")}
+              </h2>
+              <ul className="mt-1 grid gap-0.5 text-[15px]">
+                {passport.prescribers.map((pr) => (
+                  <li key={pr.name ?? "unknown"}><span className="font-semibold">{pr.name ?? t("prescriberUnknown")}</span>: {pr.medicines.join(", ")}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* confirmed notes */}
       <section className="break-inside-avoid border-t border-rule bg-paper-sunk/60 px-6 py-4 print:bg-transparent">
@@ -111,18 +149,30 @@ export function MedicinePassport({ passport, url }: { passport: Passport; url?: 
           <p lang="bn" className="font-bn-display text-[20px] leading-snug">{t("showAtVisit")}</p>
           <p lang="en" className="font-display text-[18px] italic leading-snug text-ink-soft">{t("showAtVisitEn")}</p>
           <p className="mt-1 text-[13px] text-ink-faint">{t("updated", { date: date(passport.generated_at, locale) })}</p>
+          {passport.last_reviewed && (
+            <p className="text-[13px] text-ink-faint">
+              {t("lastReviewed", { name: passport.last_reviewed.by ?? "", role: t(passport.last_reviewed.role === "doctor" ? "roleDoctor" : "rolePharmacist"),
+                date: date(passport.last_reviewed.at, locale) })}
+            </p>
+          )}
           {passport.demo_label && (
             <p className="mt-1 text-[13px] font-medium text-ink-soft">{passport.demo_label}</p>
           )}
         </div>
         <div className="shrink-0 text-center">
-          <div
-            className={cx("h-[92px] w-[92px] bg-white p-1.5", !qr && "animate-[breathe_1.6s_ease-in-out_infinite] bg-paper-sunk")}
-            aria-label={t("scanQr")}
-            role="img"
-            dangerouslySetInnerHTML={qr ? { __html: qr } : undefined}
-          />
-          <p className="mt-1 max-w-[100px] text-[13px] leading-tight text-ink-faint">{t("scanQr")}</p>
+          {url === null ? (
+            <p className="flex h-[92px] w-[92px] items-center justify-center rounded-md border border-dashed border-rule-strong p-2 text-[13px] leading-tight text-ink-faint">
+              {t("qrOff")}
+            </p>
+          ) : (
+            <div
+              className={cx("h-[92px] w-[92px] bg-white p-1.5", !qr && "animate-[breathe_1.6s_ease-in-out_infinite] bg-paper-sunk")}
+              aria-label={t("scanQr")}
+              role="img"
+              dangerouslySetInnerHTML={qr ? { __html: qr } : undefined}
+            />
+          )}
+          {url !== null && <p className="mt-1 max-w-[100px] text-[13px] leading-tight text-ink-faint">{t("scanQr")}</p>}
         </div>
       </footer>
     </article>
@@ -133,7 +183,7 @@ function bnSlot(key: string) {
   return { morning: "সকাল", noon: "দুপুর", night: "রাত", as_needed: "প্রয়োজনে" }[key] ?? key;
 }
 
-function Entry({ e, needsCheck }: { e: PassportEntry; needsCheck: string }) {
+function Entry({ e, needsCheck, forLabel }: { e: PassportEntry; needsCheck: string; forLabel: string }) {
   const english = e.generic ? genericName(e.generic, "en") : e.brand;
   const bangla = e.generic ? genericName(e.generic, "bn") : null;
   return (
@@ -143,8 +193,17 @@ function Entry({ e, needsCheck }: { e: PassportEntry; needsCheck: string }) {
       <span className="tabular text-[15px] text-ink-soft">
         {e.brand}
         {e.strength ? ` ${e.strength}` : ""}
+        {e.per_dose && e.per_dose > 1 ? ` × ${e.per_dose}` : ""}
         {e.prescriber ? ` · ${e.prescriber}` : ""}
       </span>
+      {(e.purpose_bn || e.purpose) && (
+        <span className="basis-full text-[15px] text-ink">
+          <span className="text-ink-soft">{forLabel}: </span>
+          {e.purpose_bn && <span lang="bn">{e.purpose_bn}</span>}
+          {e.purpose_bn && e.purpose && <span className="text-ink-faint"> · </span>}
+          {e.purpose && <span lang="en" className="italic text-ink-soft">{e.purpose}</span>}
+        </span>
+      )}
       {e.needs_review && (
         <span className="rounded-chip border border-dashed border-amber px-2 text-[13px] font-semibold text-amber print:border-ink print:text-ink">
           {needsCheck}

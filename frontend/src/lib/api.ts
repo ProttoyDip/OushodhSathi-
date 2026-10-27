@@ -1,6 +1,6 @@
 import type {
-  AuditEntry, EvalResult, FamilyStatus, Flag, Health, MedicineItem, ModelsInfo, NextStep, Passport, Patient, PilotStats,
-  Question, Report, ReviewQueue, SathiReply,
+  AuditEntry, BPPhotoReading, CaseSummary, CleanupItem, EmergencyPage, EvalResult, FamilyStatus, Flag, Health, MedicineItem,
+  ModelsInfo, NextStep, Passport, Patient, PilotStats, Question, Report, ReviewQueue, SathiReply, Today, VisitPrep,
 } from "./types";
 import { familyKey } from "./familyKey";
 
@@ -54,8 +54,9 @@ export const api = {
   // family (each call sends that household's private key, see lib/familyKey.ts)
   createPatient: (body: { name: string; name_bn?: string | null; age: number; district?: string | null; conditions: string[] }) =>
     request<Patient & { family_key: string }>("/patients", { method: "POST", body: json(body) }),
-  patient: (id: number) => request<Patient>(`/patients/${id}`, { pid: id }),
-  items: (id: number) => request<MedicineItem[]>(`/patients/${id}/items`, { pid: id }),
+  // a reviewer's token also opens any household (the dashboard's patient panel)
+  patient: (id: number, token?: string) => request<Patient>(`/patients/${id}`, { pid: id, token }),
+  items: (id: number, token?: string) => request<MedicineItem[]>(`/patients/${id}/items`, { pid: id, token }),
   addItem: (id: number, body: Partial<MedicineItem>, confirmed = false) =>
     request<MedicineItem>(`/patients/${id}/items?confirmed=${confirmed}`, { method: "POST", body: json(body), pid: id }),
   patchItem: (id: number, itemId: number, body: Partial<MedicineItem>) =>
@@ -87,7 +88,24 @@ export const api = {
   questionsSeen: (id: number) => request<void>(`/patients/${id}/questions/seen`, { method: "POST", pid: id }),
   seen: (id: number, what: "results" | "passport") =>
     request<void>(`/patients/${id}/seen`, { method: "POST", body: json({ what }), pid: id }),
-  addBP: (id: number, body: { systolic: number; diastolic: number; taken_on?: string }) =>
+  patchPatient: (id: number, body: { allergies?: string[]; emergency_contact_name?: string | null;
+    emergency_contact_phone?: string | null; visit_questions?: string[] }) =>
+    request<Patient>(`/patients/${id}`, { method: "PATCH", body: json(body), pid: id }),
+  emergencyToken: (id: number) => request<{ token: string | null }>(`/patients/${id}/emergency`, { pid: id }),
+  enableEmergency: (id: number) => request<{ token: string }>(`/patients/${id}/emergency`, { method: "POST", pid: id }),
+  revokeEmergency: (id: number) => request<void>(`/patients/${id}/emergency`, { method: "DELETE", pid: id }),
+  emergency: (token: string) => request<EmergencyPage>(`/emergency/${encodeURIComponent(token)}`),
+  fhir: (id: number) => request<Record<string, unknown>>(`/patients/${id}/fhir`, { pid: id }),
+  readBP: (id: number, photo: File) => {
+    const fd = new FormData();
+    fd.append("photo", photo);
+    return request<BPPhotoReading>(`/patients/${id}/bp/read`, { method: "POST", body: fd, pid: id });
+  },
+  today: (id: number) => request<Today>(`/patients/${id}/today`, { pid: id }),
+  visit: (id: number) => request<VisitPrep>(`/patients/${id}/visit`, { pid: id }),
+  visitDone: (id: number) => request<{ next: string }>(`/patients/${id}/visit/done`, { method: "POST", pid: id }),
+  cleanup: (id: number) => request<{ to_set_aside: CleanupItem[]; set_aside: CleanupItem[] }>(`/patients/${id}/cleanup`, { pid: id }),
+  addBP: (id: number, body: { systolic: number; diastolic: number; pulse?: number; taken_on?: string; source?: "manual" | "photo" }) =>
     request<{ ok: true; readings: Report["bp"]["readings"] }>(`/patients/${id}/bp`, { method: "POST", body: json(body), pid: id }),
 
   // reviewer (token required)
@@ -102,5 +120,18 @@ export const api = {
     request<{ questions: Question[]; open: number }>(`/questions?status=${status}`, { token }),
   reply: (token: string, qid: number, reply: string, reviewer: string) =>
     request<Question>(`/questions/${qid}/reply`, { method: "POST", body: json({ reply, reviewer }), token }),
+  caseSummary: (token: string, id: number, reviewer: string) =>
+    request<CaseSummary>(`/patients/${id}/case-summary?reviewer=${encodeURIComponent(reviewer)}`, { token }),
+  opened: (token: string, flagId: number) => request<void>(`/flags/${flagId}/opened`, { method: "POST", token }),
+  clinical: (token: string, itemId: number, body: { purpose?: string | null; purpose_bn?: string | null; stopped?: boolean; reviewer: string }) =>
+    request<MedicineItem>(`/items/${itemId}/clinical`, { method: "PATCH", body: json(body), token }),
+  approveSchedule: (token: string, id: number, reviewer: string) =>
+    request<{ approved: number }>(`/patients/${id}/schedule/approve`, { method: "POST", body: json({ reviewer }), token }),
+  confirmAllergies: (token: string, id: number, reviewer: string) =>
+    request<Patient>(`/patients/${id}/allergies/confirm`, { method: "POST", body: json({ reviewer }), token }),
+  reviewTime: () => request<{ reviews: number; median_seconds: number | null }>("/eval/review-time"),
+  sathiEval: () => request<{ prompt_version: string; mode: string; run_at: string; cases: number;
+    by_category: Record<string, { n: number; correct: number; rate: number; target: number }>; leaks: string[];
+    latency_ms: { mean: number; p95: number } }[]>("/eval/sathi"),
   audit: (token: string, id: number) => request<AuditEntry[]>(`/patients/${id}/reviews`, { token }),
 };

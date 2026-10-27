@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  ArrowLeft, Check, CircleCheck, Cpu, ExternalLink, FileText, History, KeyRound, LogOut, NotebookPen, Pill, Stethoscope, Undo2, X,
+  ArrowLeft, Check, CircleCheck, Cpu, ExternalLink, FileText, History, KeyRound, LogOut, NotebookPen, Stethoscope, Undo2, X,
 } from "lucide-react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
@@ -14,9 +14,11 @@ import { SeverityBadge } from "@/components/SeverityBadge";
 import { StripCard } from "@/components/StripCard";
 import { api, ApiError } from "@/lib/api";
 import { cx, date, genericName, since } from "@/lib/format";
-import type { AuditEntry, Flag, MedicineItem, ReviewQueue } from "@/lib/types";
+import type { AuditEntry, Flag, ReviewQueue } from "@/lib/types";
 import { REVIEWER_SESSION, type ReviewerSession } from "@/lib/reviewer";
 import { useApi } from "@/lib/useApi";
+import { CaseSummaryPanel } from "@/components/review/CaseSummaryPanel";
+import { ClinicalEditor } from "@/components/review/ClinicalEditor";
 import { QuestionsBoard } from "@/components/review/QuestionsBoard";
 
 const SESSION = REVIEWER_SESSION;
@@ -353,7 +355,7 @@ function Dashboard({ session, onSignOut }: { session: Session; onSignOut: () => 
           )}
         >
           {selected ? (
-            <Evidence key={selected.id} flag={selected} now={now}>
+            <Evidence key={selected.id} flag={selected} now={now} session={session}>
               <div className="mt-8 rounded-card border border-rule bg-paper-raised p-5">
                 <label htmlFor="note" className="flex items-center gap-2 font-semibold text-ink">
                   <NotebookPen aria-hidden size={18} /> {t("dash.note")} <span className="font-normal text-ink-faint">{t("dash.noteHint")}</span>
@@ -398,7 +400,7 @@ function Dashboard({ session, onSignOut }: { session: Session; onSignOut: () => 
             view === "patient" ? "block" : "hidden",
           )}
         >
-          {selected?.patient ? <PatientPanel token={session.token} patientId={selected.patient.id} key={selected.patient.id} /> : null}
+          {selected?.patient ? <PatientPanel session={session} patientId={selected.patient.id} key={selected.patient.id} /> : null}
         </aside>
       </div>
       </>)}
@@ -418,8 +420,12 @@ function Dashboard({ session, onSignOut }: { session: Session; onSignOut: () => 
   );
 }
 
-function Evidence({ flag, now, children }: { flag: Flag; now: number; children: React.ReactNode }) {
+function Evidence({ flag, now, session, children }: { flag: Flag; now: number; session: Session; children: React.ReactNode }) {
   const t = useTranslations("review");
+  // the review-time clock starts when a reviewer first opens the finding
+  useEffect(() => {
+    api.opened(session.token, flag.id).catch(() => {});
+  }, [session.token, flag.id]);
   const locale = useLocale();
   const ruleName = useRuleName();
   const generic = (flag.meta.generic as string | undefined) ?? flag.items[0]?.generic ?? "";
@@ -442,6 +448,7 @@ function Evidence({ flag, now, children }: { flag: Flag; now: number; children: 
         {flag.patient && <>{flag.patient.name}, {flag.patient.age} · </>}{t("ev.meta", { time: since(flag.created_at, now), route })}
         {flag.patient?.is_demo && <DemoTag className="ml-3 align-middle" />}
       </p>
+      {flag.patient && <CaseSummaryPanel token={session.token} reviewer={session.name} patientId={flag.patient.id} />}
 
       <div className="mt-6">
         {flag.items.length >= 2 ? (
@@ -511,9 +518,10 @@ function Evidence({ flag, now, children }: { flag: Flag; now: number; children: 
   );
 }
 
-function PatientPanel({ token, patientId }: { token: string; patientId: number }) {
-  const patient = useApi(() => api.patient(patientId), [patientId]);
-  const items = useApi(() => api.items(patientId), [patientId]);
+function PatientPanel({ session, patientId }: { session: Session; patientId: number }) {
+  const token = session.token;
+  const patient = useApi(() => api.patient(patientId, token), [patientId]);
+  const items = useApi(() => api.items(patientId, token), [patientId]);
   const audit = useApi<AuditEntry[]>(() => api.audit(token, patientId), [patientId], 15000);
   const t = useTranslations("review");
   const tc = useTranslations("passport.conditions");
@@ -531,17 +539,8 @@ function PatientPanel({ token, patientId }: { token: string; patientId: number }
         <p className="tabular text-sm text-ink-soft">{t("panel.years", { age: p.age })} · {p.district}</p>
         <p className="mt-1 text-sm text-ink-soft">{p.conditions.map((c) => (tc.has(c) ? tc(c) : c)).join(" · ")}</p>
       </section>
-      <section>
-        <h3 className="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-[0.06em] text-ink-faint"><Pill aria-hidden size={14} /> {t("panel.confirmedMeds", { n: confirmed.length })}</h3>
-        <ul className="mt-2 grid gap-1.5 text-sm">
-          {confirmed.map((i: MedicineItem) => (
-            <li key={i.id} className="flex items-baseline justify-between gap-2">
-              <span className="font-medium text-ink">{i.brand} <span className="tabular font-normal text-ink-soft">{i.strength}</span></span>
-              <span className="truncate text-ink-soft">{i.generic ? genericName(i.generic, locale) : t("panel.unknown")}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <ClinicalEditor token={token} reviewer={session.name} patient={p} items={items.data ?? []}
+        onChanged={() => { patient.reload(); items.reload(); }} />
       <section>
         <h3 className="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-[0.06em] text-ink-faint"><Stethoscope aria-hidden size={14} /> {t("panel.prescribers")}</h3>
         <ul className="mt-2 grid gap-1 text-sm text-ink">{prescribers.map((x) => <li key={x}>{x}</li>)}</ul>

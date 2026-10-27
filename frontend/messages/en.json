@@ -78,7 +78,13 @@
     "shareText": "Our family's medicine list on OushodhSathi (private link):",
     "shareCopyPrompt": "Copy this private link:",
     "questions": "Questions to the pharmacist",
-    "questionsHint": "Ask about a medicine and read the replies"
+    "questionsHint": "Ask about a medicine and read the replies",
+    "today": "Today's medicines",
+    "todayHint": "Morning, noon and night, in pictures",
+    "visit": "Before the doctor visit",
+    "visitHint": "Everything to show the doctor on one page",
+    "cleanup": "Medicines to set aside",
+    "cleanupHint": "Expired strips, and ones the pharmacist stopped"
   },
   "scan": {
     "title": "Photograph the medicines",
@@ -180,7 +186,15 @@
     "bpSave": "Save reading",
     "bpSaving": "Saving…",
     "bpSaved": "Reading saved.",
-    "bpInvalid": "Please check the numbers: the top number is usually 60–260, the bottom 30–160, and the top is always higher."
+    "bpInvalid": "Please check the numbers: the top number is usually 60–260, the bottom 30–160, and the top is always higher.",
+    "bpPhoto": "Take a photo of the machine",
+    "bpPhotoReading": "Reading the numbers…",
+    "bpPhotoHint": "Or type the numbers below.",
+    "bpPhotoRead": "Read from the photo. Check them against the machine, then save.",
+    "bpPhotoCheck": "Not fully sure about these numbers. Please compare them with the machine and correct them.",
+    "bpPhotoUnreadable": "Couldn't read the numbers. Please type them in.",
+    "bpPhotoFailed": "Couldn't read the photo right now. Please type the numbers.",
+    "bpPulse": "Pulse"
   },
   "passport": {
     "title": "Medicine passport",
@@ -198,7 +212,7 @@
     "notes": "Clinician-confirmed notes",
     "noNotes": "No confirmed notes.",
     "updated": "Updated {date}",
-    "scanQr": "Scan for the latest list",
+    "scanQr": "Scan in an emergency",
     "print": "Print",
     "empty": "No confirmed medicines on the list.",
     "needsCheck": "Needs checking",
@@ -206,7 +220,34 @@
       "hypertension": "High blood pressure",
       "type 2 diabetes": "Type 2 diabetes"
     },
-    "qrPrivate": "The QR code is this household's private link. Anyone who scans it can open the list, so show it only to people you trust, such as your doctor."
+    "qrOff": "Emergency page is off",
+    "purpose": "For",
+    "allergies": "Allergies",
+    "allergiesNone": "None recorded",
+    "allergiesConfirmed": "Confirmed by {name}",
+    "allergiesUnconfirmed": "Not yet confirmed by the pharmacist",
+    "prescribers": "Prescribed by",
+    "prescriberUnknown": "Not known",
+    "lastReviewed": "Last reviewed by {name} ({role}), {date}",
+    "roleDoctor": "doctor",
+    "rolePharmacist": "pharmacist",
+    "safetyTitle": "Allergies and emergencies",
+    "safetyIntro": "Add what a doctor needs to know in an emergency. A pharmacist confirms the allergies.",
+    "addAllergy": "Add",
+    "allergyPh": "For example: penicillin",
+    "removeAllergy": "Remove {name}",
+    "contactName": "Emergency contact",
+    "contactPhone": "Their phone number",
+    "saveContact": "Save contact",
+    "emergencyTitle": "Emergency page",
+    "emergencyBody": "The passport's QR code opens a read-only page with the medicines, allergies and emergency contact, with no login. Only the first name is shown. You can renew the link or switch it off at any time.",
+    "emergencyOn": "Switch on the emergency page",
+    "emergencyOff": "Switch off",
+    "emergencyRenew": "New link",
+    "emergencyOpen": "Open the page",
+    "fhirHint": "For hospital or clinic systems: the medicine list in the international FHIR format.",
+    "fhirDownload": "Download (FHIR)",
+    "saved": "Saved."
   },
   "landing": {
     "nav": {
@@ -399,13 +440,18 @@
       "s4": "Readings below 0.75 confidence and web-found brand matches are always marked for human confirmation.",
       "s5": "Patient names and phone numbers are never sent to a model, only medicine photos and medicine names.",
       "s6": "Photos are processed in memory and not stored after extraction.",
-      "pdpo": "These follow the data-minimisation and purpose-limitation principles of Bangladesh’s Personal Data Protection Ordinance 2025 (PDPO). OushodhSathi is a research prototype, not a medical device, and makes no compliance claim."
+      "pdpo": "These follow the data-minimisation and purpose-limitation principles of Bangladesh’s Personal Data Protection Ordinance 2025 (PDPO). OushodhSathi is a research prototype, not a medical device, and makes no compliance claim.",
+      "fhir": "The confirmed list exports as a FHIR R4 Bundle (a Patient with no identifiers beyond an internal id, and one MedicationStatement per medicine), ready for Bangladesh's Shared Health Record and health ID plans."
     },
     "evaluation": {
       "intro": "Extraction accuracy on our own labelled photos of real Bangladeshi strips (cut strips, Bangla text, blur):",
       "tests": "The rules engine, API safety gate, router fallback and explanation guard are covered by the pytest suite; the live count is in the status table below.",
       "pilotTitle": "Pilot",
-      "pilotIntro": "What we find in real homes, reported as proportions with 95% Wilson score intervals, which stay honest at small sample sizes:"
+      "pilotIntro": "What we find in real homes, reported as proportions with 95% Wilson score intervals, which stay honest at small sample sizes:",
+      "sathiTitle": "Sathi, the in-app helper",
+      "sathiIntro": "80 test questions in Bangla, Banglish and English: app questions must be answered from the right guide entry; medical questions must go to the pharmacist; emergencies must get the 999 message; attempts to talk Sathi out of its rules must fail. The run fails, in CI too, if a single medical or emergency question gets an app answer.",
+      "reviewTitle": "What a review costs",
+      "reviewIntro": "The time from a pharmacist opening a finding to deciding it, recorded for every decision. This is the unit cost behind a paid review service."
     },
     "roadmap": {
       "r1": "A pharmacist-verified brand table (replace the demo seed with a licensed Bangladeshi drug database).",
@@ -507,7 +553,21 @@
       "photos": "Photos / items",
       "brand": "Brand",
       "strength": "Strength",
-      "conf": "Avg conf."
+      "conf": "Avg conf.",
+      "sathiCategory": "Question type",
+      "sathiResult": "Handled correctly",
+      "sathiTarget": "Target",
+      "sathiCat": {
+        "app": "App questions (right guide entry)",
+        "medical": "Medical → pharmacist",
+        "emergency": "Emergency → 999",
+        "injection": "Rule-breaking attempts refused"
+      },
+      "sathiMeta": "{cases} cases · {mode} · {version} · {leaks} leaks",
+      "seconds": "{n} s",
+      "minutes": "{n} min",
+      "reviewTimeBody": "median time per decision, over {n} reviews",
+      "reviewTimeNone": "No timed reviews yet. The clock starts when a reviewer opens a finding."
     }
   },
   "models": {
@@ -679,6 +739,31 @@
       "humanOnly": "Written by you. Sathi never writes replies.",
       "send": "Send reply",
       "failed": "The reply was not sent. Please try again."
+    },
+    "summary": {
+      "title": "AI summary — check the evidence",
+      "none": "not available",
+      "questions": "Questions to check",
+      "caveat": "Facts only, generated by AI; every name was checked against the record. You decide.",
+      "dropped": "No summary for this patient. Use the evidence below.",
+      "loading": "preparing…"
+    },
+    "clinical": {
+      "allergies": "Allergies",
+      "noAllergies": "None entered by the family",
+      "confirmedBy": "Confirmed by {name}",
+      "confirmAllergies": "Confirm allergies",
+      "medicines": "Confirmed medicines ({n})",
+      "unknown": "not recognised",
+      "approved": "times approved",
+      "notApproved": "times not approved",
+      "approveTimes": "Approve times ({n})",
+      "timesApproved": "All times approved",
+      "purposeLabel": "What {brand} is for",
+      "purposePh": "What it is for (Bangla)",
+      "save": "Save",
+      "markStopped": "Mark as stopped",
+      "stoppedBy": "Stopped by {name}"
     }
   },
   "start": {
@@ -773,5 +858,72 @@
     "askedOn": "Asked {date}",
     "replyFrom": "Reply from {name}",
     "waiting": "Waiting for a reply"
+  },
+  "emergency": {
+    "title": "Emergency medical information",
+    "inactive": "This emergency link is not active. The family may have switched it off or made a new one.",
+    "allergies": "Allergies",
+    "noAllergies": "No allergies recorded",
+    "allergiesUnconfirmed": "Entered by the family; not yet confirmed by a pharmacist.",
+    "call": "Call {name}",
+    "contact": "the emergency contact",
+    "medicines": "{count, plural, one {# medicine} other {# medicines}} currently taken",
+    "footer": "Read-only page from OushodhSathi. The medicine list was checked by a pharmacist or doctor. The family can switch this page off at any time."
+  },
+  "today": {
+    "title": "Today's medicines",
+    "intro": "The times the pharmacist checked. Tap Listen to hear them.",
+    "print": "Print for the fridge",
+    "listen": "Listen",
+    "stop": "Stop",
+    "nothing": "Nothing at this time",
+    "tablets": "{count, plural, one {# tablet} other {# tablets}}",
+    "waiting": "{count, plural, one {# medicine's times are} other {# medicines' times are}} waiting for the pharmacist to check. They will appear here after that.",
+    "fromPlan": "Only times approved by a pharmacist or doctor are shown. Change nothing without asking them."
+  },
+  "visit": {
+    "title": "Before the doctor visit",
+    "since": "changes since {date}",
+    "firstVisit": "first visit with OushodhSathi",
+    "print": "Print or save",
+    "medicines": "{count, plural, one {# medicine now} other {# medicines now}}",
+    "changes": "What changed since the last visit",
+    "noChanges": "Nothing changed since the last visit.",
+    "changesFirst": "After this visit, changes will be listed here.",
+    "added": "added",
+    "stopped": "stopped",
+    "findings": "Findings the pharmacist confirmed",
+    "noFindings": "No confirmed findings.",
+    "bp": "Blood pressure, last 4 weeks",
+    "noBp": "No readings in the last 4 weeks.",
+    "questions": "Our questions for the doctor",
+    "questionsHint": "Write or say what you want to ask. Sathi can help you put it into words, but never answers it.",
+    "addQuestion": "Add a question",
+    "add": "Add",
+    "speak": "Say the question",
+    "removeQuestion": "Remove this question",
+    "pharmacistAnswers": "Already answered by the pharmacist",
+    "afterTitle": "After the visit",
+    "afterBody": "If the doctor gave a new prescription, scan it. The pharmacist checks the new list the same way.",
+    "afterCta": "Visit done: scan the new prescription",
+    "generated": "Prepared {date}",
+    "mic": {
+      "micUnsupported": "This browser can't turn speech into text. Please type instead.",
+      "micBlocked": "The microphone is blocked. Allow it in the browser settings, or type instead."
+    }
+  },
+  "cleanup": {
+    "title": "Medicines to set aside",
+    "intro": "So nobody takes them by mistake: strips that have expired, and medicines the pharmacist or doctor stopped.",
+    "tip1": "Keep them in a separate bag, away from the medicines in use.",
+    "tip2": "Ask how to throw them away safely:",
+    "ask": "ask the pharmacist",
+    "toDo": "{count, plural, =0 {Nothing to set aside} one {# strip to set aside} other {# strips to set aside}}",
+    "none": "Nothing to set aside right now.",
+    "done": "I have set it aside",
+    "putAway": "Already set aside ({count})",
+    "undo": "Put back",
+    "expired": "Expired {date}",
+    "stopped": "Stopped by {name}"
   }
 }

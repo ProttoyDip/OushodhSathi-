@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, Camera, Check, Keyboard, Stethoscope } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, Camera, Check, Keyboard, MessageSquareReply, Send, ShieldQuestion, Stethoscope } from "lucide-react";
 import { NextIntlClientProvider, useLocale, useTranslations } from "next-intl";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { type ReactNode, useCallback, useEffect, useState, useSyncExternalStore } from "react";
@@ -11,6 +11,7 @@ import { DemoTag, LangToggle, ThemeToggle } from "@/components/Chrome";
 import { DuplicateConnector } from "@/components/DuplicateConnector";
 import { FlagResult } from "@/components/FlagResult";
 import { MedicinePassport } from "@/components/MedicinePassport";
+import { SathiMark } from "@/components/sathi/SathiMark";
 import { SPRING_TRAVEL } from "@/components/Motion";
 import { SeverityBadge } from "@/components/SeverityBadge";
 import { StripCard } from "@/components/StripCard";
@@ -33,6 +34,8 @@ const STEPS = [
   { ch: "Family", chBn: "পরিবার", who: "Her daughter's phone, Toronto", whoBn: "মেয়ের ফোন, টরন্টো", en: "Only now does the family see it, in simple Bangla.", bn: "এরপরই পরিবার দেখতে পায়, সহজ বাংলায়।" },
   { ch: "Passport", chBn: "পাসপোর্ট", who: "Printed, carried to every visit", whoBn: "ছাপানো, প্রতিবার সাথে নেওয়া", en: "A passport for every doctor visit.", bn: "প্রতিবার ডাক্তারের কাছে নেওয়ার পাসপোর্ট।" },
   { ch: "Report", chBn: "রিপোর্ট", who: "Weekly report", whoBn: "সাপ্তাহিক রিপোর্ট", en: "And the weekly report keeps watch.", bn: "সাপ্তাহিক রিপোর্টে রক্তচাপের খোঁজ।" },
+  { ch: "Sathi", chBn: "সাথী", who: "In-app helper · answers only from the app guide", whoBn: "অ্যাপের সাহায্যকারী · শুধু অ্যাপ গাইড থেকে", en: "Sathi always shows the one next step, and helps with the app.", bn: "সাথী সবসময় পরের কাজটা দেখায়, অ্যাপ চালাতে সাহায্য করে।" },
+  { ch: "Ask a person", chBn: "মানুষের কাছে", who: "Guard · the pharmacist replies, never the AI", whoBn: "গার্ড · উত্তর দেন ফার্মাসিস্ট, এআই নয়", en: "Medicine questions go to the pharmacist, never to the AI.", bn: "ওষুধের প্রশ্ন যায় ফার্মাসিস্টের কাছে, এআই-এর কাছে নয়।" },
 ];
 
 /** A keyboard-paced walkthrough of the hero flow for recording. → / Space next, ← back. */
@@ -109,7 +112,7 @@ export default function DemoWalkthrough() {
         </main>
 
         <footer className="mx-auto flex w-full max-w-[1680px] items-end justify-between gap-6 px-8 pb-6 lg:px-16">
-          <ol className="grid min-w-0 flex-1 grid-cols-8 gap-2" aria-label={t("progress")}>
+          <ol className="grid min-w-0 flex-1 grid-cols-10 gap-2" aria-label={t("progress")}>
             {STEPS.map((st, i) => (
               <li key={i} className="min-w-0">
                 <button
@@ -324,6 +327,8 @@ function Stage({ step, passportUrl }: { step: number; passportUrl?: string }) {
     );
   }
   if (step === 5) return <Phone label="ওষুধসাথী"><FlagResult flag={DEMO_FLAG} /></Phone>;
+  if (step === 8) return <Phone label="ওষুধসাথী"><SathiGuideScene /></Phone>;
+  if (step === 9) return <Phone label="ওষুধসাথী"><SathiHumanScene /></Phone>;
   if (step === 6)
     return (
       <motion.div className="demo-fit w-full max-w-[580px]" initial={{ opacity: 0, y: 40, rotate: -2 }} animate={{ opacity: 1, y: 0, rotate: 0.6 }} transition={SPRING_TRAVEL}>
@@ -345,5 +350,65 @@ function Stage({ step, passportUrl }: { step: number; passportUrl?: string }) {
       <div className="mt-4"><BPTrend readings={DEMO_BP} height={300} /></div>
       <p className="mt-4 border-t border-rule pt-4 text-[15px] text-ink-soft">Sent to the family every Friday. Target 140/90 marked on the chart.</p>
     </motion.div>
+  );
+}
+
+const later = (delay: number) => ({
+  initial: { opacity: 0, y: 14 },
+  animate: { opacity: 1, y: 0 },
+  transition: { ...SPRING_TRAVEL, delay },
+});
+
+function Bubble({ children, delay }: { children: ReactNode; delay: number }) {
+  return <motion.p {...later(delay)} className="ml-auto w-fit max-w-[85%] rounded-card bg-neel px-4 py-2.5 text-on-neel">{children}</motion.p>;
+}
+
+/** Scene: the next-step card, then a quick-reply chip answered from the app guide. */
+function SathiGuideScene() {
+  return (
+    <div className="grid gap-4">
+      <motion.section {...later(0.1)} className="rounded-card border border-neel/40 bg-paper-raised p-5 shadow-soft">
+        <p className="flex items-center gap-2 text-[15px] font-semibold text-neel"><SathiMark size={24} /> পরের কাজ</p>
+        <p className="mt-3 font-bn-display text-[24px] leading-[1.35] text-ink">৩টি ওষুধ আপনার যাচাইয়ের অপেক্ষায়।</p>
+        <span className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-card border border-neel px-5 font-semibold text-neel">
+          মিলিয়ে নিন <ArrowRight aria-hidden size={20} />
+        </span>
+      </motion.section>
+      <motion.div {...later(0.6)} className="flex flex-wrap gap-2">
+        {["কীভাবে ঠিক করব?", "ছবি ঝাপসা হলে?", "এটা কে দেখবেন?"].map((c, i) => (
+          <span key={c} className={cx("rounded-chip border px-4 py-2 text-base font-medium", i === 1 ? "border-neel bg-neel text-on-neel" : "border-neel/50 bg-neel-tint text-ink")}>{c}</span>
+        ))}
+      </motion.div>
+      <Bubble delay={1.1}>ছবি ঝাপসা হলে?</Bubble>
+      <motion.div {...later(1.6)} className="max-w-[92%] rounded-card border border-rule bg-paper-raised p-4">
+        <p className="mb-1.5 flex items-center gap-1.5 text-[14px] font-medium text-ink-soft"><BookOpen aria-hidden size={15} /> অ্যাপ গাইড থেকে</p>
+        <p className="text-ink">ঝাপসা ছবি মুছে আবার তুলুন: ফোন স্থির রাখুন আর লেখার ওপর একবার ট্যাপ করে ফোকাস করুন।</p>
+        <p className="mt-2 font-semibold text-neel underline underline-offset-4">এই পাতায় যান</p>
+      </motion.div>
+    </div>
+  );
+}
+
+/** Scene: a medicine question is redirected to the pharmacist, and a person replies. */
+function SathiHumanScene() {
+  return (
+    <div className="grid gap-4">
+      <Bubble delay={0.1}>Ace কি বন্ধ করে দেব?</Bubble>
+      <motion.div {...later(0.6)} className="max-w-[92%] rounded-card border border-amber-line bg-amber-tint/60 p-4">
+        <p className="flex items-start gap-2 text-ink">
+          <ShieldQuestion aria-hidden size={20} className="mt-1 shrink-0 text-amber" />
+          <span>এই প্রশ্নের উত্তর ফার্মাসিস্ট বা ডাক্তার দেবেন। আমি আপনার প্রশ্নটা তাঁদের কাছে পাঠাতে পারি।</span>
+        </p>
+        <span className="mt-3 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-card bg-neel px-5 font-semibold text-on-neel">
+          <Send aria-hidden size={18} /> ফার্মাসিস্টকে জিজ্ঞেস করুন
+        </span>
+      </motion.div>
+      <motion.p {...later(1.3)} className="flex items-center gap-2 font-medium text-ink"><Check aria-hidden size={20} className="text-green" /> পাঠানো হয়েছে।</motion.p>
+      <motion.div {...later(2.1)} className="rounded-md border-l-4 border-neel bg-neel-tint/60 p-4">
+        <p className="flex items-center gap-2 text-[15px] font-semibold text-neel"><MessageSquareReply aria-hidden size={18} /> Demo pharmacist-এর উত্তর</p>
+        <p className="mt-1.5 text-ink">দুটোতেই প্যারাসিটামল আছে। আমি ডাক্তারকে জানিয়েছি, পরের ভিজিটে তিনি ঠিক করে দেবেন।</p>
+        <p lang="en" className="mt-2 text-[13px] text-ink-faint">Written by a person. The AI never answers medical questions.</p>
+      </motion.div>
+    </div>
   );
 }

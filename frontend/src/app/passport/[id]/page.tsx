@@ -19,6 +19,9 @@ export default function PassportPage() {
   const t = useTranslations("passport");
   const tc = useTranslations("common");
   const passport = useApi(() => api.passport(pid), [pid]);
+  useEffect(() => {
+    if (passport.data) api.seen(pid, "passport").catch(() => {});
+  }, [pid, passport.data]);
   const [url, setUrl] = useState<string>();
   // the QR opens this household's own passport: a private link when this browser holds the family key
   useEffect(() => setUrl(familyLink(pid, `/passport/${pid}`) ?? `${window.location.origin}/passport/${pid}`), [pid]);

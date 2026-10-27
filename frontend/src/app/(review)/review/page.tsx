@@ -17,6 +17,7 @@ import { cx, date, genericName, since } from "@/lib/format";
 import type { AuditEntry, Flag, MedicineItem, ReviewQueue } from "@/lib/types";
 import { REVIEWER_SESSION, type ReviewerSession } from "@/lib/reviewer";
 import { useApi } from "@/lib/useApi";
+import { QuestionsBoard } from "@/components/review/QuestionsBoard";
 
 const SESSION = REVIEWER_SESSION;
 
@@ -115,6 +116,12 @@ function Dashboard({ session, onSignOut }: { session: Session; onSignOut: () => 
   const [selectedId, setSelectedId] = useState<number | null>(null);
   // below xl only some panels fit: phones show one, laptops show the queue plus one
   const [view, setView] = useState<"queue" | "evidence" | "patient">("queue");
+  // findings to review, or family questions Sathi passed on
+  const [mode, setMode] = useState<"flags" | "questions">("flags");
+  const [openQuestions, setOpenQuestions] = useState<number>();
+  useEffect(() => {
+    api.reviewerQuestions(session.token).then((r) => setOpenQuestions(r.open)).catch(() => {});
+  }, [session.token]);
   const [hidden, setHidden] = useState<Set<number>>(new Set());
   const [note, setNote] = useState("");
   const [noteError, setNoteError] = useState(false);
@@ -198,6 +205,7 @@ function Dashboard({ session, onSignOut }: { session: Session; onSignOut: () => 
   // Keyboard: J/K move, C confirm, D dismiss, N note, U undo. Off while typing.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      if (mode !== "flags") return;
       const typing = e.target instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
       if (typing) {
         if (e.key === "Escape") (e.target as HTMLElement).blur();
@@ -215,7 +223,7 @@ function Dashboard({ session, onSignOut }: { session: Session; onSignOut: () => 
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [move, decide, undo, toast]);
+  }, [move, decide, undo, toast, mode]);
 
   return (
     // pinned to the window: header stays put, and queue, evidence and patient each scroll on their own
@@ -228,7 +236,24 @@ function Dashboard({ session, onSignOut }: { session: Session; onSignOut: () => 
         </Link>
         <span className="hidden h-6 w-px bg-rule lg:block" aria-hidden />
         <h1 className="hidden whitespace-nowrap text-lg font-semibold text-ink lg:block">{t("dash.title")}</h1>
-        <dl className="hidden items-center gap-4 text-sm md:flex" aria-label={t("dash.counts")}>
+        <div role="group" aria-label={t("dash.mode")} className="inline-flex shrink-0 rounded-md border border-rule p-0.5">
+          {([["flags", t("dash.findings")], ["questions", t("dash.questionsTab")]] as const).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              aria-pressed={mode === key}
+              onClick={() => setMode(key)}
+              className={cx("inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded px-2.5 text-sm font-medium sm:px-3",
+                mode === key ? "bg-neel-tint text-ink" : "text-ink-soft hover:text-ink")}
+            >
+              {label}
+              {key === "questions" && !!openQuestions && (
+                <span className="tabular rounded-chip bg-neel px-1.5 text-[12px] font-semibold text-on-neel">{openQuestions}</span>
+              )}
+            </button>
+          ))}
+        </div>
+        <dl className={cx("hidden items-center gap-4 text-sm", mode === "flags" && "md:flex")} aria-label={t("dash.counts")}>
           <Count label={t("dash.pending")} value={counts?.pending} />
           <Count label={t("dash.red")} value={counts?.red} tone="red" />
           <Count label={t("dash.amber")} value={counts?.amber} tone="amber" />
@@ -249,6 +274,9 @@ function Dashboard({ session, onSignOut }: { session: Session; onSignOut: () => 
         </div>
       </header>
 
+      {mode === "questions" ? (
+        <QuestionsBoard token={session.token} reviewer={session.name} now={now} onCount={setOpenQuestions} />
+      ) : (<>
       <div role="tablist" aria-label={t("dash.panels")} className="flex shrink-0 gap-1 border-b border-rule bg-paper-raised px-3 py-2 lg:pl-[352px] xl:hidden">
         {([
           ["queue", `${t("dash.queue")}${counts ? ` (${counts.pending})` : ""}`, "lg:hidden"],
@@ -373,6 +401,7 @@ function Dashboard({ session, onSignOut }: { session: Session; onSignOut: () => 
           {selected?.patient ? <PatientPanel token={session.token} patientId={selected.patient.id} key={selected.patient.id} /> : null}
         </aside>
       </div>
+      </>)}
 
       {toast && (
         <div role="status" className="fixed bottom-6 left-1/2 z-20 flex w-max max-w-[calc(100vw-2rem)] -translate-x-1/2 flex-wrap items-center gap-x-4 gap-y-2 rounded-card border border-rule bg-ink px-5 py-3 text-paper shadow-soft" style={{ animation: "assemble 200ms var(--ease-out-quint) both" }}>

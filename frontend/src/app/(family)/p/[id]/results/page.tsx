@@ -4,6 +4,7 @@ import { BookUser, CircleCheck, ScanLine } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useEffect } from "react";
 import { buttonStyles, FamilyHeader, familyWidth } from "@/components/Chrome";
 import { FlagResult } from "@/components/FlagResult";
 import { ErrorState, Skeleton } from "@/components/States";
@@ -18,6 +19,10 @@ export default function ResultsPage() {
   const patient = useApi(() => api.patient(pid), [pid]);
   const status = useApi(() => api.status(pid), [pid]);
   const flags = useApi(() => api.familyFlags(pid), [pid]);
+  // reading the results moves the family's next step along
+  useEffect(() => {
+    if (flags.data) api.seen(pid, "results").catch(() => {});
+  }, [pid, flags.data]);
   const list = flags.data ?? [];
   const reviewed = status.data?.review_state === "reviewed";
 

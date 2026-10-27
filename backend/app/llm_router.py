@@ -204,7 +204,10 @@ class Router:
         self.client = client or httpx.Client(timeout=timeout)
 
     def chat(self, task: Task, messages: list[dict], *, json_mode: bool = False,
-             temperature: float = 0) -> RouterResult:
+             temperature: float = 0, budget_s: float | None = None) -> RouterResult:
+        """budget_s: total seconds for the whole chain. For callers with a safe fixed fallback
+        (Sathi), a slow model is worse than no model: stop trying once the budget is spent."""
+        started = time.monotonic()
         providers = configured_providers(task, self.client)
         if not providers:
             raise NoProviderAvailable(f"no provider configured for task {task!r}")
@@ -215,6 +218,12 @@ class Router:
                 log.info("task=%s cache hit (%s/%s)", task, p.name, p.model)
                 last_used[task] = {"provider": p.name, "model": p.model, "at": time.time(), "cached": True}
                 return RouterResult(hit, p.name, p.model, cached=True)
+            timeout = None
+            if budget_s is not None:
+                timeout = budget_s - (time.monotonic() - started)
+                if timeout < 1:
+                    errors.append(f"{p.name}: over the {budget_s:g}s budget")
+                    break
             body: dict = {"model": p.model, "messages": messages, "temperature": temperature}
             if json_mode and p.name != "ollama":
                 body["response_format"] = {"type": "json_object"}
@@ -222,6 +231,7 @@ class Router:
                 r = self.client.post(
                     f"{p.base_url}/chat/completions", json=body,
                     headers={"Authorization": f"Bearer {p.api_key}"},
+                    **({"timeout": timeout} if timeout is not None else {}),
                 )
             except httpx.HTTPError as e:  # timeouts, connection refused (e.g. Ollama not running)
                 log.warning("task=%s provider=%s failed: %s; falling through", task, p.name, type(e).__name__)

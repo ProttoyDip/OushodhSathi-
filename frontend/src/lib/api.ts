@@ -1,5 +1,6 @@
 import type {
-  AuditEntry, EvalResult, FamilyStatus, Flag, Health, MedicineItem, ModelsInfo, Passport, Patient, PilotStats, Report, ReviewQueue,
+  AuditEntry, EvalResult, FamilyStatus, Flag, Health, MedicineItem, ModelsInfo, NextStep, Passport, Patient, PilotStats,
+  Question, Report, ReviewQueue, SathiReply,
 } from "./types";
 import { familyKey } from "./familyKey";
 
@@ -76,6 +77,16 @@ export const api = {
   familyFlags: (id: number) => request<Flag[]>(`/patients/${id}/flags?view=family`, { pid: id }),
   passport: (id: number) => request<Passport>(`/patients/${id}/passport`, { pid: id }),
   report: (id: number) => request<Report>(`/patients/${id}/report`, { pid: id }),
+  nextStep: (id: number, lang: string, phrase = false) =>
+    request<NextStep>(`/patients/${id}/next-step?lang=${lang}&phrase=${phrase}`, { pid: id }),
+  askSathi: (id: number, question: string, lang: string) =>
+    request<SathiReply>("/assistant/ask", { method: "POST", body: json({ patient_id: id, question, lang }), pid: id }),
+  questions: (id: number) => request<Question[]>(`/patients/${id}/questions`, { pid: id }),
+  askPharmacist: (id: number, text: string) =>
+    request<Question>(`/patients/${id}/questions`, { method: "POST", body: json({ text }), pid: id }),
+  questionsSeen: (id: number) => request<void>(`/patients/${id}/questions/seen`, { method: "POST", pid: id }),
+  seen: (id: number, what: "results" | "passport") =>
+    request<void>(`/patients/${id}/seen`, { method: "POST", body: json({ what }), pid: id }),
   addBP: (id: number, body: { systolic: number; diastolic: number; taken_on?: string }) =>
     request<{ ok: true; readings: Report["bp"]["readings"] }>(`/patients/${id}/bp`, { method: "POST", body: json(body), pid: id }),
 
@@ -87,5 +98,9 @@ export const api = {
     request<Flag>(`/flags/${flagId}/review`, { method: "POST", body: json(body), token }),
   undo: (token: string, flagId: number, reviewer: string) =>
     request<Flag>(`/flags/${flagId}/undo?reviewer=${encodeURIComponent(reviewer)}`, { method: "POST", token }),
+  reviewerQuestions: (token: string, status: "open" | "all" = "open") =>
+    request<{ questions: Question[]; open: number }>(`/questions?status=${status}`, { token }),
+  reply: (token: string, qid: number, reply: string, reviewer: string) =>
+    request<Question>(`/questions/${qid}/reply`, { method: "POST", body: json({ reply, reviewer }), token }),
   audit: (token: string, id: number) => request<AuditEntry[]>(`/patients/${id}/reviews`, { token }),
 };

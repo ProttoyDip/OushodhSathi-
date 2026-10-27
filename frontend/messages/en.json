@@ -76,7 +76,9 @@
     "shareCopied": "Link copied. Anyone with it can open this household.",
     "shareTitle": "OushodhSathi",
     "shareText": "Our family's medicine list on OushodhSathi (private link):",
-    "shareCopyPrompt": "Copy this private link:"
+    "shareCopyPrompt": "Copy this private link:",
+    "questions": "Questions to the pharmacist",
+    "questionsHint": "Ask about a medicine and read the replies"
   },
   "scan": {
     "title": "Photograph the medicines",
@@ -524,6 +526,10 @@
       "explain_bn": {
         "title": "Bangla explanations",
         "desc": "Written only after a clinician confirms a finding. Your own computer (Ollama) is tried first when it is running."
+      },
+      "sathi": {
+        "title": "Sathi, the app helper",
+        "desc": "Rewords answers from the app guide. Never answers medical questions; the local model goes first."
       }
     },
     "first": "Tried first",
@@ -604,7 +610,10 @@
       "toastConfirmed": "Confirmed",
       "toastDismissed": "Dismissed",
       "undo": "Undo (U)",
-      "panels": "Panels"
+      "panels": "Panels",
+      "mode": "What to review",
+      "findings": "Findings",
+      "questionsTab": "Questions"
     },
     "ev": {
       "badge": "{sev} · for the {route}",
@@ -652,6 +661,24 @@
       "INTERACTION": "Drug interaction",
       "BEERS_65": "Beers list, age 65+",
       "EXPIRED": "Expired or expiring strip"
+    },
+    "questions": {
+      "title": "Questions from families",
+      "intro": "Sathi passes every medical question to you. Reply in plain words; the family sees it on their questions page. Target: within 1–2 days.",
+      "filter": "Show",
+      "open": "Waiting",
+      "all": "All",
+      "none": "No questions yet.",
+      "noneOpen": "No questions waiting. Well done.",
+      "demo": "Demo",
+      "waiting": "Waiting {time}",
+      "overdue": "over 2 days",
+      "repliedBy": "Replied by {name}, {date}",
+      "replyLabel": "Your reply",
+      "replyPh": "Write as you would speak to the family.",
+      "humanOnly": "Written by you. Sathi never writes replies.",
+      "send": "Send reply",
+      "failed": "The reply was not sent. Please try again."
     }
   },
   "start": {
@@ -671,5 +698,80 @@
     "privateTitle": "Private to your family",
     "privateBody": "This list opens only on this phone and through its private link. The name is never sent to an AI model.",
     "privateShare": "Afterwards, use \"Share with family\" on the home screen to send the link to brothers, sisters or a carer."
+  },
+  "sathi": {
+    "name": "Sathi",
+    "role": "Helps with the app. Medicine questions go to the pharmacist.",
+    "open": "Open Sathi, the app helper",
+    "close": "Close Sathi",
+    "nextStep": "Next step",
+    "urgent": "Urgent",
+    "greeting": "I'm Sathi. I can help you use the app. I'll send any question about medicines to the pharmacist.",
+    "suggestions": "Suggested questions",
+    "thinking": "Sathi is looking in the app guide…",
+    "error": "I can't answer right now. Please try again in a moment.",
+    "fromGuide": "From the app guide",
+    "inputLabel": "Your question",
+    "placeholder": "Type or speak your question",
+    "mic": "Speak your question",
+    "micStop": "Stop listening",
+    "micUnsupported": "This browser can't turn speech into text. Please type instead.",
+    "micBlocked": "The microphone is blocked. Allow it in the browser settings, or type instead.",
+    "send": "Send",
+    "listen": "Listen",
+    "stopListening": "Stop",
+    "draftLabel": "Your question for the pharmacist (you can change it)",
+    "askPharmacist": "Ask the pharmacist",
+    "sent": "Sent. The pharmacist usually replies within a day or two.",
+    "seeQuestions": "See your questions",
+    "chips": {
+      "scan": [
+        "How do I scan medicines?",
+        "How do I take a good photo?",
+        "What if the strip is cut?",
+        "Can I scan a prescription?",
+        "Do you keep my photos?",
+        "What can Sathi do?"
+      ],
+      "confirm": [
+        "How do I fix a wrong name?",
+        "What if the photo is blurry?",
+        "Who checks my list?",
+        "What does \"Please check\" mean?",
+        "How do I add a medicine by hand?",
+        "How do I set the times?"
+      ],
+      "review": [
+        "How long does checking take?",
+        "Who checks my list?",
+        "Why don't results show straight away?",
+        "What does \"confirmed\" mean?",
+        "How do I print the passport?",
+        "What can Sathi do?"
+      ],
+      "results": [
+        "What do red and amber mean?",
+        "How do I print the passport?",
+        "How do I send the passport on WhatsApp?",
+        "What should I show the doctor?",
+        "How do I show the list to my brother?",
+        "How do I add a blood pressure reading?"
+      ]
+    }
+  },
+  "questions": {
+    "title": "Questions to the pharmacist",
+    "intro": "A pharmacist or doctor reads your question and replies, usually within a day or two. Replies are written by a person, never by AI.",
+    "askLabel": "Your question",
+    "placeholder": "For example: Do Napa and Ace need to be taken together?",
+    "privacy": "Only the reviewing pharmacist or doctor sees this.",
+    "send": "Send to the pharmacist",
+    "sending": "Sending…",
+    "sent": "Sent. You'll see the reply here.",
+    "listTitle": "Your questions",
+    "none": "No questions yet.",
+    "askedOn": "Asked {date}",
+    "replyFrom": "Reply from {name}",
+    "waiting": "Waiting for a reply"
   }
 }

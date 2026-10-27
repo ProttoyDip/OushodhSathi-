@@ -27,6 +27,9 @@ from .next_step import NextStep
 
 log = logging.getLogger("oushodh.sathi")
 
+# a family is waiting: a model that is slower than this loses to the guide's own answer
+ANSWER_BUDGET_S = 8.0
+
 Kind = Literal["answer", "not_in_guide", "medical_redirect", "emergency"]
 Lang = Literal["bn", "en"]
 
@@ -134,7 +137,7 @@ def ask(question: str, lang: Lang, pid: int, router: Router | None, *,
                                     f"Guide entries:\n{entries_text}\n\nQuestion: {clean_q}"},
     ]
     try:
-        result = router.chat("sathi", messages, json_mode=True)
+        result = router.chat("sathi", messages, json_mode=True, budget_s=ANSWER_BUDGET_S)
         parsed = ModelAnswer.model_validate(parse_json(result.text))
     except (NoProviderAvailable, ValueError, ValidationError) as e:
         log.info("sathi answer from the guide (%s)", type(e).__name__)
@@ -168,7 +171,7 @@ def phrase_next_step(step: NextStep, lang: Lang, router: Router | None) -> tuple
             {"role": "system", "content": prompts.load("sathi_nextstep")},
             {"role": "user", "content": f"State: {step.code}\nParameters: {params}\nFixed sentence: {fixed}\n"
                                         f"Reply language: {lang}"},
-        ], temperature=0.3)
+        ], temperature=0.3, budget_s=ANSWER_BUDGET_S)
     except NoProviderAvailable:
         return fixed, "fixed"
     text = result.text.strip().strip('"').strip()

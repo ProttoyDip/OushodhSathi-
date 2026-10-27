@@ -30,8 +30,9 @@ NOT_IN_GUIDE_EN = "I don't know that one. Ask me something else about the app, o
 
 
 def _any(patterns: tuple[str, ...]):
-    """Latin words match on word boundaries; Bangla matches as text (it inflects by suffix)."""
-    parts = [rf"\b{re.escape(p)}\b" if p.isascii() else re.escape(p) for p in patterns]
+    """Latin words match on word boundaries. Bangla matches at the start of a word but may
+    run on (it inflects by suffix): "খাব" matches "খাবো" but not "দেখাব" (to show)."""
+    parts = [rf"\b{re.escape(p)}\b" if p.isascii() else rf"(?<![ঀ-৿]){re.escape(p)}" for p in patterns]
     return re.compile("|".join(parts), re.IGNORECASE)
 
 
@@ -70,7 +71,7 @@ _MEDICAL = _any((
     "খাওয়া যাবে", "খেলে হবে", "খেলে কি", "খাব কি", "খাবে কি", "বদলে দেব", "ওষুধ বদল", "বিকল্প", "কম খাব",
     "বেশি খাব", "দ্বিগুণ", "খাব", "খাবো", "খাওয়াব", "ওষুধটা কিসের", "ওষুধটি কিসের", "ওষুধ কিসের",
     # symptoms and effects
-    "পার্শ্বপ্রতিক্রিয়া", "সাইড ইফেক্ট", "ব্যথা", "জ্বর", "মাথা ঘোর", "বমি", "ডায়রিয়া", "পাতলা পায়খানা",
+    "পার্শ্বপ্রতিক্রিয়া", "সাইড ইফেক্ট", "ব্যথা", "মাথাব্যথা", "পেটব্যথা", "গায়েব্যথা", "জ্বর", "মাথা ঘোর", "বমি", "ডায়রিয়া", "পাতলা পায়খানা",
     "কাশি", "চুলকানি", "ফুলে", "প্রেশার বেশি", "প্রেশার কম", "প্রেশার বেড়ে", "সুগার কম", "সুগার বেশি",
     "সুগার বেড়ে", "দুর্বল", "ঘুম হয় না", "রোজা", "গর্ভ", "অ্যালার্জি হয়েছে",
     # Banglish
@@ -113,7 +114,7 @@ def classify(question: str, router: Router | None) -> Intent:
         result = router.chat("text", [
             {"role": "system", "content": prompts.load("sathi_intent")},
             {"role": "user", "content": question},
-        ])
+        ], budget_s=6.0)  # too slow counts as unsure, and unsure counts as MEDICAL
     except NoProviderAvailable:
         return "MEDICAL"
     word = result.text.strip().strip(".\"'` ").upper()

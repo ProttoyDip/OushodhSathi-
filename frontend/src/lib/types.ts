@@ -181,6 +181,46 @@ export interface ModelTask {
 }
 
 export interface ModelsInfo {
-  tasks: Record<"vision" | "text" | "explain_bn", ModelTask>;
+  tasks: Record<"vision" | "text" | "explain_bn" | "sathi", ModelTask>;
   demo_mode: boolean;
+}
+
+export type StepCode =
+  | "EMERGENCY_ACTIVE" | "PHARMACIST_REPLIED" | "RESULTS_READY" | "LOW_CONFIDENCE" | "ITEMS_TO_CONFIRM" | "NO_SCAN"
+  | "READY_TO_SEND" | "SENT_FOR_REVIEW" | "PASSPORT_NOT_SAVED" | "REFILL_DUE" | "ALL_GOOD";
+
+export interface NextStep {
+  code: StepCode;
+  params: Record<string, string | number>;
+  text: string;
+  button: string;
+  route: string;
+  phrased_by: string;
+}
+
+export interface SathiAction {
+  label: string;
+  route: string | null;
+  tel: string | null;
+  question_draft: string | null;
+}
+
+export interface SathiReply {
+  kind: "answer" | "not_in_guide" | "medical_redirect" | "emergency";
+  text: string;
+  guide_ids: string[];
+  actions: SathiAction[];
+  source: string;
+}
+
+export interface Question {
+  id: number;
+  patient_id: number;
+  text: string;
+  created_at: string;
+  reply: string | null;
+  replied_by: string | null;
+  replied_at: string | null;
+  reply_seen_at: string | null;
+  patient?: { id: number; name: string; name_bn: string | null; age: number; is_demo: boolean } | null;
 }

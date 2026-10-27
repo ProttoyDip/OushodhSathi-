@@ -86,6 +86,21 @@ def test_app_questions_are_not_medical(text):
     assert not guard.looks_medical(text) and not guard.is_emergency(text)
 
 
+def test_bangla_keywords_match_whole_words_only():
+    assert not guard.looks_medical("ডাক্তারকে কী দেখাব?")  # "দেখাব" (to show) contains "খাব"
+    assert guard.looks_medical("দিনে কয়টা খাবো?") and guard.looks_medical("মাথাব্যথা হচ্ছে")
+
+
+def test_every_quick_reply_chip_gets_a_guide_answer():
+    from pathlib import Path
+
+    messages = Path(__file__).resolve().parents[2] / "frontend" / "messages"
+    for lang in ("bn", "en"):
+        chips = json.loads((messages / f"{lang}.json").read_text(encoding="utf-8"))["sathi"]["chips"]
+        for q in (q for group in chips.values() for q in group):
+            assert sathi.ask(q, lang, 1, None).kind == "answer", q
+
+
 def test_intent_model_failure_counts_as_medical():
     assert guard.classify("anything", None) == "MEDICAL"
     assert guard.classify("anything", FakeRouter(fail=True)) == "MEDICAL"
@@ -187,6 +202,25 @@ def test_next_step_rewording_keeps_numbers_honest():
     assert how.startswith("llm:")
     wrong, how = sathi.phrase_next_step(step, "en", FakeRouter({"sathi": "5 medicines are waiting."}))
     assert wrong == step.text_en and how == "fixed"
+
+
+def test_router_budget_stops_trying_slow_providers(monkeypatch):
+    import httpx
+
+    from app.llm_router import Router
+
+    monkeypatch.setenv("OPENROUTER_API_KEY", "k")
+    monkeypatch.setenv("OPENROUTER_TEXT_MODEL", "slow/model")
+    calls = []
+
+    def handler(request):
+        calls.append(request)
+        return httpx.Response(200, json={"choices": [{"message": {"content": "late"}}]})
+
+    router = Router(client=httpx.Client(transport=httpx.MockTransport(handler)))
+    with pytest.raises(NoProviderAvailable, match="budget"):
+        router.chat("sathi", [{"role": "user", "content": "hi"}], budget_s=0.5)
+    assert calls == []  # not even started: the family gets the guide's answer instead
 
 
 # ---- through the API -----------------------------------------------------------------------

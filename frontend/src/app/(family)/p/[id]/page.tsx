@@ -1,12 +1,13 @@
 "use client";
 
-import { BookUser, Camera, ChevronRight, CircleCheck, Clock, Cpu, LineChart, ScanLine, Share2 } from "lucide-react";
+import { BookUser, Camera, ChevronRight, CircleCheck, Clock, Cpu, LineChart, MessagesSquare, ScanLine, Share2 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { buttonStyles, FamilyHeader, familyWidth } from "@/components/Chrome";
 import { SeverityBadge } from "@/components/SeverityBadge";
+import { NextStepCard } from "@/components/sathi/NextStepCard";
 import { ErrorState, Skeleton } from "@/components/States";
 import { api } from "@/lib/api";
 import { familyLink } from "@/lib/familyKey";
@@ -38,7 +39,9 @@ export default function FamilyHome() {
           <Skeleton lines={3} />
         ) : (
           <div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-x-10">
-            <div {...reveal(0)} className="lg:col-start-1 lg:row-start-1">
+            <div {...reveal(0)} className="grid gap-6 lg:col-start-1 lg:row-start-1">
+            <NextStepCard pid={pid} />
+            <div>
             {/* the patient, written like the head of a prescription */}
             <section aria-labelledby="patient-name" className="rounded-card border border-rule bg-paper-raised px-5 pb-4 pt-5 shadow-soft">
               <h1 id="patient-name" className="font-bn-display text-[34px] leading-[1.15] text-ink">
@@ -64,6 +67,7 @@ export default function FamilyHome() {
                 {t("scanCta")}
               </Link>
               <p className="mt-2 px-1 text-base text-ink-soft">{t("scanHint")}</p>
+            </div>
             </div>
             </div>
 
@@ -119,6 +123,7 @@ export default function FamilyHome() {
             <nav {...reveal(180)} aria-label={t("passport")} className="divide-y lg:col-start-1 lg:row-start-2 divide-rule overflow-hidden rounded-card border border-rule bg-paper-raised">
               <RowLink href={`/passport/${pid}`} Icon={BookUser} title={t("passport")} hint={t("passportHint")} />
               <RowLink href={`/p/${pid}/report`} Icon={LineChart} title={t("report")} hint={t("reportHint")} />
+              <RowLink href={`/p/${pid}/questions`} Icon={MessagesSquare} title={t("questions")} hint={t("questionsHint")} />
               <ShareRow pid={pid} />
               <RowLink href={`/models?from=/p/${pid}`} Icon={Cpu} title={t("models")} hint={t("modelsHint")} />
             </nav>

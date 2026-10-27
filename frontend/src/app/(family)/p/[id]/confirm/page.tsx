@@ -4,7 +4,7 @@ import { Check, CircleCheck, Clock, Cpu, FlaskConical, Pencil, Plus, Send, Trash
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { buttonStyles, FamilyHeader, familyWidth } from "@/components/Chrome";
 import { ErrorState, Skeleton } from "@/components/States";
 import { StripCard } from "@/components/StripCard";
@@ -50,6 +50,19 @@ function Confirm() {
   const [editing, setEditing] = useState<number | null>(null);
   const [editingTimes, setEditingTimes] = useState<number | null>(null);
   const [plans, setPlans] = useState<Record<number, Plan>>({});
+  // lift Sathi's button above the fixed send bar so it never covers the primary action
+  const barRef = useRef<HTMLDivElement>(null);
+  const hasBar = (items.data?.length ?? 0) > 0;
+  useEffect(() => {
+    const bar = barRef.current;
+    if (!bar) return;
+    const root = document.documentElement;
+    const sync = () => root.style.setProperty("--sathi-offset", `${bar.offsetHeight + 12}px`);
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(bar);
+    return () => { ro.disconnect(); root.style.removeProperty("--sathi-offset"); };
+  }, [hasBar]);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string>();
 
@@ -212,7 +225,7 @@ function Confirm() {
       </main>
 
       {list.length > 0 && (
-        <div className="no-print fixed inset-x-0 bottom-0 border-t border-rule bg-paper/95 px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-3 backdrop-blur-sm">
+        <div ref={barRef} className="no-print fixed inset-x-0 bottom-0 border-t border-rule bg-paper/95 px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-3 backdrop-blur-sm">
           <div className={`mx-auto lg:flex lg:items-center lg:justify-end lg:gap-6 ${familyWidth}`}>
             <p className="mb-2 text-center text-base text-ink-soft lg:mb-0" aria-live="polite">{t("remaining", { count: open.length })}</p>
             <button type="button" disabled={open.length > 0 || sending} onClick={send} className={`${buttonStyles.primary} lg:w-auto lg:min-w-[320px]`}>

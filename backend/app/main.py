@@ -586,14 +586,15 @@ def models() -> dict:
     """The model chain per task (first answers, the rest are fallbacks), the user's choice,
     and what actually answered last. Names only; never keys."""
     out = {}
-    for task in ("vision", "text", "explain_bn"):
+    for task in ("vision", "text", "explain_bn", "sathi"):
         kind = "vision" if task == "vision" else "text"
         pref = llm_router.preferred(kind)
+        local_first = task in llm_router.LOCAL_FIRST
         out[task] = {
             "chain": [{"provider": p.name, "model": p.model} for p in configured_providers(task)],
-            "preferred": {"provider": pref[0], "model": pref[1]} if pref and task != "explain_bn" else None,
+            "preferred": {"provider": pref[0], "model": pref[1]} if pref and not local_first else None,
             "last_used": llm_router.last_used.get(task),
-            "choosable": task != "explain_bn",
+            "choosable": not local_first,
         }
     return {"tasks": out, "demo_mode": demo_mode()}
 

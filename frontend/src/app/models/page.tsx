@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleCheck, Cpu, Languages, Lock, ScanText, Search, ShieldCheck } from "lucide-react";
+import { CircleCheck, Cpu, Languages, Lock, MessageCircleHeart, ScanText, Search, ShieldCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -26,6 +26,7 @@ const TASKS = [
   { key: "vision", Icon: ScanText },
   { key: "text", Icon: Search },
   { key: "explain_bn", Icon: Languages },
+  { key: "sathi", Icon: MessageCircleHeart },
 ] as const;
 
 const refKey = (r: ModelRef) => `${r.provider}|${r.model}`;
@@ -69,10 +70,10 @@ function Models() {
         ) : !info.data ? (
           <>
             <p className="mt-6 text-base text-ink-faint" aria-live="polite">{t("checking")}</p>
-            <Skeleton lines={3} className="mt-3 lg:grid-cols-3" />
+            <Skeleton lines={4} className="mt-3 lg:grid-cols-2 xl:grid-cols-4" />
           </>
         ) : (
-          <div className="mt-8 grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-3 lg:items-start">
+          <div className="mt-8 grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-2 lg:items-start xl:grid-cols-4">
             {TASKS.map(({ key, Icon }, i) => (
               <TaskCard key={key} index={i} kind={key} Icon={Icon} task={info.data!.tasks[key]} token={token} onChange={(d) => info.setData(d)} />
             ))}
@@ -85,7 +86,7 @@ function Models() {
 
 function TaskCard({ index, kind, Icon, task, token, onChange }: {
   index: number;
-  kind: "vision" | "text" | "explain_bn";
+  kind: "vision" | "text" | "explain_bn" | "sathi";
   Icon: typeof ScanText;
   task: ModelTask;
   token: string | null;
@@ -95,7 +96,7 @@ function TaskCard({ index, kind, Icon, task, token, onChange }: {
   const [state, setState] = useState<"idle" | "saving" | "saved" | "failed">("idle");
 
   async function choose(value: string) {
-    if (kind === "explain_bn" || !token) return;
+    if (kind === "explain_bn" || kind === "sathi" || !token) return;
     setState("saving");
     try {
       const [provider, ...rest] = value.split("|");
@@ -186,7 +187,7 @@ function TaskCard({ index, kind, Icon, task, token, onChange }: {
             {state === "saved" ? t("saved") : state === "failed" ? t("failed") : ""}
           </p>
         </div>
-      ) : kind === "explain_bn" ? (
+      ) : kind === "explain_bn" || kind === "sathi" ? (
         <p className="mt-4 border-t border-rule pt-4 text-[13px] text-ink-soft">{t("fixedNote")} {t("templates")}</p>
       ) : null}
     </section>

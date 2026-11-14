@@ -1,11 +1,16 @@
 import type {
   AuditEntry, BPPhotoReading, CaseSummary, CleanupItem, EmergencyPage, EvalResult, FamilyStatus, Flag, Health, MedicineItem,
   ActivityEntry, ModelsInfo, NextStep, Passport, Patient, PilotStats, Question, RamadanRequest, Report, ReviewQueue,
-  SathiReply, Savings, Today, VisitPrep,
+  ReviewerAccount, ReviewerInvite, SathiReply, Savings, Today, VisitPrep,
 } from "./types";
 import { familyKey } from "./familyKey";
 
-export const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
+// A production build on Vercel without NEXT_PUBLIC_API_URL would quietly call localhost from every phone.
+const configuredApi = process.env.NEXT_PUBLIC_API_URL;
+if (!configuredApi && process.env.NODE_ENV === "production" && process.env.VERCEL) {
+  throw new Error("NEXT_PUBLIC_API_URL must be set for a production build");
+}
+export const API_URL = (configuredApi || "http://localhost:8000").replace(/\/$/, "");
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -13,8 +18,8 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init: RequestInit & { token?: string; pid?: number } = {}): Promise<T> {
-  const { token, pid, headers, ...rest } = init;
+async function request<T>(path: string, init: RequestInit & { token?: string; pid?: number; admin?: string } = {}): Promise<T> {
+  const { token, pid, admin, headers, ...rest } = init;
   const key = pid !== undefined ? familyKey(pid) : null;
   let res: Response;
   try {
@@ -24,6 +29,7 @@ async function request<T>(path: string, init: RequestInit & { token?: string; pi
         ...(rest.body && !(rest.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
         ...(token ? { "X-Reviewer-Token": token } : {}),
         ...(key ? { "X-Family-Key": key } : {}),
+        ...(admin ? { "X-Admin-Token": admin } : {}),
         ...headers,
       },
       cache: "no-store",
@@ -53,7 +59,8 @@ export const api = {
     request<ModelsInfo>("/models/preference", { method: "PUT", body: json({ kind, ...(choice ?? {}) }), token }),
 
   // family (each call sends that household's private key, see lib/familyKey.ts)
-  createPatient: (body: { name: string; name_bn?: string | null; age: number; district?: string | null; conditions: string[] }) =>
+  createPatient: (body: { name: string; name_bn?: string | null; age: number; district?: string | null; conditions: string[];
+    consent: true; family_email?: string | null; email_opt_in?: boolean }) =>
     request<Patient & { family_key: string }>("/patients", { method: "POST", body: json(body) }),
   // a reviewer's token also opens any household (the dashboard's patient panel)
   patient: (id: number, token?: string) => request<Patient>(`/patients/${id}`, { pid: id, token }),
@@ -90,7 +97,7 @@ export const api = {
   seen: (id: number, what: "results" | "passport") =>
     request<void>(`/patients/${id}/seen`, { method: "POST", body: json({ what }), pid: id }),
   patchPatient: (id: number, body: { allergies?: string[]; emergency_contact_name?: string | null;
-    emergency_contact_phone?: string | null; visit_questions?: string[] }) =>
+    emergency_contact_phone?: string | null; visit_questions?: string[]; family_email?: string | null; email_opt_in?: boolean }) =>
     request<Patient>(`/patients/${id}`, { method: "PATCH", body: json(body), pid: id }),
   emergencyToken: (id: number) => request<{ token: string | null }>(`/patients/${id}/emergency`, { pid: id }),
   enableEmergency: (id: number) => request<{ token: string }>(`/patients/${id}/emergency`, { method: "POST", pid: id }),
@@ -111,11 +118,16 @@ export const api = {
   visit: (id: number) => request<VisitPrep>(`/patients/${id}/visit`, { pid: id }),
   visitDone: (id: number) => request<{ next: string }>(`/patients/${id}/visit/done`, { method: "POST", pid: id }),
   cleanup: (id: number) => request<{ to_set_aside: CleanupItem[]; set_aside: CleanupItem[] }>(`/patients/${id}/cleanup`, { pid: id }),
+  rotateFamilyKey: (id: number) => request<{ family_key: string }>(`/patients/${id}/family-key/rotate`, { method: "POST", pid: id }),
+  exportHousehold: (id: number) => request<Record<string, unknown>>(`/patients/${id}/export`, { pid: id }),
+  deleteHousehold: (id: number) =>
+    request<void>(`/patients/${id}`, { method: "DELETE", body: json({ confirm: "DELETE" }), pid: id }),
   addBP: (id: number, body: { systolic: number; diastolic: number; pulse?: number; taken_on?: string; source?: "manual" | "photo" }) =>
     request<{ ok: true; readings: Report["bp"]["readings"] }>(`/patients/${id}/bp`, { method: "POST", body: json(body), pid: id }),
 
   // reviewer (token required)
-  patients: (token: string) => request<(Patient & { family_key: string })[]>("/patients", { token }),
+  me: (token: string) => request<ReviewerAccount>("/reviewer/me", { token }),
+  patients: (token: string) => request<Patient[]>("/patients", { token }),
   queue: (token: string, status = "pending_review") => request<ReviewQueue>(`/flags?status=${status}`, { token }),
   reviewerFlags: (token: string, id: number) => request<Flag[]>(`/patients/${id}/flags?view=reviewer`, { token }),
   review: (token: string, flagId: number, body: { status: "confirmed" | "dismissed"; reviewer: string; note?: string }) =>
@@ -143,4 +155,15 @@ export const api = {
     by_category: Record<string, { n: number; correct: number; rate: number; target: number }>; leaks: string[];
     latency_ms: { mean: number; p95: number } }[]>("/eval/sathi"),
   audit: (token: string, id: number) => request<AuditEntry[]>(`/patients/${id}/reviews`, { token }),
+
+  // admin (ADMIN_TOKEN): personal reviewer invites and lost family links
+  admin: {
+    reviewers: (admin: string) => request<ReviewerAccount[]>("/admin/reviewers", { admin }),
+    createReviewer: (admin: string, body: { name: string; role: "pharmacist" | "doctor"; reg_no?: string | null }) =>
+      request<ReviewerInvite>("/admin/reviewers", { method: "POST", body: json(body), admin }),
+    revoke: (admin: string, id: number) => request<ReviewerAccount>(`/admin/reviewers/${id}/revoke`, { method: "POST", admin }),
+    reissue: (admin: string, id: number) => request<ReviewerInvite>(`/admin/reviewers/${id}/reissue`, { method: "POST", admin }),
+    familyLink: (admin: string, pid: number) =>
+      request<{ family_key: string; family_url: string }>(`/admin/patients/${pid}/family-key`, { method: "POST", admin }),
+  },
 };

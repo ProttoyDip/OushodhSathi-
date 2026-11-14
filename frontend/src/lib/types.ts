@@ -25,7 +25,24 @@ export interface Patient {
   emergency_contact_phone?: string | null;
   visit_questions?: string[];
   last_visit_at?: string | null;
+  family_email?: string | null;
+  email_opt_in?: boolean;
+  consent_at?: string | null;
 }
+
+/** A pharmacist or doctor with a personal, revocable login (is_demo: the shared demo token). */
+export interface ReviewerAccount {
+  id: number;
+  name: string;
+  role: "pharmacist" | "doctor";
+  reg_no: string | null;
+  created_at: string;
+  revoked_at: string | null;
+  is_demo: boolean;
+}
+
+/** Returned once when an invite is created or re-issued: the token is never shown again. */
+export type ReviewerInvite = ReviewerAccount & { token: string; invite_url: string };
 
 export interface MedicineItem {
   id: number;

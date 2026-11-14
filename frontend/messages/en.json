@@ -84,7 +84,9 @@
     "visit": "Before the doctor visit",
     "visitHint": "Everything to show the doctor on one page",
     "cleanup": "Medicines to set aside",
-    "cleanupHint": "Expired strips, and ones the pharmacist stopped"
+    "cleanupHint": "Expired strips, and ones the pharmacist stopped",
+    "settings": "Settings and privacy",
+    "settingsHint": "Email, private link, download or delete"
   },
   "scan": {
     "title": "Photograph the medicines",
@@ -103,7 +105,7 @@
     "reading2": "Matching the names…",
     "reading3": "Putting the list together…",
     "readingNote": "This can take a few seconds. Keep this page open.",
-    "privacy": "Photos are only used to read medicine names. They are not stored.",
+    "privacy": "Photos are only used to read medicine names and are not stored. On a prescription, fold or cover the patient's name before taking the photo.",
     "demoNote": "Demo mode: no AI model is connected, so the demo household's list is shown.",
     "tooMany": "You can add up to 12 photos at a time.",
     "failed": "The photos could not be read. Try again, or type the medicine names yourself.",
@@ -630,7 +632,10 @@
       "offline": "Can’t reach the review server.",
       "checking": "Checking…",
       "open": "Open the queue",
-      "demo": "Demo server: the reviewer token is <code>demo-reviewer</code>. Set REVIEWER_TOKEN in backend/.env for real use."
+      "demo": "Demo server: the reviewer token is <code>demo-reviewer</code>. Set REVIEWER_TOKEN in backend/.env for real use.",
+      "badInvite": "That invite link is not valid any more. Ask the team for a new one.",
+      "nameNeeded": "Add your name: it is recorded with every decision.",
+      "inviteHint": "Pharmacists and doctors sign in with their personal invite link from the team. Lost it? Ask for a new one."
     },
     "dash": {
       "title": "Review queue",
@@ -798,7 +803,24 @@
     "creating": "Creating…",
     "privateTitle": "Private to your family",
     "privateBody": "This list opens only on this phone and through its private link. The name is never sent to an AI model.",
-    "privateShare": "Afterwards, use \"Share with family\" on the home screen to send the link to brothers, sisters or a carer."
+    "privateShare": "Afterwards, use \"Share with family\" on the home screen to send the link to brothers, sisters or a carer.",
+    "email": "Your email (optional)",
+    "emailPlaceholder": "e.g. nusrat@example.com",
+    "emailInvalid": "This email address doesn't look right.",
+    "emailOptIn": "Email me when the pharmacist has checked the list, and a short weekly report.",
+    "consent": "I have read the <privacy>privacy notice</privacy> and <terms>terms</terms>, and I look after this person's medicines with their agreement.",
+    "saved": {
+      "done": "List created",
+      "title": "Save your family link",
+      "body": "This private link is the only way to open the list on another phone. Keep it somewhere safe and share it only with family.",
+      "linkLabel": "Your private family link",
+      "copy": "Copy the link",
+      "copied": "Copied",
+      "whatsapp": "Send to myself on WhatsApp",
+      "whatsappText": "Our family medicine list on OushodhSathi (private, keep safe):",
+      "warning": "Anyone with this link can open the list. If it reaches the wrong person, make a new link in Settings.",
+      "continue": "Go to the list"
+    }
   },
   "sathi": {
     "name": "Sathi",
@@ -998,5 +1020,75 @@
     "docs": "Docs",
     "reset": "Reset demo household",
     "failed": "Reset failed"
+  },
+  "settings": {
+    "title": "Settings and privacy",
+    "demo": "The demo household is invented data and cannot be changed here.",
+    "email": {
+      "title": "Email updates",
+      "body": "We email only when the pharmacist has checked the list, and a short weekly report. No advertising.",
+      "optIn": "Send me these emails",
+      "save": "Save",
+      "saved": "Saved",
+      "error": "Could not save. Check the connection and try again."
+    },
+    "link": {
+      "title": "Private family link",
+      "body": "If the link reached someone it shouldn't, make a new one. The old link stops working at once; this phone keeps working. Send the new link to the family again.",
+      "rotate": "Make a new link",
+      "confirm": "Yes, make a new link",
+      "cancel": "Cancel",
+      "newLink": "New private link",
+      "error": "Could not make a new link. Try again."
+    },
+    "export": {
+      "title": "Download your data",
+      "body": "A copy of everything about this household: the medicine list, confirmed findings, blood pressure and questions.",
+      "download": "Download (JSON)"
+    },
+    "delete": {
+      "title": "Delete this household",
+      "body": "Deletes the medicine list, findings, blood pressure, questions and the private link, for everyone in the family. This cannot be undone.",
+      "type": "To confirm, type <b>{word}</b>",
+      "word": "DELETE",
+      "button": "Delete everything",
+      "error": "Could not delete. Try again."
+    }
+  },
+  "admin": {
+    "title": "Team admin",
+    "body": "Personal reviewer logins and lost family links. Only for the OushodhSathi team.",
+    "token": "Admin token",
+    "open": "Open",
+    "signOut": "Sign out",
+    "badToken": "That admin token is not right.",
+    "notConfigured": "ADMIN_TOKEN is not set on this server.",
+    "offline": "Can't reach the server.",
+    "reviewers": "Reviewers",
+    "none": "No reviewers yet.",
+    "name": "Name",
+    "namePh": "e.g. Pharm. S. Akter",
+    "roleLabel": "Role",
+    "role": {
+      "pharmacist": "Pharmacist",
+      "doctor": "Doctor"
+    },
+    "reg": "Registration no.",
+    "regPh": "BMDC or Pharmacy Council",
+    "create": "Create invite",
+    "inviteFor": "Invite link for {name}",
+    "onceWarning": "Shown once. Send it privately; it signs this person in.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "done": "Done",
+    "reissue": "New link",
+    "revoke": "Revoke",
+    "revoked": "revoked",
+    "familyTitle": "Lost family link",
+    "familyBody": "A family changed phone or cleared the browser. Make a new private link for their household number; the old link stops working.",
+    "household": "Household no.",
+    "familyButton": "Make a new family link",
+    "familyNew": "New family link",
+    "error": "Something went wrong. Try again."
   }
 }

@@ -14,8 +14,8 @@ import { SeverityBadge } from "@/components/SeverityBadge";
 import { StripCard } from "@/components/StripCard";
 import { api, ApiError } from "@/lib/api";
 import { cx, date, genericName, since } from "@/lib/format";
-import type { AuditEntry, Flag, ReviewQueue } from "@/lib/types";
-import { REVIEWER_SESSION, type ReviewerSession } from "@/lib/reviewer";
+import type { AuditEntry, Flag, ReviewerAccount, ReviewQueue } from "@/lib/types";
+import { REVIEWER_SESSION, takeInviteFromUrl, type ReviewerSession } from "@/lib/reviewer";
 import { useApi } from "@/lib/useApi";
 import { JudgeBar } from "@/components/JudgeBar";
 import { CaseSummaryPanel } from "@/components/review/CaseSummaryPanel";
@@ -30,30 +30,49 @@ type Toast = { flag: Flag; status: "confirmed" | "dismissed"; until: number };
 export default function ReviewPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(false);
+  const [inviteError, setInviteError] = useState(false);
+  const signIn = useCallback((s: Session) => {
+    try { sessionStorage.setItem(SESSION, JSON.stringify(s)); } catch {}
+    setSession(s);
+  }, []);
   useEffect(() => {
+    // an invite link signs the reviewer in with their personal token
+    const invite = takeInviteFromUrl();
+    if (invite) {
+      api.me(invite)
+        .then((me) => { if (!me.is_demo) signIn(sessionFor(invite, me)); else setInviteError(true); })
+        .catch(() => setInviteError(true))
+        .finally(() => setReady(true));
+      return;
+    }
     try {
       const s = sessionStorage.getItem(SESSION);
       if (s) setSession(JSON.parse(s));
     } catch {}
     setReady(true);
-  }, []);
+  }, [signIn]);
   if (!ready) return null;
   return session ? (
-    <Dashboard session={session} onSignOut={() => { sessionStorage.removeItem(SESSION); setSession(null); }} />
+    <Dashboard session={session} onSignOut={() => { try { sessionStorage.removeItem(SESSION); } catch {} setSession(null); }} />
   ) : (
-    <Login onSignIn={(s) => { sessionStorage.setItem(SESSION, JSON.stringify(s)); setSession(s); }} />
+    <Login onSignIn={signIn} inviteError={inviteError} />
   );
+}
+
+function sessionFor(token: string, me: ReviewerAccount, typedName = ""): Session {
+  return { token, name: me.is_demo ? typedName.trim() || me.name : me.name, role: me.role, reg_no: me.reg_no, demo: me.is_demo };
 }
 
 /* ------------------------------------------------------------------ login */
 
-function Login({ onSignIn }: { onSignIn: (s: Session) => void }) {
+function Login({ onSignIn, inviteError }: { onSignIn: (s: Session) => void; inviteError?: boolean }) {
   const health = useApi(() => api.health(), []);
   const t = useTranslations("review");
   const [name, setName] = useState("");
   const [token, setToken] = useState("");
-  const [error, setError] = useState<string>();
+  const [error, setError] = useState<string | undefined>(inviteError ? t("login.badInvite") : undefined);
   const [busy, setBusy] = useState(false);
+  const demoServer = health.data?.reviewer_login === "demo token";
   const field = "mt-1.5 block h-11 w-full rounded-md border border-rule-strong bg-paper px-3 text-base text-ink";
 
   return (
@@ -77,8 +96,12 @@ function Login({ onSignIn }: { onSignIn: (s: Session) => void }) {
           setBusy(true);
           setError(undefined);
           try {
-            await api.queue(token.trim());
-            onSignIn({ token: token.trim(), name: name.trim() });
+            const me = await api.me(token.trim());
+            if (me.is_demo && !name.trim()) {
+              setError(t("login.nameNeeded"));
+              return;
+            }
+            onSignIn(sessionFor(token.trim(), me, name));
           } catch (err) {
             setError(err instanceof ApiError && err.status === 401 ? t("login.badToken") : t("login.offline"));
           } finally {
@@ -86,10 +109,12 @@ function Login({ onSignIn }: { onSignIn: (s: Session) => void }) {
           }
         }}
       >
-        <label className="text-sm font-medium text-ink-soft">
-          {t("login.name")}
-          <input required value={name} onChange={(e) => setName(e.target.value)} className={field} autoComplete="name" placeholder={t("login.namePh")} />
-        </label>
+        {demoServer && (
+          <label className="text-sm font-medium text-ink-soft">
+            {t("login.name")}
+            <input required maxLength={80} value={name} onChange={(e) => setName(e.target.value)} className={field} autoComplete="name" placeholder={t("login.namePh")} />
+          </label>
+        )}
         <label className="text-sm font-medium text-ink-soft">
           {t("login.token")}
           <input required type="password" value={token} onChange={(e) => setToken(e.target.value)} className={field} autoComplete="current-password" />
@@ -100,10 +125,12 @@ function Login({ onSignIn }: { onSignIn: (s: Session) => void }) {
           {busy ? t("login.checking") : t("login.open")}
         </button>
       </form>
-      {health.data?.reviewer_login === "demo token" && (
+      {demoServer ? (
         <p className="mt-6 rounded-md border border-dashed border-rule-strong px-3 py-2 text-sm text-ink-soft">
           {t.rich("login.demo", { code: (c) => <code className="font-mono text-ink">{c}</code> })}
         </p>
+      ) : (
+        <p className="mt-6 text-sm text-ink-soft">{t("login.inviteHint")}</p>
       )}
     </main>
   );

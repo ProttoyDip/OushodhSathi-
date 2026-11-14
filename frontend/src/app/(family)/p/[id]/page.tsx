@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, BookUser, Camera, ChevronRight, CircleCheck, Clock, Cpu, LineChart, MessagesSquare, ScanLine, Share2, Stethoscope, Sunrise } from "lucide-react";
+import { Archive, BookUser, Camera, ChevronRight, CircleCheck, Clock, Cpu, LineChart, MessagesSquare, ScanLine, Settings, Share2, Stethoscope, Sunrise } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -133,6 +133,9 @@ export default function FamilyHome() {
               <RowLink href={`/p/${pid}/cleanup`} Icon={Archive} title={t("cleanup")} hint={t("cleanupHint")} />
               <ShareRow pid={pid} />
               <RowLink href={`/models?from=/p/${pid}`} Icon={Cpu} title={t("models")} hint={t("modelsHint")} />
+              {patient.data && !patient.data.is_demo && (
+                <RowLink href={`/p/${pid}/settings`} Icon={Settings} title={t("settings")} hint={t("settingsHint")} />
+              )}
             </nav>
 
             {/* for siblings far away: what happened, and a digest for the family group */}

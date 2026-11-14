@@ -25,6 +25,26 @@ export function rememberFamilyKey(pid: number, key: string) {
   } catch {}
 }
 
+/** After deleting a household, or when its link was rotated elsewhere. */
+export function forgetFamilyKey(pid: number) {
+  try {
+    localStorage.removeItem(storageKey(pid));
+  } catch {}
+}
+
+/** Households this browser can open (their keys are saved here), newest first. */
+export function savedHouseholds(): number[] {
+  try {
+    return Object.keys(localStorage)
+      .map((k) => /^oushodh:key:(\d+)$/.exec(k)?.[1])
+      .filter((x): x is string => !!x)
+      .map(Number)
+      .sort((a, b) => b - a);
+  } catch {
+    return [];
+  }
+}
+
 /** Keeps the key out of the address bar (and out of screenshots) once it is stored. */
 export function stripKeyFromUrl() {
   const url = new URL(window.location.href);

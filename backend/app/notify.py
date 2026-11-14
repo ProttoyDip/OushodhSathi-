@@ -26,6 +26,8 @@ CODE_BN = {
     "INTERACTION": "দুটি ওষুধ একসাথে ঝুঁকিপূর্ণ",
     "BEERS_65": "৬৫ বছরের পরে সাবধানে খাওয়ার ওষুধ",
     "EXPIRED": "মেয়াদ শেষ",
+    "ANTICHOLINERGIC_BURDEN": "মাথা ঘোরা ও পড়ে যাওয়ার ঝুঁকি",
+    "LOOK_ALIKE_NAMES": "নাম প্রায় একই, ওষুধ আলাদা",
 }
 CODE_EN = {
     "DUPLICATE_GENERIC": "Same medicine twice",
@@ -33,6 +35,8 @@ CODE_EN = {
     "INTERACTION": "Two medicines that can interact",
     "BEERS_65": "Needs care after age 65",
     "EXPIRED": "Expired strip",
+    "ANTICHOLINERGIC_BURDEN": "Risk of confusion and falls",
+    "LOOK_ALIKE_NAMES": "Similar names, different medicines",
 }
 FOOTER = (
     "\n\n—\nওষুধসাথী কখনো কোনো ওষুধ বন্ধ বা পরিবর্তন করতে বলে না। ডাক্তারের সাথে কথা না বলে কোনো ওষুধ বন্ধ করবেন না।\n"

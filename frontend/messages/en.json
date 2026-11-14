@@ -30,7 +30,9 @@
     "THERAPEUTIC_DUPLICATION": "Two medicines of the same kind",
     "INTERACTION": "A problem when taken together",
     "BEERS_65": "Risky for people over 65",
-    "EXPIRED": "Expired"
+    "EXPIRED": "Expired",
+    "ANTICHOLINERGIC_BURDEN": "Risk of confusion and falls",
+    "LOOK_ALIKE_NAMES": "Similar names, different medicines"
   },
   "strip": {
     "expiry": "Exp",
@@ -781,14 +783,17 @@
     },
     "row": {
       "waiting": "Time waiting",
-      "age": "{age}y"
+      "age": "{age}y",
+      "risk": "Risk {score}"
     },
     "rules": {
       "DUPLICATE_GENERIC": "Same generic, two brands",
       "THERAPEUTIC_DUPLICATION": "Two drugs, same class",
       "INTERACTION": "Drug interaction",
       "BEERS_65": "Beers list, age 65+",
-      "EXPIRED": "Expired or expiring strip"
+      "EXPIRED": "Expired or expiring strip",
+      "ANTICHOLINERGIC_BURDEN": "Anticholinergic burden (ACB ≥ 3)",
+      "LOOK_ALIKE_NAMES": "Look-alike / sound-alike names"
     },
     "questions": {
       "title": "Questions from families",
@@ -847,6 +852,24 @@
       "unplaced": "{n, plural, one {# medicine has} other {# medicines have}} no slot: the family will see it as \"not in the Ramadan plan\".",
       "approve": "Approve the Ramadan plan",
       "failed": "The plan was not saved. Please try again."
+    },
+    "risk": {
+      "open_red": "Red findings waiting: {value}",
+      "open_amber": "Amber findings waiting: {value}",
+      "age": "Age {value}",
+      "medicines": "{value} medicines",
+      "prescribers": "{value} prescribers",
+      "acb": "Anticholinergic score {value}"
+    },
+    "bp": {
+      "title": "Home blood pressure, last 4 weeks",
+      "none": "No readings yet.",
+      "few": "{n} readings: too few for a trend.",
+      "falling": "Systolic falling about {v} per week (95% CI {lo} to {hi}).",
+      "rising": "Systolic rising about {v} per week (95% CI {lo} to {hi}).",
+      "flat": "No clear change in systolic ({v} per week, 95% CI {lo} to {hi}).",
+      "above": "{k} of {n} readings at or above {s}/{d}. Average {ms}/{md}.",
+      "caveat": "Straight-line fit, arithmetic only. Home readings vary; check the readings themselves."
     }
   },
   "start": {

@@ -90,6 +90,12 @@ def template(flag: StoredFlag, items: list[MedicineItem]) -> str:
         reason = m.get("reason_bn") or ""
         text = (f"{brands} বয়স্কদের জন্য সাবধানে ব্যবহারের ওষুধের তালিকায় আছে। {reason} "
                 f"{reviewer} বিষয়টি দেখেছেন।")
+    elif flag.code == "ANTICHOLINERGIC_BURDEN":
+        text = (f"{brands} — এই ধরনের ওষুধ একসাথে বেশি হলে বয়স্কদের মাথা ঘোরা, ভুলে যাওয়া বা "
+                f"পড়ে যাওয়ার ঝুঁকি বাড়তে পারে। {reviewer} বিষয়টি দেখেছেন।")
+    elif flag.code == "LOOK_ALIKE_NAMES":
+        text = (f"{brands} — নাম দেখতে বা শুনতে প্রায় একই, কিন্তু এগুলো আলাদা ওষুধ। "
+                f"বাসায় বা দোকানে একটির জায়গায় আরেকটি চলে আসতে পারে। {reviewer} বিষয়টি দেখেছেন।")
     elif flag.code == "EXPIRED":
         if flag.severity == "red":
             text = f"{brands} ওষুধটির মেয়াদ শেষ হয়ে গেছে। {reviewer} বিষয়টি দেখেছেন।"

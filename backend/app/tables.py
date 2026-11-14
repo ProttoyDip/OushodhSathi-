@@ -53,6 +53,8 @@ class RuleTables:
     interactions: tuple[InteractionRow, ...] = ()
     beers: tuple[BeersRow, ...] = ()
     duplicate_classes: frozenset[str] = field(default_factory=frozenset)
+    # generic -> Anticholinergic Cognitive Burden score (1-3), from acb_seed.csv
+    acb: dict[str, int] = field(default_factory=dict)
 
 
 def _read_csv(path: Path) -> list[dict[str, str]]:
@@ -112,7 +114,9 @@ def load_rule_tables() -> RuleTables:
         for line in (DATA_DIR / "duplicate_classes.txt").read_text(encoding="utf-8").splitlines()
         if line.strip()
     )
-    return RuleTables(tuple(interactions), tuple(beers), dup)
+    acb_path = DATA_DIR / "acb_seed.csv"
+    acb = {r["generic"].lower(): int(r["score"]) for r in _read_csv(acb_path)} if acb_path.exists() else {}
+    return RuleTables(tuple(interactions), tuple(beers), dup, acb)
 
 
 @lru_cache(maxsize=1)

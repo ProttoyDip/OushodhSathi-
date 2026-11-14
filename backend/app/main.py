@@ -36,9 +36,10 @@ from .rules import run_rules  # noqa: E402
 from . import clinical, sathi  # noqa: E402
 from .demo_seed import demo_patient_id, seed_demo  # noqa: E402
 from .savings import find_savings  # noqa: E402
-from .stats import pilot_stats, proportion  # noqa: E402
+from .stats import bp_trend, pilot_stats, proportion  # noqa: E402
 from .store import Store, now  # noqa: E402
 from .tables import load_rule_tables  # noqa: E402
+from .triage import household_risk  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("oushodh.api")
@@ -439,16 +440,25 @@ def review_queue(
     status: Literal["pending_review", "confirmed", "dismissed", "all"] = "pending_review",
     store: Store = Depends(get_store),
 ) -> dict:
-    """Reviewer queue across patients: red first, then longest waiting."""
+    """Reviewer queue across patients: red first, then the higher-risk household, then
+    longest waiting. The risk score only orders the queue (app/triage.py); it never
+    changes a flag."""
     flags = store.list_flags(statuses=None if status == "all" else (status,))
     patients = {p.id: p for p in store.list_patients()}
+    pending = store.list_flags(statuses=("pending_review",))
+    acb = load_rule_tables().acb
+    risk: dict[int, dict] = {}
+    for pid in {f.patient_id for f in flags}:
+        if (p := patients.get(pid)) is not None:
+            risk[pid] = household_risk(p, store.list_items(pid, confirmed_only=True),
+                                       [f for f in pending if f.patient_id == pid], acb)
     rows = []
     for f in _with_items(store, flags):
         p = patients.get(f["patient_id"])
         rows.append({**f, "patient": {"id": p.id, "name": p.name, "name_bn": p.name_bn, "age": p.age,
-                                      "is_demo": p.is_demo} if p else None})
-    rows.sort(key=lambda r: (0 if r["severity"] == "red" else 1, r["created_at"]))
-    pending = store.list_flags(statuses=("pending_review",))
+                                      "is_demo": p.is_demo} if p else None,
+                     "priority": risk.get(f["patient_id"], {"score": 0, "reasons": []})})
+    rows.sort(key=lambda r: (0 if r["severity"] == "red" else 1, -r["priority"]["score"], r["created_at"]))
     return {
         "flags": rows,
         "counts": {
@@ -1027,6 +1037,15 @@ def get_case_summary(pid: int, reviewer: str | None = None, rev: ReviewerAccount
     # automation bias: after a reviewer's first 10 reviews the panel starts collapsed
     name = who(rev, reviewer) if (reviewer or not rev.is_demo) else None
     return {**out, "collapsed": bool(name) and store.reviews_by(name) >= 10}
+
+
+@app.get("/patients/{pid}/bp-trend", dependencies=[Depends(require_reviewer)])
+def get_bp_trend(pid: int, days: int = 28, store: Store = Depends(get_store)) -> dict:
+    """Reviewer only: straight-line trend of the last `days` of home readings with a 95% CI.
+    Descriptive arithmetic (app/stats.py); never shown to the family as advice."""
+    _patient_or_404(store, pid)
+    since_day = (date.today() - timedelta(days=max(7, min(days, 180)))).isoformat()
+    return bp_trend(store.list_bp(pid, limit=500, since=since_day))
 
 
 @app.post("/patients/{pid}/bp/read", dependencies=[Depends(family_access), Depends(limit_scan)])

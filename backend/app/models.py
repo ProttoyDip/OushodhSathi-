@@ -12,7 +12,8 @@ Severity = Literal["red", "amber"]
 RoutedTo = Literal["doctor", "pharmacist"]
 FlagStatus = Literal["pending_review", "confirmed", "dismissed"]
 FlagCode = Literal[
-    "DUPLICATE_GENERIC", "THERAPEUTIC_DUPLICATION", "INTERACTION", "BEERS_65", "EXPIRED"
+    "DUPLICATE_GENERIC", "THERAPEUTIC_DUPLICATION", "INTERACTION", "BEERS_65", "EXPIRED",
+    "ANTICHOLINERGIC_BURDEN", "LOOK_ALIKE_NAMES",
 ]
 MatchMethod = Literal["exact", "fuzzy", "web_unverified", "not_found", "manual"]
 

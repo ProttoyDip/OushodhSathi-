@@ -58,3 +58,65 @@ def pilot_stats(path: Path) -> dict:
         out.append(proportion("Rule flags confirmed by the clinician",
                               sum(r["flags_confirmed"] for r in rows), raised))
     return {"households": n, "medicines": sum(r["medicines"] for r in rows), "proportions": out}
+
+
+# ---- blood-pressure trend (reviewer only) -------------------------------------------
+
+# two-sided 95% t critical values; df >= 30 uses the normal value
+_T95 = {1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571, 6: 2.447, 7: 2.365, 8: 2.306, 9: 2.262,
+        10: 2.228, 11: 2.201, 12: 2.179, 13: 2.160, 14: 2.145, 15: 2.131, 16: 2.120, 17: 2.110,
+        18: 2.101, 19: 2.093, 20: 2.086, 22: 2.074, 24: 2.064, 26: 2.056, 28: 2.048}
+BP_TARGET = (140, 90)
+BP_MIN_READINGS = 4
+BP_MIN_SPAN_DAYS = 3
+
+
+def _t95(df: int) -> float:
+    if df >= 30:
+        return Z95
+    return _T95.get(df) or _T95[max(k for k in _T95 if k <= df)]
+
+
+def _slope(xs: list[float], ys: list[float]) -> tuple[float, float]:
+    """Least-squares slope and its standard error."""
+    n = len(xs)
+    mx, my = sum(xs) / n, sum(ys) / n
+    sxx = sum((x - mx) ** 2 for x in xs)
+    b = sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / sxx
+    a = my - b * mx
+    resid = sum((y - (a + b * x)) ** 2 for x, y in zip(xs, ys))
+    se = sqrt(resid / (n - 2) / sxx) if n > 2 else float("inf")
+    return b, se
+
+
+def bp_trend(readings: list[dict]) -> dict:
+    """Describe home blood-pressure readings for the reviewer: a straight-line trend per
+    week with a 95% confidence interval, plus how many readings were at or above 140/90.
+
+    Pure arithmetic, no AI. It describes the numbers; it never says what to do.
+    "falling"/"rising" only when the whole 95% interval is on one side of zero.
+    """
+    from datetime import date as _date
+
+    rows = sorted(readings, key=lambda r: r["taken_on"])
+    n = len(rows)
+    above = sum(r["systolic"] >= BP_TARGET[0] or r["diastolic"] >= BP_TARGET[1] for r in rows)
+    out: dict = {"n": n, "above_target": above, "target": {"systolic": BP_TARGET[0], "diastolic": BP_TARGET[1]}}
+    if n == 0:
+        return {**out, "status": "no_readings"}
+    days = [(_date.fromisoformat(str(r["taken_on"])[:10]) - _date.fromisoformat(str(rows[0]["taken_on"])[:10])).days
+            for r in rows]
+    out["first"], out["last"] = str(rows[0]["taken_on"])[:10], str(rows[-1]["taken_on"])[:10]
+    out["mean"] = {"systolic": round(sum(r["systolic"] for r in rows) / n),
+                   "diastolic": round(sum(r["diastolic"] for r in rows) / n)}
+    if n < BP_MIN_READINGS or days[-1] - days[0] < BP_MIN_SPAN_DAYS or len(set(days)) < 2:
+        return {**out, "status": "too_few"}
+    result = {}
+    for k in ("systolic", "diastolic"):
+        b, se = _slope(days, [float(r[k]) for r in rows])
+        half = _t95(n - 2) * se
+        per_week, lo, hi = 7 * b, 7 * (b - half), 7 * (b + half)
+        result[k] = {"per_week": round(per_week, 1), "ci_low": round(lo, 1), "ci_high": round(hi, 1)}
+    s = result["systolic"]
+    status = "falling" if s["ci_high"] < 0 else "rising" if s["ci_low"] > 0 else "no_clear_change"
+    return {**out, "status": status, "slope": result}

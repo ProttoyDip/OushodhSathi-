@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock3, Pill, Stethoscope, UserRound } from "lucide-react";
+import { Clock3, Gauge, Pill, Stethoscope, UserRound } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { forwardRef } from "react";
 import { cx, since } from "@/lib/format";
@@ -62,6 +62,17 @@ export const ReviewRow = forwardRef<
           <Stethoscope aria-hidden size={13} />
           {t(`routes.${flag.routed_to}`)}
         </span>
+        {flag.priority && flag.priority.score > 0 && (
+          <span
+            className="tabular flex shrink-0 items-center gap-1"
+            title={flag.priority.reasons
+              .map((r) => `${t(`risk.${r.code}`, { value: r.value })} (+${r.points})`)
+              .join("\n")}
+          >
+            <Gauge aria-hidden size={13} />
+            {t("row.risk", { score: flag.priority.score })}
+          </span>
+        )}
       </div>
     </button>
   );

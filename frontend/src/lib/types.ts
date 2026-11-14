@@ -5,7 +5,9 @@ export type FlagCode =
   | "THERAPEUTIC_DUPLICATION"
   | "INTERACTION"
   | "BEERS_65"
-  | "EXPIRED";
+  | "EXPIRED"
+  | "ANTICHOLINERGIC_BURDEN"
+  | "LOOK_ALIKE_NAMES";
 export type MatchMethod = "exact" | "fuzzy" | "web_unverified" | "not_found" | "manual";
 
 export interface Patient {
@@ -97,7 +99,11 @@ export interface Flag {
   explanation_bn: string | null;
   items: MedicineItem[];
   patient?: { id: number; name: string; name_bn: string | null; age: number; is_demo: boolean } | null;
+  /** Reviewer queue only: household risk used to order the queue (backend/app/triage.py). */
+  priority?: { score: number; reasons: { code: RiskReason; points: number; value: number }[] };
 }
+
+export type RiskReason = "open_red" | "open_amber" | "age" | "medicines" | "prescribers" | "acb";
 
 export interface FamilyStatus {
   review_state: "not_checked" | "in_review" | "reviewed";
@@ -344,6 +350,17 @@ export interface EmergencyPage {
   allergies_confirmed: boolean;
   emergency_contact: { name: string | null; phone: string } | null;
   is_demo: boolean;
+}
+
+export interface BPTrend {
+  n: number;
+  above_target: number;
+  target: { systolic: number; diastolic: number };
+  status: "no_readings" | "too_few" | "falling" | "rising" | "no_clear_change";
+  first?: string;
+  last?: string;
+  mean?: { systolic: number; diastolic: number };
+  slope?: Record<"systolic" | "diastolic", { per_week: number; ci_low: number; ci_high: number }>;
 }
 
 export interface CaseSummary {

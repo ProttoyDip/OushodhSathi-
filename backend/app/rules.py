@@ -6,15 +6,22 @@ from __future__ import annotations
 
 import calendar
 import hashlib
+import re
 from collections import defaultdict
 from datetime import date
 from itertools import combinations
+
+from rapidfuzz.distance import JaroWinkler
 
 from .models import Flag, RuleItem
 from .tables import BeersRow, InteractionRow, RuleTables
 
 EXPIRY_WARNING_DAYS = 30
 BEERS_AGE = 65
+ACB_THRESHOLD = 3          # total ACB score >= 3 is clinically significant
+LOOK_ALIKE_SIMILARITY = 0.85  # Jaro-Winkler on cleaned brand names (weights a shared start)
+LOOK_ALIKE_PREFIX = 2          # ...and the names must start with the same letters
+SOUND_ALIKE_MIN_LEN = 4    # shorter names give too many phonetic collisions
 
 
 def _key(*parts: str) -> str:
@@ -202,6 +209,96 @@ def expired(items: list[RuleItem], today: date) -> list[Flag]:
     return flags
 
 
+def anticholinergic_burden(items: list[RuleItem], age: int | None, acb: dict[str, int]) -> list[Flag]:
+    """Sum the Anticholinergic Cognitive Burden (ACB) score of every distinct generic.
+
+    A total of 3 or more in an adult 65+ is linked to confusion, falls and cognitive
+    decline. One flag for the whole list, routed to the pharmacist.
+    """
+    if age is None or age < BEERS_AGE or not acb:
+        return []
+    scored: dict[str, int] = {}
+    members: dict[int, RuleItem] = {}
+    for it in items:
+        for g in _generics(it):
+            if g in acb:
+                scored[g] = acb[g]
+                members[it.id] = it
+    total = sum(scored.values())
+    if total < ACB_THRESHOLD:
+        return []
+    group = sorted(members.values(), key=lambda it: it.id)
+    parts = ", ".join(f"{g} {s}" for g, s in sorted(scored.items(), key=lambda kv: (-kv[1], kv[0])))
+    return [Flag(
+        key=_key("ANTICHOLINERGIC_BURDEN", *sorted(scored)),
+        code="ANTICHOLINERGIC_BURDEN", severity="amber", routed_to="pharmacist",
+        item_ids=[it.id for it in group],
+        evidence=(f"Anticholinergic burden score {total} ({parts}) from "
+                  f"{' and '.join(_label(it) for it in group)}. A total of {ACB_THRESHOLD} or more in adults 65+ "
+                  "is linked to confusion, falls and memory problems."),
+        data_source="Anticholinergic Cognitive Burden scale, 2012 update (acb_seed.csv)",
+        meta={"score": total, "scores": scored, "threshold": ACB_THRESHOLD},
+    )]
+
+
+_FORM_WORDS = re.compile(r"\b(tab|tablet|cap|capsule|syrup|susp|inj|injection|cream|drop|drops|xr|sr|er|mr|ds)\b")
+
+
+def _clean_name(brand: str) -> str:
+    """Brand name for comparison: lowercase letters only, no strengths or dosage forms."""
+    name = _FORM_WORDS.sub(" ", re.sub(r"[0-9.]+\s*(mg|mcg|g|ml|iu|%)?", " ", brand.lower()))
+    return re.sub(r"[^a-z]", "", name)
+
+
+def _sound_key(name: str) -> str:
+    """A small phonetic key: how the name sounds when read aloud (Bangla or English speakers)."""
+    if not name:
+        return ""
+    s = re.sub(r"c(?=[eiy])", "s", name)  # soft c: "Ceclo" sounds like "Seclo"
+    for a, b in (("ph", "f"), ("ck", "k"), ("qu", "k"), ("q", "k"), ("c", "k"), ("x", "ks"),
+                 ("z", "s"), ("v", "b"), ("w", "b"), ("th", "t"), ("dh", "d"), ("bh", "b"), ("kh", "k"),
+                 ("gh", "g"), ("sh", "s"), ("y", "i")):
+        s = s.replace(a, b)
+    head, tail = s[0], re.sub(r"[aeiou]", "", s[1:])
+    return re.sub(r"(.)\1+", r"\1", head + tail)
+
+
+def look_alike_names(items: list[RuleItem]) -> list[Flag]:
+    """Two brands in the same house whose names look or sound alike but contain
+    different medicines: an elderly patient (or a shopkeeper) can mix them up."""
+    flags = []
+    seen: set[tuple[str, str]] = set()
+    for x, y in combinations(items, 2):
+        gx, gy = set(_generics(x)), set(_generics(y))
+        if not gx or not gy or gx & gy:
+            continue  # unknown medicine, or the same medicine (other rules cover that)
+        nx, ny = _clean_name(x.brand), _clean_name(y.brand)
+        if not nx or not ny or nx == ny:
+            continue
+        pair = tuple(sorted((nx, ny)))
+        if pair in seen:
+            continue
+        similarity = JaroWinkler.similarity(nx, ny)
+        looks = similarity >= LOOK_ALIKE_SIMILARITY and nx[:LOOK_ALIKE_PREFIX] == ny[:LOOK_ALIKE_PREFIX]
+        sounds = min(len(nx), len(ny)) >= SOUND_ALIKE_MIN_LEN and _sound_key(nx) == _sound_key(ny)
+        if not looks and not sounds:
+            continue
+        seen.add(pair)
+        ratio = similarity * 100
+        how = "look and sound alike" if looks and sounds else ("sound alike" if sounds else "look alike")
+        flags.append(Flag(
+            key=_key("LOOK_ALIKE_NAMES", *pair),
+            code="LOOK_ALIKE_NAMES", severity="amber", routed_to="pharmacist",
+            item_ids=sorted((x.id, y.id)),
+            evidence=(f"{_label(x)} ({' + '.join(sorted(gx))}) and {_label(y)} ({' + '.join(sorted(gy))}) "
+                      f"have names that {how} (similarity {round(ratio)}%) but are different medicines. "
+                      "They are easy to mix up at home or at the shop."),
+            data_source="name similarity (Jaro-Winkler + phonetic key)",
+            meta={"similarity": round(ratio, 1), "looks_alike": looks, "sound_alike": sounds, "how": how},
+        ))
+    return flags
+
+
 SEVERITY_ORDER = {"red": 0, "amber": 1}
 
 
@@ -213,6 +310,8 @@ def run_rules(items: list[RuleItem], age: int | None, tables: RuleTables, today:
         + interactions(items, tables.interactions)
         + beers(items, age, tables.beers)
         + expired(items, today)
+        + anticholinergic_burden(items, age, tables.acb)
+        + look_alike_names(items)
     )
     unique = {f.key: f for f in flags}  # belt and braces: never two flags with one key
     return sorted(unique.values(), key=lambda f: (SEVERITY_ORDER[f.severity], f.code, f.item_ids))

@@ -1,0 +1,10 @@
+# STOPP/START criteria, version 3. Source: O'Mahony D et al., "STOPP/START criteria for potentially
+# inappropriate prescribing in older people: version 3", Eur Geriatr Med 2023;14(4):625-632,
+# https://doi.org/10.1007/s41999-023-00777-y (133 STOPP + 57 START criteria).
+# EMPTY BY DESIGN: criteria are entered and verified by our pharmacist from the paper, never written from memory.
+# Columns: id (e.g. STOPP-A1), kind (STOPP | START), condition (a patient condition code, blank = any),
+# drug_target ("class:X" or a generic; for START optional, must be present), absent_target ("class:X" or a
+# generic; STOPP: fire only if absent; START: the possibly omitted medicine), text_en, source, verified (yes | no).
+# Only verified=yes rows are used. STOPP rows become STOPP_CRITERION findings (amber, pharmacist).
+# START rows are NEVER family findings: they appear only as reviewer notes ("possible omission - for the doctor").
+id,kind,condition,drug_target,absent_target,text_en,source,verified

@@ -65,3 +65,11 @@ DEMO_PURPOSE = {
 DEMO_ALLERGIES = ["Penicillin"]
 # not a real number: the 1000 prefix is not issued in Bangladesh
 DEMO_CONTACT = ("Nusrat (daughter)", "+880 1000 000000")
+
+
+# Kidney function (demo data, invented): creatinine 1.4 mg/dL for a woman of 68 gives an eGFR of
+# about 41 mL/min/1.73 m2 (CKD-EPI 2021, stage G3b), so the demo shows one amber KIDNEY_DOSE on
+# Comet (metformin, eGFR below 45). Dated two months before the demo is opened.
+DEMO_SEX = "female"
+DEMO_CREATININE_MG_DL = 1.4
+DEMO_KIDNEY_DAYS_AGO = 60

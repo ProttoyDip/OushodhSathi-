@@ -22,7 +22,7 @@ from .models import (
 
 DEFAULT_DB = Path(__file__).resolve().parent.parent / "oushodh.db"
 
-TABLES = ("notifications", "reviewers", "activity", "sathi_events", "questions", "bp_readings", "reviews", "flags", "items", "cache", "patients")
+TABLES = ("dose_events", "kidney_tests", "notifications", "reviewers", "activity", "sathi_events", "questions", "bp_readings", "reviews", "flags", "items", "cache", "patients")
 
 # {id}: auto-increment key, {ref}: foreign key column, {real}: floating point
 SCHEMA = """
@@ -77,6 +77,15 @@ CREATE TABLE IF NOT EXISTS reviewers (
   id {id}, name TEXT NOT NULL, role TEXT NOT NULL, reg_no TEXT,
   token_hash TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL, revoked_at TEXT
 );
+CREATE TABLE IF NOT EXISTS dose_events (
+  id {id}, patient_id {ref} NOT NULL REFERENCES patients(id), item_id {ref} NOT NULL REFERENCES items(id),
+  day TEXT NOT NULL, slot TEXT NOT NULL, status TEXT NOT NULL, recorded_at TEXT NOT NULL,
+  UNIQUE (patient_id, item_id, day, slot)
+);
+CREATE TABLE IF NOT EXISTS kidney_tests (
+  id {id}, patient_id {ref} NOT NULL REFERENCES patients(id), taken_on TEXT NOT NULL,
+  creatinine_mg_dl {real} NOT NULL, entered_by TEXT, source TEXT NOT NULL, created_at TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS notifications (
   id {id}, patient_id {ref} NOT NULL, kind TEXT NOT NULL, period TEXT NOT NULL, sent_at TEXT NOT NULL,
   UNIQUE (patient_id, kind, period)
@@ -107,6 +116,7 @@ ADDED_COLUMNS = {
         "consent_at": "TEXT",              # the family accepted the privacy notice at /start
         "consent_version": "TEXT",
         "key_rotated_at": "TEXT",
+        "sex": "TEXT",                     # female | male, for eGFR; optional
     },
     "items": {
         "purpose": "TEXT",                # what it is for, written by the reviewing pharmacist
@@ -119,9 +129,10 @@ ADDED_COLUMNS = {
         "schedule_approved_by": "TEXT",
         "schedule_approved_at": "TEXT",
         "ramadan_slots": "TEXT NOT NULL DEFAULT '[]'",  # sehri / iftar, set only by a reviewer
+        "prescriber_kind": "TEXT NOT NULL DEFAULT 'unknown'",  # doctor | village_doctor | drug_shop | self | unknown
     },
-    "flags": {"opened_at": "TEXT", "reviewer_id": "{ref}"},  # opened_at: review-time evidence
-    "reviews": {"seconds": "{real}", "reviewer_id": "{ref}"},  # seconds: opened -> decided
+    "flags": {"opened_at": "TEXT", "reviewer_id": "{ref}", "checklist": "TEXT NOT NULL DEFAULT '[]'"},  # opened_at: review-time evidence
+    "reviews": {"seconds": "{real}", "reviewer_id": "{ref}", "checklist": "TEXT NOT NULL DEFAULT '[]'"},  # seconds: opened -> decided
     "bp_readings": {"pulse": "INTEGER", "source": "TEXT"},
 }
 
@@ -357,6 +368,7 @@ class Store:
         self._exec("DELETE FROM items WHERE patient_id = ?", (pid,))
 
     def delete_item(self, item_id: int) -> bool:
+        self._exec("DELETE FROM dose_events WHERE item_id = ?", (item_id,))
         return self._exec("DELETE FROM items WHERE id = ?", (item_id,)) > 0
 
     # ---- flags ----------------------------------------------------------
@@ -365,6 +377,7 @@ class Store:
         d["item_ids"] = json.loads(d["item_ids"])
         d["meta"] = json.loads(d["meta"])
         d["active"] = bool(d["active"])
+        d["checklist"] = json.loads(d.get("checklist") or "[]")
         return StoredFlag(**d)
 
     def sync_flags(self, pid: int, flags: list[Flag]) -> list[StoredFlag]:
@@ -411,12 +424,14 @@ class Store:
     def review_flag(self, flag_id: int, review: ReviewIn, explanation_bn: str | None,
                     seconds: float | None = None, reviewer_id: int | None = None) -> StoredFlag:
         ts = now()
+        checklist = json.dumps(sorted(set(getattr(review, "checklist", []) or [])))
         self._many([
             ("UPDATE flags SET status = ?, reviewer = ?, reviewer_id = ?, note = ?, reviewed_at = ?, "
-             "explanation_bn = ? WHERE id = ?",
-             (review.status, review.reviewer, reviewer_id, review.note, ts, explanation_bn, flag_id)),
-            ("INSERT INTO reviews (flag_id, status, reviewer, reviewer_id, note, created_at, seconds) "
-             "VALUES (?,?,?,?,?,?,?)", (flag_id, review.status, review.reviewer, reviewer_id, review.note, ts, seconds)),
+             "explanation_bn = ?, checklist = ? WHERE id = ?",
+             (review.status, review.reviewer, reviewer_id, review.note, ts, explanation_bn, checklist, flag_id)),
+            ("INSERT INTO reviews (flag_id, status, reviewer, reviewer_id, note, created_at, seconds, checklist) "
+             "VALUES (?,?,?,?,?,?,?,?)",
+             (flag_id, review.status, review.reviewer, reviewer_id, review.note, ts, seconds, checklist)),
         ])
         return self.get_flag(flag_id)  # type: ignore[return-value]
 
@@ -424,7 +439,7 @@ class Store:
         ts = now()
         self._many([
             ("UPDATE flags SET status = 'pending_review', reviewer = NULL, reviewer_id = NULL, note = NULL, "
-             "reviewed_at = NULL, explanation_bn = NULL WHERE id = ?", (flag_id,)),
+             "reviewed_at = NULL, explanation_bn = NULL, checklist = '[]' WHERE id = ?", (flag_id,)),
             ("INSERT INTO reviews (flag_id, status, reviewer, reviewer_id, note, created_at) VALUES (?,?,?,?,?,?)",
              (flag_id, "undone", reviewer, reviewer_id, None, ts)),
         ])
@@ -458,6 +473,33 @@ class Store:
             args.append(since)
         rows = self._all(sql + " ORDER BY taken_on DESC, id DESC LIMIT ?", (*args, limit))
         return list(reversed(rows))
+
+    # ---- taken / missed ticks: one row per (medicine, day, slot); a second tap updates it --
+    def record_dose(self, pid: int, item_id: int, day: str, slot: str, status: str) -> dict:
+        self._exec(
+            "INSERT INTO dose_events (patient_id, item_id, day, slot, status, recorded_at) VALUES (?,?,?,?,?,?) "
+            "ON CONFLICT (patient_id, item_id, day, slot) DO UPDATE SET status = excluded.status, "
+            "recorded_at = excluded.recorded_at", (pid, item_id, day, slot, status, now()))
+        return self._all("SELECT item_id, day, slot, status, recorded_at FROM dose_events WHERE patient_id = ? "
+                         "AND item_id = ? AND day = ? AND slot = ?", (pid, item_id, day, slot))[0]
+
+    def list_doses(self, pid: int, since: str) -> list[dict]:
+        return self._all("SELECT item_id, day, slot, status, recorded_at FROM dose_events WHERE patient_id = ? "
+                         "AND day >= ? ORDER BY day, item_id, slot", (pid, since))
+
+    # ---- kidney tests: creatinine only; eGFR is computed on read (app/kidney.py) --
+    def add_kidney_test(self, pid: int, taken_on: str, creatinine_mg_dl: float, entered_by: str | None,
+                        source: str) -> dict:
+        kid = self._insert("INSERT INTO kidney_tests (patient_id, taken_on, creatinine_mg_dl, entered_by, source, "
+                           "created_at) VALUES (?,?,?,?,?,?)", (pid, taken_on, creatinine_mg_dl, entered_by, source, now()))
+        return self._all("SELECT * FROM kidney_tests WHERE id = ?", (kid,))[0]
+
+    def list_kidney_tests(self, pid: int) -> list[dict]:
+        return self._all("SELECT * FROM kidney_tests WHERE patient_id = ? ORDER BY taken_on DESC, id DESC", (pid,))
+
+    def latest_kidney_test(self, pid: int) -> dict | None:
+        rows = self.list_kidney_tests(pid)
+        return rows[0] if rows else None
 
     # ---- questions to the pharmacist -----------------------------------
     def add_question(self, pid: int, text: str) -> dict:
@@ -499,11 +541,13 @@ class Store:
         self._many([
             ("DELETE FROM reviews WHERE flag_id IN (SELECT id FROM flags WHERE patient_id = ?)", (pid,)),
             ("DELETE FROM flags WHERE patient_id = ?", (pid,)),
+            ("DELETE FROM dose_events WHERE patient_id = ?", (pid,)),
             ("DELETE FROM items WHERE patient_id = ?", (pid,)),
             ("DELETE FROM bp_readings WHERE patient_id = ?", (pid,)),
             ("DELETE FROM questions WHERE patient_id = ?", (pid,)),
             ("DELETE FROM sathi_events WHERE patient_id = ?", (pid,)),
             ("DELETE FROM activity WHERE patient_id = ?", (pid,)),
+            ("DELETE FROM kidney_tests WHERE patient_id = ?", (pid,)),
             ("UPDATE patients SET last_checked_at = NULL, results_seen_at = NULL, passport_seen_at = NULL, "
              "visit_questions = '[]', last_visit_at = NULL, ramadan_status = NULL, ramadan_requested_at = NULL, "
              "ramadan_note = NULL, ramadan_approved_by = NULL, ramadan_approved_at = NULL WHERE id = ?", (pid,)),

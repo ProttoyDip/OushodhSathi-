@@ -32,7 +32,12 @@
     "BEERS_65": "Risky for people over 65",
     "EXPIRED": "Expired",
     "ANTICHOLINERGIC_BURDEN": "Risk of confusion and falls",
-    "LOOK_ALIKE_NAMES": "Similar names, different medicines"
+    "LOOK_ALIKE_NAMES": "Similar names, different medicines",
+    "TRIPLE_WHAMMY": "Three medicines together can strain the kidneys",
+    "KIDNEY_DOSE": "Needs a look because of the kidney test",
+    "KIDNEY_TEST_DUE": "A kidney blood test is due",
+    "ANTIBIOTIC_NO_PRESCRIPTION": "An antibiotic without a doctor's prescription",
+    "STOPP_CRITERION": "Worth reviewing for an older adult"
   },
   "strip": {
     "expiry": "Exp",
@@ -45,7 +50,13 @@
     "unknownGeneric": "Ingredient unknown",
     "photo": "Photo of {brand}",
     "source": "Source",
-    "confirmed": "Confirmed"
+    "confirmed": "Confirmed",
+    "aware": "Antibiotic · {group}",
+    "awareGroup": {
+      "Access": "Access",
+      "Watch": "Watch",
+      "Reserve": "Reserve"
+    }
   },
   "connector": {
     "both": "Both are {generic}",
@@ -139,7 +150,15 @@
     "asNeeded": "Only when needed",
     "asNeededHint": "None chosen: listed as \"only when needed\".",
     "pillsLeft": "Pills left (optional)",
-    "editTimes": "Edit times"
+    "editTimes": "Edit times",
+    "from": {
+      "title": "Where did it come from?",
+      "doctor": "Doctor",
+      "village_doctor": "Village doctor",
+      "drug_shop": "Drug shop",
+      "self": "Bought ourselves",
+      "unknown": "Don't know"
+    }
   },
   "status": {
     "title": "A pharmacist or doctor is reviewing",
@@ -466,7 +485,7 @@
       "l3": "In a small 2011 study of 35 geriatric outpatients at a private hospital, 69% were prescribed five or more medicines (<trend>Trends of prescribing for out-door geriatric patients</trend>)."
     },
     "solution": {
-      "body": "A family member photographs every strip, box and prescription. A vision model reads the photos into a typed list; each brand is mapped to its generic; a deterministic rules engine flags duplicates, same-class pairs, interactions, drugs risky after 65 (AGS Beers Criteria) and expired strips; a pharmacist or doctor confirms every flag; and only then does the family see a plain-Bangla explanation, a weekly report and a printable medicine passport with a QR code."
+      "body": "A family member photographs every strip, box and prescription. A vision model reads the photos into a typed list; each brand is mapped to its generic; a deterministic rules engine flags duplicates, same-class pairs, interactions, drugs risky after 65 (AGS Beers Criteria), a high anticholinergic burden, look-alike names, the \"triple whammy\" (ACE inhibitor or ARB + diuretic + NSAID), medicines that need care at the latest kidney test (eGFR, CKD-EPI 2021), a kidney test that is due, antibiotics without a prescription (WHO AWaRe) and expired strips; a pharmacist or doctor confirms every flag; and only then does the family see a plain-Bangla explanation, a weekly report and a printable medicine passport with a QR code."
     },
     "ai": {
       "body": "One router (<code>backend/app/llm_router.py</code>) talks to every model through OpenAI-compatible APIs, falls through on 429, 5xx and timeouts, and caches every response in SQLite by a SHA-256 of task, model and messages. The shelf agent is built with Pydantic-AI and may call three tools: match_brand, lookup_unknown_brand and a read-only check_medicines. It cannot write flags.",
@@ -634,7 +653,15 @@
       "seconds": "{n} s",
       "minutes": "{n} min",
       "reviewTimeBody": "median time per decision, over {n} reviews",
-      "reviewTimeNone": "No timed reviews yet. The clock starts when a reviewer opens a finding."
+      "reviewTimeNone": "No timed reviews yet. The clock starts when a reviewer opens a finding.",
+      "intentTitle": "Sathi intent classifier (escalate-only)",
+      "riskTitle": "Missed-dose risk model (reviewer-only)",
+      "modelInProgress": "Evaluation in progress: not enough real data yet, so it is switched off.",
+      "modelDone": "Evaluated on held-out data.",
+      "modelOn": "on",
+      "modelOff": "off",
+      "intentGate": "{n} of {need} human-written held-out questions",
+      "riskGate": "{h} of {needH} real households · {w} of {needW} household-weeks"
     }
   },
   "models": {
@@ -743,7 +770,12 @@
       "panels": "Panels",
       "mode": "What to review",
       "findings": "Findings",
-      "questionsTab": "Questions"
+      "questionsTab": "Questions",
+      "packTitle": "Pack and source (for the record, not shown to the family)",
+      "pack": {
+        "pack_unusual": "Pack looked unusual",
+        "unlicensed_seller": "Bought from an unlicensed seller"
+      }
     },
     "ev": {
       "badge": "{sev} · for the {route}",
@@ -793,7 +825,12 @@
       "BEERS_65": "Beers list, age 65+",
       "EXPIRED": "Expired or expiring strip",
       "ANTICHOLINERGIC_BURDEN": "Anticholinergic burden (ACB ≥ 3)",
-      "LOOK_ALIKE_NAMES": "Look-alike / sound-alike names"
+      "LOOK_ALIKE_NAMES": "Look-alike / sound-alike names",
+      "TRIPLE_WHAMMY": "Triple whammy (ACEi/ARB + diuretic + NSAID)",
+      "KIDNEY_DOSE": "Kidney dose (eGFR below threshold)",
+      "KIDNEY_TEST_DUE": "Kidney test due (metformin, no eGFR in 12 months)",
+      "ANTIBIOTIC_NO_PRESCRIPTION": "Antibiotic (WHO AWaRe Watch/Reserve) without prescription",
+      "STOPP_CRITERION": "STOPP v3 criterion (verified by our pharmacist)"
     },
     "questions": {
       "title": "Questions from families",
@@ -859,7 +896,9 @@
       "age": "Age {value}",
       "medicines": "{value} medicines",
       "prescribers": "{value} prescribers",
-      "acb": "Anticholinergic score {value}"
+      "acb": "Anticholinergic score {value}",
+      "adherence_low": "Adherence {value} over 14 days (from family ticks)",
+      "followup_suggested": "Follow-up suggested (missed-dose model)"
     },
     "bp": {
       "title": "Home blood pressure, last 4 weeks",
@@ -870,6 +909,33 @@
       "flat": "No clear change in systolic ({v} per week, 95% CI {lo} to {hi}).",
       "above": "{k} of {n} readings at or above {s}/{d}. Average {ms}/{md}.",
       "caveat": "Straight-line fit, arithmetic only. Home readings vary; check the readings themselves."
+    },
+    "kidney": {
+      "title": "Kidney function",
+      "none": "No creatinine result yet.",
+      "egfr": "eGFR {egfr} mL/min/1.73 m² ({stage}) from creatinine {cr} mg/dL.",
+      "noEgfr": "Creatinine {cr} mg/dL. eGFR needs the patient's sex (Settings).",
+      "taken": "Test of {date}.",
+      "needsSex": "Sex not recorded: eGFR cannot be calculated.",
+      "creatinine": "Creatinine",
+      "unit": "Unit",
+      "date": "Test date",
+      "save": "Add result",
+      "invalid": "Check the value and unit (0.2 to 20 mg/dL).",
+      "error": "Could not save. Try again.",
+      "caveat": "CKD-EPI 2021 (race-free), arithmetic only. Kidney findings appear in the queue as pending."
+    },
+    "adherence": {
+      "title": "Taken / not taken, last {days} days",
+      "none": "No ticks recorded yet.",
+      "line": "{taken} of {recorded} recorded doses taken ({p}%, 95% CI {lo}–{hi}%)",
+      "noTicks": "no ticks yet",
+      "coverage": "{recorded} of {expected} expected doses recorded",
+      "caveat": "Self-reported by the family; untapped doses are missing data, not missed doses. Families never see these percentages."
+    },
+    "start": {
+      "title": "Possible omission — for the doctor (START v3)",
+      "caveat": "From criteria our pharmacist verified. Never shown to the family: only the doctor decides whether to start a medicine."
     }
   },
   "start": {
@@ -965,7 +1031,13 @@
         "How do I show the list to my brother?",
         "How do I add a blood pressure reading?"
       ]
-    }
+    },
+    "micHold": "Hold to speak",
+    "micRelease": "Release to stop",
+    "voiceFallback": "Voice could not be turned into text here. Press the mic again to use your phone's own speech recognition, or type.",
+    "voiceNoticeTitle": "About voice",
+    "voiceNotice": "To turn your words into text, your voice goes to NVIDIA's server. We do not keep the recording. Read and correct the text before you send it.",
+    "voiceNoticeOk": "OK, I understand"
   },
   "questions": {
     "title": "Questions to the pharmacist",
@@ -1012,7 +1084,15 @@
     "ramadanTitle": "Fasting in Ramadan?",
     "ramadanBody": "Ask the pharmacist or doctor to plan the medicines around sehri and iftar. Nothing changes here until they approve a plan.",
     "ramadanAsk": "Ask for a Ramadan plan",
-    "ramadanWaiting": "Request sent. Today's medicines stay as they are until a pharmacist or doctor approves a Ramadan plan."
+    "ramadanWaiting": "Request sent. Today's medicines stay as they are until a pharmacist or doctor approves a Ramadan plan.",
+    "tick": {
+      "label": "Was this dose taken?",
+      "taken": "Taken",
+      "missed": "Not taken",
+      "missedNote": "Noted. If you are unsure what to do about a dose, ask the pharmacist.",
+      "ask": "Ask the pharmacist",
+      "error": "Could not save the tick. Check the connection and try again."
+    }
   },
   "visit": {
     "title": "Before the doctor visit",
@@ -1138,6 +1218,14 @@
       "word": "DELETE",
       "button": "Delete everything",
       "error": "Could not delete. Try again."
+    },
+    "sex": {
+      "title": "Sex",
+      "body": "Used only to work out kidney function from a blood test result. You can leave it empty.",
+      "female": "Female",
+      "male": "Male",
+      "saved": "Saved",
+      "error": "Could not save. Try again."
     }
   },
   "admin": {
@@ -1205,6 +1293,13 @@
           "p": [
             "To read the photos and look up unknown brands, we send medicine photos and medicine names to an AI provider. We never send the patient's name or any phone number to an AI model.",
             "On the pilot, photos only go to providers that do not keep them."
+          ]
+        },
+        {
+          "h": "Voice",
+          "p": [
+            "If you hold the microphone button in Sathi, your recording goes to NVIDIA's speech service (Whisper large-v3) to be turned into text. We do not store or log the recording. The text appears in the box for you to read and correct before anything is sent.",
+            "Speech can contain names. Patient names are removed from the text before any AI model sees a question."
           ]
         },
         {

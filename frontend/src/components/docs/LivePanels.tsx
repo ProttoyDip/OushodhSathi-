@@ -189,3 +189,25 @@ export function ReviewTimePanel() {
     </div>
   );
 }
+
+/** The two ML pipelines and their data gates. No accuracy numbers until there is real data. */
+export function ModelGatesPanel() {
+  const t = useTranslations("docs.live");
+  const m = useApi(() => api.evalModels(), []);
+  if (!m.data) return <div className="h-16 rounded-card bg-paper-sunk" style={{ animation: "breathe 1.6s ease-in-out infinite" }} />;
+  const { intent, adherence_risk: risk } = m.data;
+  return (
+    <ul className="grid gap-3 sm:grid-cols-2">
+      <li className="rounded-card border border-rule bg-paper-raised p-4">
+        <p className="font-semibold text-ink">{t("intentTitle")}</p>
+        <p className="mt-1 text-ink-soft">{intent.status === "done" ? t("modelDone") : t("modelInProgress")}</p>
+        <p className="tabular mt-1 text-[14px] text-ink-faint">{t("intentGate", { n: intent.heldout_human, need: intent.required })} · {intent.enabled ? t("modelOn") : t("modelOff")}</p>
+      </li>
+      <li className="rounded-card border border-rule bg-paper-raised p-4">
+        <p className="font-semibold text-ink">{t("riskTitle")}</p>
+        <p className="mt-1 text-ink-soft">{risk.status === "done" ? t("modelDone") : t("modelInProgress")}</p>
+        <p className="tabular mt-1 text-[14px] text-ink-faint">{t("riskGate", { h: risk.households, needH: risk.required_households, w: risk.household_weeks, needW: risk.required_household_weeks })}</p>
+      </li>
+    </ul>
+  );
+}

@@ -1,7 +1,7 @@
 import type {
   AuditEntry, BPPhotoReading, BPTrend, CaseSummary, CleanupItem, EmergencyPage, EvalResult, FamilyStatus, Flag, Health, MedicineItem,
   ActivityEntry, ModelsInfo, NextStep, Passport, Patient, PilotStats, Question, RamadanRequest, Report, ReviewQueue,
-  ReviewerAccount, ReviewerInvite, SathiReply, Savings, Today, VisitPrep,
+  AdherenceSummary, DoseTick, KidneyView, ReviewerAccount, Slot, ReviewerInvite, SathiReply, Savings, Today, VisitPrep,
 } from "./types";
 import { familyKey } from "./familyKey";
 
@@ -51,6 +51,10 @@ const json = (body: unknown) => JSON.stringify(body);
 
 export const api = {
   health: () => request<Health>("/health"),
+  evalModels: () => request<{
+    intent: { status: string; heldout_human: number; required: number; enabled: boolean };
+    adherence_risk: { status: string; households: number; required_households: number; household_weeks: number; required_household_weeks: number };
+  }>("/eval/models"),
   evalResults: () => request<EvalResult[]>("/eval/results"),
   pilotStats: () => request<PilotStats>("/pilot/stats"),
   models: () => request<ModelsInfo>("/models"),
@@ -88,6 +92,14 @@ export const api = {
   report: (id: number) => request<Report>(`/patients/${id}/report`, { pid: id }),
   nextStep: (id: number, lang: string, phrase = false) =>
     request<NextStep>(`/patients/${id}/next-step?lang=${lang}&phrase=${phrase}`, { pid: id }),
+  // speech to text for Sathi's text box; 503 = use the browser's own recognition
+  transcribe: (id: number, audio: Blob, lang: string) => {
+    const fd = new FormData();
+    fd.append("audio", audio, "speech.wav");
+    fd.append("lang", lang === "bn" ? "bn" : "en");
+    fd.append("patient_id", String(id));
+    return request<{ text: string }>("/sathi/transcribe", { method: "POST", body: fd, pid: id });
+  },
   askSathi: (id: number, question: string, lang: string) =>
     request<SathiReply>("/assistant/ask", { method: "POST", body: json({ patient_id: id, question, lang }), pid: id }),
   questions: (id: number) => request<Question[]>(`/patients/${id}/questions`, { pid: id }),
@@ -97,7 +109,7 @@ export const api = {
   seen: (id: number, what: "results" | "passport") =>
     request<void>(`/patients/${id}/seen`, { method: "POST", body: json({ what }), pid: id }),
   patchPatient: (id: number, body: { allergies?: string[]; emergency_contact_name?: string | null;
-    emergency_contact_phone?: string | null; visit_questions?: string[]; family_email?: string | null; email_opt_in?: boolean }) =>
+    emergency_contact_phone?: string | null; visit_questions?: string[]; family_email?: string | null; email_opt_in?: boolean; sex?: "female" | "male" | null }) =>
     request<Patient>(`/patients/${id}`, { method: "PATCH", body: json(body), pid: id }),
   emergencyToken: (id: number) => request<{ token: string | null }>(`/patients/${id}/emergency`, { pid: id }),
   enableEmergency: (id: number) => request<{ token: string }>(`/patients/${id}/emergency`, { method: "POST", pid: id }),
@@ -118,6 +130,9 @@ export const api = {
   visit: (id: number) => request<VisitPrep>(`/patients/${id}/visit`, { pid: id }),
   visitDone: (id: number) => request<{ next: string }>(`/patients/${id}/visit/done`, { method: "POST", pid: id }),
   cleanup: (id: number) => request<{ to_set_aside: CleanupItem[]; set_aside: CleanupItem[] }>(`/patients/${id}/cleanup`, { pid: id }),
+  doses: (id: number, days = 1) => request<DoseTick[]>(`/patients/${id}/doses?days=${days}`, { pid: id }),
+  recordDose: (id: number, body: { item_id: number; day: string; slot: Slot; status: "taken" | "missed" }) =>
+    request<DoseTick>(`/patients/${id}/doses`, { method: "POST", body: json(body), pid: id }),
   rotateFamilyKey: (id: number) => request<{ family_key: string }>(`/patients/${id}/family-key/rotate`, { method: "POST", pid: id }),
   exportHousehold: (id: number) => request<Record<string, unknown>>(`/patients/${id}/export`, { pid: id }),
   deleteHousehold: (id: number) =>
@@ -130,7 +145,8 @@ export const api = {
   patients: (token: string) => request<Patient[]>("/patients", { token }),
   queue: (token: string, status = "pending_review") => request<ReviewQueue>(`/flags?status=${status}`, { token }),
   reviewerFlags: (token: string, id: number) => request<Flag[]>(`/patients/${id}/flags?view=reviewer`, { token }),
-  review: (token: string, flagId: number, body: { status: "confirmed" | "dismissed"; reviewer: string; note?: string }) =>
+  review: (token: string, flagId: number, body: { status: "confirmed" | "dismissed"; reviewer: string; note?: string;
+    checklist?: ("pack_unusual" | "unlicensed_seller")[] }) =>
     request<Flag>(`/flags/${flagId}/review`, { method: "POST", body: json(body), token }),
   undo: (token: string, flagId: number, reviewer: string) =>
     request<Flag>(`/flags/${flagId}/undo?reviewer=${encodeURIComponent(reviewer)}`, { method: "POST", token }),
@@ -138,6 +154,12 @@ export const api = {
     request<{ questions: Question[]; open: number }>(`/questions?status=${status}`, { token }),
   reply: (token: string, qid: number, reply: string, reviewer: string) =>
     request<Question>(`/questions/${qid}/reply`, { method: "POST", body: json({ reply, reviewer }), token }),
+  startNotes: (token: string, id: number) =>
+    request<{ criterion: string; text: string; omitted: string; source: string }[]>(`/patients/${id}/start-notes`, { token }),
+  adherence: (token: string, id: number) => request<AdherenceSummary>(`/patients/${id}/adherence`, { token }),
+  kidney: (token: string, id: number) => request<KidneyView>(`/patients/${id}/kidney`, { token }),
+  addKidneyTest: (token: string, id: number, body: { creatinine: number; unit: "mg/dL" | "umol/L"; taken_on: string; source: "reviewer" | "lab_report" }) =>
+    request<KidneyView>(`/patients/${id}/kidney-tests`, { method: "POST", body: json(body), token }),
   bpTrend: (token: string, id: number) => request<BPTrend>(`/patients/${id}/bp-trend`, { token }),
   caseSummary: (token: string, id: number, reviewer: string) =>
     request<CaseSummary>(`/patients/${id}/case-summary?reviewer=${encodeURIComponent(reviewer)}`, { token }),

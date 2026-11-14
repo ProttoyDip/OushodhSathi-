@@ -13,7 +13,8 @@ from typing import Literal
 
 import httpx
 from dotenv import load_dotenv
-from fastapi import Body, Depends, FastAPI, File, Header, HTTPException, Query, UploadFile
+from fastapi import Body, Depends, FastAPI, File, Form, Header, HTTPException, Query, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ValidationError, model_validator
 
@@ -24,7 +25,7 @@ from .agent import read_shelf, resolve_brand  # noqa: E402
 from .demo import DEMO_ITEMS, DEMO_LABEL  # noqa: E402
 from .explain import explain_flag  # noqa: E402
 from .ratelimit import limit_new_patient, limit_sathi, limit_scan, limit_writes  # noqa: E402
-from . import llm_router, notify  # noqa: E402
+from . import adherence_risk, asr, llm_router, notify  # noqa: E402
 from .llm_router import NoProviderAvailable, Router, _env, configured_providers, provider_names  # noqa: E402
 from .models import (  # noqa: E402
     ClinicalPatch, MedicineItem, MedicineItemIn, MedicineItemPatch, Patient, PatientCreate, PatientPatch,
@@ -32,7 +33,8 @@ from .models import (  # noqa: E402
 )
 from .next_step import StepContext, next_step  # noqa: E402
 from .refills import counts, refills_due  # noqa: E402
-from .rules import run_rules  # noqa: E402
+from .rules import run_rules, start_omissions  # noqa: E402
+from . import kidney as kidney_fn  # noqa: E402
 from . import clinical, sathi  # noqa: E402
 from .demo_seed import demo_patient_id, seed_demo  # noqa: E402
 from .savings import find_savings  # noqa: E402
@@ -229,6 +231,7 @@ def health(store: Store = Depends(get_store)) -> dict:
         "prompts": {name: prompts.version(name) for name in prompts.ACTIVE},
         "reviewer_login": "demo token" if demo_mode() else "personal accounts",
         "email": notify.configured(),
+        "voice": asr.configured(),  # server speech to text (Whisper large-v3 via NVIDIA); else the browser's
         "test_count": test_count,
         "patients": len(store.list_patients()),
     }
@@ -282,6 +285,9 @@ def export_household(pid: int, store: Store = Depends(get_store)) -> dict:
         "questions": [{k: q[k] for k in ("text", "created_at", "reply", "replied_by", "replied_at")}
                       for q in store.list_questions(pid)],
         "activity": store.list_activity(pid, limit=10_000),
+        "kidney_tests": [{k: t[k] for k in ("taken_on", "creatinine_mg_dl", "source", "entered_by")}
+                         for t in store.list_kidney_tests(pid)],
+        "dose_ticks": store.list_doses(pid, since="0000-00-00"),
     }
 
 
@@ -380,9 +386,7 @@ def run_check(pid: int, store: Store = Depends(get_store)) -> dict:
     patient = _patient_or_404(store, pid)
     before = {f.key for f in store.list_flags(pid, active_only=False)}
     confirmed = store.list_items(pid, confirmed_only=True)
-    rule_items = [RuleItem(**it.model_dump(include=set(RuleItem.model_fields))) for it in confirmed]
-    flags = run_rules(rule_items, patient.age, load_rule_tables(), date.today())
-    stored = store.sync_flags(pid, flags)
+    stored = _sync_rules(store, patient, confirmed)
     store.mark_checked(pid)
     store.log_activity(pid, "sent_for_review", len(confirmed))
     new = [f for f in stored if f.key not in before]
@@ -394,6 +398,20 @@ def run_check(pid: int, store: Store = Depends(get_store)) -> dict:
         "flags_new": len(new),
         "review_state": _review_state(store, pid),
     }
+
+
+def kidney_context(store: Store, patient: Patient) -> kidney_fn.KidneyContext:
+    return kidney_fn.context_from(store.latest_kidney_test(patient.id), patient.age, patient.sex)
+
+
+def _sync_rules(store: Store, patient: Patient, confirmed: list[MedicineItem] | None = None) -> list[StoredFlag]:
+    """Runs the rules on the confirmed items with the household's kidney context and stores the result."""
+    if confirmed is None:
+        confirmed = store.list_items(patient.id, confirmed_only=True)
+    rule_items = [RuleItem(**it.model_dump(include=set(RuleItem.model_fields))) for it in confirmed]
+    flags = run_rules(rule_items, patient.age, load_rule_tables(), date.today(), kidney_context(store, patient),
+                      conditions=patient.conditions)
+    return store.sync_flags(patient.id, flags)
 
 
 def _review_state(store: Store, pid: int) -> str:
@@ -432,7 +450,8 @@ def list_flags(
         return _with_items(store, store.list_flags(pid))
     flags = store.list_flags(pid, statuses=("confirmed",))
     assert all(f.status == "confirmed" for f in flags)
-    return _with_items(store, flags)
+    # the pharmacist's pack checklist is for the record, never shown to the family
+    return [{k: v for k, v in f.items() if k != "checklist"} for f in _with_items(store, flags)]
 
 
 @app.get("/flags", dependencies=[Depends(require_reviewer)])
@@ -450,8 +469,11 @@ def review_queue(
     risk: dict[int, dict] = {}
     for pid in {f.patient_id for f in flags}:
         if (p := patients.get(pid)) is not None:
+            totals = adherence_summary(store, pid)["household"]
             risk[pid] = household_risk(p, store.list_items(pid, confirmed_only=True),
-                                       [f for f in pending if f.patient_id == pid], acb)
+                                       [f for f in pending if f.patient_id == pid], acb,
+                                       adherence=(totals["taken"], totals["missed"]),
+                                       followup=adherence_risk.followup_suggested(store, p))
     rows = []
     for f in _with_items(store, flags):
         p = patients.get(f["patient_id"])
@@ -816,6 +838,7 @@ def step_context(store: Store, pid: int) -> StepContext:
         reviewed=state == "reviewed",
         passport_seen=p.passport_seen_at is not None,
         refills=[(it.brand, days) for it, days in refills_due(confirmed)],
+        doses_unticked_today=_unticked_today(store, pid, confirmed),
     )
 
 
@@ -1385,3 +1408,229 @@ def notify_weekly(store: Store = Depends(get_store)) -> dict:
         notify.send(notify.Email(p.family_email, subject, text))
         sent += 1
     return {"period": period, "sent": sent, "email": True}
+
+
+# ---- 12B: kidney function ------------------------------------------------------------------
+
+class KidneyTestIn(BaseModel):
+    creatinine: float = Field(gt=0, le=2000)
+    unit: Literal["mg/dL", "umol/L"] = "mg/dL"
+    taken_on: date
+    source: Literal["reviewer", "lab_report"] = "lab_report"
+
+    @model_validator(mode="after")
+    def _plausible(self) -> "KidneyTestIn":
+        mg = kidney_fn.to_mg_dl(self.creatinine, self.unit)
+        if not kidney_fn.MIN_CREATININE_MG_DL <= mg <= kidney_fn.MAX_CREATININE_MG_DL:
+            raise ValueError("Creatinine must be between 0.2 and 20 mg/dL (18 and 1768 umol/L): check the value and unit")
+        if self.taken_on > date.today() + timedelta(days=1):
+            raise ValueError("The test date cannot be in the future")
+        return self
+
+
+def _kidney_view(store: Store, p: Patient) -> dict:
+    latest = store.latest_kidney_test(p.id)
+    ctx = kidney_fn.context_from(latest, p.age, p.sex)
+    return {
+        "sex": p.sex, "age": p.age,
+        "latest": None if latest is None else {
+            "taken_on": latest["taken_on"], "creatinine_mg_dl": round(float(latest["creatinine_mg_dl"]), 2),
+            "source": latest["source"], "entered_by": latest["entered_by"],
+            "egfr": round(ctx.egfr, 1) if ctx.egfr is not None else None,
+            "stage": kidney_fn.kdigo_stage(ctx.egfr) if ctx.egfr is not None else None,
+        },
+        "needs_sex": latest is not None and p.sex is None,
+        "tests": len(store.list_kidney_tests(p.id)),
+        "equation": "CKD-EPI 2021 (race-free)",
+    }
+
+
+@app.get("/patients/{pid}/kidney", dependencies=[Depends(require_reviewer)])
+def get_kidney(pid: int, store: Store = Depends(get_store)) -> dict:
+    """Reviewer only: the latest creatinine, its eGFR (CKD-EPI 2021) and KDIGO stage."""
+    return _kidney_view(store, _patient_or_404(store, pid))
+
+
+@app.post("/patients/{pid}/kidney-tests", status_code=201)
+def add_kidney_test(pid: int, body: KidneyTestIn, rev: ReviewerAccount = Depends(current_reviewer),
+                    store: Store = Depends(get_store)) -> dict:
+    """Reviewer only: a creatinine result (mg/dL or umol/L). Only creatinine is stored; eGFR is
+    computed on read. The rules re-run, so kidney findings appear in the queue as pending."""
+    p = _patient_or_404(store, pid)
+    mg = round(kidney_fn.to_mg_dl(body.creatinine, body.unit), 3)
+    store.add_kidney_test(pid, body.taken_on.isoformat(), mg, who(rev), body.source)
+    if p.last_checked_at is not None:
+        _sync_rules(store, p)
+    store.log_activity(pid, "kidney_test_added", 1)
+    return _kidney_view(store, p)
+
+
+# ---- 12D: taken / missed ticks and adherence ------------------------------------------------
+
+DOSE_DAYS_BACK = 7      # a family can tick today and the previous 7 days
+ADHERENCE_DAYS = 14     # the reviewer's adherence window
+
+
+def _tickable(it: MedicineItem) -> bool:
+    """Only medicines on the pharmacist-approved schedule can be ticked."""
+    return counts(it) and bool(it.schedule) and it.schedule_approved_at is not None
+
+
+def _unticked_today(store: Store, pid: int, confirmed: list[MedicineItem]) -> int:
+    approved = [it for it in confirmed if _tickable(it)]
+    if not approved:
+        return 0
+    day = date.today().isoformat()
+    ticked = {(d["item_id"], d["slot"]) for d in store.list_doses(pid, since=day) if d["day"] == day}
+    return sum(1 for it in approved for slot in it.schedule if (it.id, slot) not in ticked)
+
+
+class DoseIn(BaseModel):
+    item_id: int
+    day: date
+    slot: Literal["morning", "noon", "night"]
+    status: Literal["taken", "missed"]
+
+
+@app.post("/patients/{pid}/doses", status_code=201, dependencies=[Depends(family_access), Depends(limit_writes)])
+def record_dose(pid: int, body: DoseIn, store: Store = Depends(get_store)) -> dict:
+    """The family ticks a dose as taken or not taken. A second tap on the same slot updates it."""
+    _patient_or_404(store, pid)
+    it = store.get_item(body.item_id)
+    if it is None or it.patient_id != pid or not it.confirmed:
+        raise HTTPException(404, "Item not found")
+    if not _tickable(it) or body.slot not in it.schedule:
+        raise HTTPException(422, "Only times the pharmacist approved can be ticked")
+    # one day of slack: the server runs on UTC, families are up to 14 hours ahead of it
+    if body.day > date.today() + timedelta(days=1):
+        raise HTTPException(422, "The day cannot be in the future")
+    if body.day < date.today() - timedelta(days=DOSE_DAYS_BACK):
+        raise HTTPException(422, f"Only the last {DOSE_DAYS_BACK} days can be ticked")
+    approved_on = _parse_ts(it.schedule_approved_at).date()  # type: ignore[union-attr]
+    if body.day < approved_on - timedelta(days=1):
+        raise HTTPException(422, "There was no approved plan on that day")
+    return store.record_dose(pid, it.id, body.day.isoformat(), body.slot, body.status)
+
+
+@app.get("/patients/{pid}/doses", dependencies=[Depends(family_access)])
+def list_doses(pid: int, days: int = Query(7, ge=1, le=DOSE_DAYS_BACK + 1), store: Store = Depends(get_store)) -> list[dict]:
+    """The family's own ticks. Never percentages: adherence numbers are for the pharmacist only."""
+    _patient_or_404(store, pid)
+    return store.list_doses(pid, since=(date.today() - timedelta(days=days - 1)).isoformat())
+
+
+def adherence_summary(store: Store, pid: int, days: int = ADHERENCE_DAYS) -> dict:
+    """Per medicine over the last `days`: taken / (taken + missed) with a 95% Wilson interval,
+    and how many of the expected doses were recorded at all, so missing data is visible."""
+    start = date.today() - timedelta(days=days - 1)
+    events = store.list_doses(pid, since=start.isoformat())
+    meds, all_taken, all_missed, all_expected = [], 0, 0, 0
+    for it in store.list_items(pid, confirmed_only=True):
+        if not _tickable(it):
+            continue
+        approved_on = _parse_ts(it.schedule_approved_at).date()  # type: ignore[union-attr]
+        first = max(start, approved_on)
+        expected = max((date.today() - first).days + 1, 0) * len(it.schedule)
+        mine = [e for e in events if e["item_id"] == it.id]
+        taken = sum(e["status"] == "taken" for e in mine)
+        missed = sum(e["status"] == "missed" for e in mine)
+        recorded = taken + missed
+        meds.append({
+            "item_id": it.id, "brand": it.brand, "generic": it.generic,
+            "taken": taken, "missed": missed, "recorded": recorded, "expected": expected,
+            "adherence": proportion(it.brand, taken, recorded) if recorded else None,
+        })
+        all_taken, all_missed, all_expected = all_taken + taken, all_missed + missed, all_expected + expected
+    recorded = all_taken + all_missed
+    return {
+        "days": days,
+        "medicines": meds,
+        "household": {"taken": all_taken, "missed": all_missed, "recorded": recorded, "expected": all_expected,
+                      "adherence": proportion("household", all_taken, recorded) if recorded else None},
+    }
+
+
+@app.get("/patients/{pid}/adherence", dependencies=[Depends(require_reviewer)])
+def get_adherence(pid: int, store: Store = Depends(get_store)) -> dict:
+    """Reviewer only: 14-day adherence per medicine with 95% Wilson intervals."""
+    _patient_or_404(store, pid)
+    return adherence_summary(store, pid)
+
+
+# ---- 12E: Bangla voice input (Whisper large-v3 via NVIDIA) --------------------------------
+
+@app.post("/sathi/transcribe", dependencies=[Depends(limit_sathi)])
+async def transcribe(
+    audio: UploadFile = File(...),
+    lang: Literal["bn", "en"] = Form("bn"),
+    patient_id: int | None = Form(None),
+    x_family_key: str | None = Header(default=None),
+    x_reviewer_token: str | None = Header(default=None),
+    store: Store = Depends(get_store),
+) -> dict:
+    """Speech to text for Sathi's text box. The audio is processed in memory and never stored
+    or logged. The family reads (and can edit) the text before sending it; it then goes through
+    the normal Sathi path, so guard.py runs before any model sees it. 503 means "use the
+    browser's own speech recognition"."""
+    if patient_id is not None:
+        family_access(patient_id, x_family_key, x_reviewer_token, store)
+    if not asr.configured():
+        raise HTTPException(503, "Speech recognition is not configured on this server")
+    data = await audio.read(asr.MAX_BYTES + 1)
+    try:
+        parsed = asr.parse_audio(data, audio.content_type or "")
+    except asr.AudioRejected as e:
+        raise HTTPException(413 if str(e) in ("too_large", "too_long") else 415, str(e)) from None
+    finally:
+        del data
+    try:
+        text = await run_in_threadpool(asr.transcribe, parsed, lang)
+    except asr.AsrUnavailable:
+        raise HTTPException(503, "Speech recognition is not available right now") from None
+    finally:
+        del parsed
+    return {"text": text}
+
+
+# ---- 12G: STOPP/START v3 (reviewer-only notes for START) ------------------------------------
+
+@app.get("/patients/{pid}/start-notes", dependencies=[Depends(require_reviewer)])
+def get_start_notes(pid: int, store: Store = Depends(get_store)) -> list[dict]:
+    """Possible omissions (START v3), for the doctor. Never a family finding: the family is
+    never told to start a medicine. Empty until our pharmacist enters and verifies criteria."""
+    p = _patient_or_404(store, pid)
+    items = store.list_items(pid, confirmed_only=True)
+    rule_items = [RuleItem(**it.model_dump(include=set(RuleItem.model_fields))) for it in items if counts(it)]
+    return start_omissions(rule_items, p.conditions, load_rule_tables().stopp_start)
+
+
+# ---- 12H/12I: model pipelines (evaluation status only; nothing here decides anything) -------
+
+@app.get("/eval/models")
+def eval_models() -> dict:
+    """Status of the escalate-only Sathi intent classifier and the missed-dose risk model, from
+    their evaluation files. Both are off until they pass their data gates; /docs shows this."""
+    import json
+
+    def read(name: str) -> dict | None:
+        f = EVAL_DIR / name
+        try:
+            return json.loads(f.read_text(encoding="utf-8")) if f.exists() else None
+        except ValueError:
+            return None
+
+    intent = read("intent_results.json") or {}
+    risk = read("adherence_model_results.json") or {}
+    return {
+        "intent": {"status": intent.get("status", "in_progress"), "heldout_human": intent.get("heldout_human", 0),
+                   "required": intent.get("required", 200), "enabled": intent_classifier_enabled()},
+        "adherence_risk": {"status": risk.get("status", "in_progress"), "households": risk.get("households", 0),
+                           "required_households": risk.get("required_households", 30),
+                           "household_weeks": risk.get("household_weeks", 0),
+                           "required_household_weeks": risk.get("required_household_weeks", 300)},
+    }
+
+
+def intent_classifier_enabled() -> bool:
+    from . import intent_classifier
+    return intent_classifier.enabled()

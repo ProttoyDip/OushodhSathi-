@@ -1,6 +1,7 @@
 "use client";
 
-import { Clock, Moon, MoonStar, NotebookPen, Pill, Printer, Sun, Sunrise, Sunset, Volume2 } from "lucide-react";
+import { CircleCheck, CircleSlash, Clock, Moon, MoonStar, NotebookPen, Pill, Printer, Sun, Sunrise, Sunset, Volume2 } from "lucide-react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
@@ -38,6 +39,15 @@ export default function TodayPage() {
   const tp = useTranslations("passport");
   const locale = useLocale();
   const today = useApi(() => api.today(pid), [pid]);
+  // the family's own calendar day (the phone's clock), not the server's
+  const [day] = useState(() => new Date().toLocaleDateString("en-CA"));
+  const ticks = useApi(() => api.doses(pid, 2), [pid]);
+  const tickOf = (itemId: number, slot: Slot) =>
+    ticks.data?.find((d) => d.item_id === itemId && d.slot === slot && d.day === day)?.status ?? null;
+  async function tick(itemId: number, slot: Slot, status: "taken" | "missed") {
+    const saved = await api.recordDose(pid, { item_id: itemId, day, slot, status });
+    ticks.setData([...(ticks.data ?? []).filter((d) => !(d.item_id === itemId && d.slot === slot && d.day === day)), saved]);
+  }
   const [thumbs, setThumbs] = useState<Record<number, string>>({});
   useEffect(() => setThumbs(loadThumbs(pid)), [pid]);
   const d = today.data;
@@ -132,7 +142,11 @@ export default function TodayPage() {
                     <p className="mt-4 text-ink-faint">{t("nothing")}</p>
                   ) : (
                     <ul className="mt-4 grid gap-3">
-                      {d.slots[key].map((m) => <Row key={m.id} m={m} thumb={thumbs[m.id]} locale={locale} />)}
+                      {d.slots[key].map((m) => (
+                        <Row key={m.id} m={m} thumb={thumbs[m.id]} locale={locale}>
+                          <DoseTick pid={pid} status={tickOf(m.id, key)} onTick={(status) => tick(m.id, key, status)} />
+                        </Row>
+                      ))}
                     </ul>
                   )}
                 </section>
@@ -158,10 +172,11 @@ export default function TodayPage() {
   );
 }
 
-function Row({ m, thumb, locale }: { m: TodayMedicine; thumb?: string; locale: string }) {
+function Row({ m, thumb, locale, children }: { m: TodayMedicine; thumb?: string; locale: string; children?: React.ReactNode }) {
   const t = useTranslations("today");
   return (
-    <li className="flex items-center gap-3">
+    <li className="grid gap-2">
+    <div className="flex items-center gap-3">
       {thumb ? (
         // eslint-disable-next-line @next/next/no-img-element -- this phone's own photo, never uploaded or stored
         <img src={thumb} alt="" className="h-16 w-16 shrink-0 rounded-md border border-rule object-cover print:h-14 print:w-14" />
@@ -178,7 +193,45 @@ function Row({ m, thumb, locale }: { m: TodayMedicine; thumb?: string; locale: s
         )}
       </span>
       <Tablets n={m.per_dose} label={t("tablets", { count: m.per_dose })} />
+    </div>
+    {children}
     </li>
+  );
+}
+
+/** Taken / not taken, two big buttons (icon + word). After "not taken" there is only a neutral line
+ * and a way to ask the pharmacist: never advice to take it late or to double the next dose.
+ * No streaks, no scores, nothing to feel bad about. */
+function DoseTick({ pid, status, onTick }: { pid: number; status: "taken" | "missed" | null; onTick: (s: "taken" | "missed") => Promise<void> }) {
+  const t = useTranslations("today.tick");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(false);
+  async function choose(s: "taken" | "missed") {
+    setBusy(true);
+    setError(false);
+    try { await onTick(s); } catch { setError(true); } finally { setBusy(false); }
+  }
+  const btn = "press inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-card border px-3 text-base font-semibold disabled:opacity-60";
+  return (
+    <div className="no-print">
+      <div role="radiogroup" aria-label={t("label")} className="flex gap-2">
+        <button type="button" role="radio" aria-checked={status === "taken"} disabled={busy} onClick={() => choose("taken")}
+          className={cx(btn, status === "taken" ? "border-green bg-green-tint text-green" : "border-rule-strong text-ink-soft hover:bg-paper-sunk")}>
+          <CircleCheck aria-hidden size={20} /> {t("taken")}
+        </button>
+        <button type="button" role="radio" aria-checked={status === "missed"} disabled={busy} onClick={() => choose("missed")}
+          className={cx(btn, status === "missed" ? "border-ink-faint bg-paper-sunk text-ink" : "border-rule-strong text-ink-soft hover:bg-paper-sunk")}>
+          <CircleSlash aria-hidden size={20} /> {t("missed")}
+        </button>
+      </div>
+      {status === "missed" && (
+        <p className="mt-2 text-[16px] text-ink-soft" aria-live="polite">
+          {t("missedNote")}{" "}
+          <Link href={`/p/${pid}/questions`} className="font-semibold text-neel underline underline-offset-4">{t("ask")}</Link>
+        </p>
+      )}
+      {error && <p role="alert" className="mt-2 text-red">{t("error")}</p>}
+    </div>
   );
 }
 

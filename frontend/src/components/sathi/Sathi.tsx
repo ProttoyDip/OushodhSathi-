@@ -5,11 +5,14 @@ import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { cx } from "@/lib/format";
 import type { SathiReply, StepCode } from "@/lib/types";
 import { SathiMark } from "./SathiMark";
 import { useSpeechInput, useVoice } from "./speech";
+import { startWavRecording, type Recording } from "@/lib/wavRecorder";
+
+const VOICE_NOTICE = "oushodh:voice-notice-seen";
 
 type Message = { id: number; role: "user"; text: string } | { id: number; role: "sathi"; reply: SathiReply } | { id: number; role: "error" };
 
@@ -44,7 +47,51 @@ function SathiHelper({ pid }: { pid: number }) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const nextId = useRef(1);
-  const speech = useSpeechInput(locale === "bn" ? "bn-BD" : "en-US", (text) => setInput((v) => (v ? `${v} ${text}` : text)));
+  const addText = useCallback((text: string) => setInput((v) => (v ? `${v} ${text}` : text)), []);
+  const speech = useSpeechInput(locale === "bn" ? "bn-BD" : "en-US", addText);
+  // server speech to text (Whisper large-v3 via NVIDIA): hold to talk; the text lands in the box to read and edit
+  const [serverVoice, setServerVoice] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const [voiceNote, setVoiceNote] = useState<"voiceFallback" | "micBlocked" | null>(null);
+  const [showNotice, setShowNotice] = useState(false);
+  const rec = useRef<Recording | null>(null);
+  useEffect(() => { api.health().then((h) => setServerVoice(!!h.voice)).catch(() => {}); }, []);
+  useEffect(() => () => rec.current?.cancel(), []);
+
+  const startTalk = useCallback(async () => {
+    if (rec.current || transcribing) return;
+    let seen = false;
+    try { seen = localStorage.getItem(VOICE_NOTICE) === "1"; } catch {}
+    if (!seen) { setShowNotice(true); return; }
+    setVoiceNote(null);
+    try {
+      rec.current = await startWavRecording(() => { void stopTalk(); });
+      setRecording(true);
+    } catch {
+      setVoiceNote("micBlocked");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stopTalk is stable for this purpose
+  }, [transcribing]);
+
+  const stopTalk = useCallback(async () => {
+    const r = rec.current;
+    if (!r) return;
+    rec.current = null;
+    setRecording(false);
+    setTranscribing(true);
+    try {
+      const { text } = await api.transcribe(pid, await r.stop(), locale);
+      if (text) addText(text);
+      inputRef.current?.focus();
+    } catch (e) {
+      // not configured or not working: the phone's own recognition takes over from the next press
+      if (e instanceof ApiError && (e.status === 503 || e.status === 415)) setServerVoice(false);
+      setVoiceNote("voiceFallback");
+    } finally {
+      setTranscribing(false);
+    }
+  }, [pid, locale, addText]);
 
   // the sheet is about the screen you are on; close it when you move
   useEffect(() => { setOpen(false); }, [pathname]);
@@ -170,6 +217,16 @@ function SathiHelper({ pid }: { pid: number }) {
               onSubmit={(e) => { e.preventDefault(); send(input); }}
             >
               {speech.note && <p className="mb-2 px-1 text-[15px] text-ink-soft" role="status">{t(speech.note)}</p>}
+              {voiceNote && <p className="mb-2 px-1 text-[15px] text-ink-soft" role="status">{t(voiceNote)}</p>}
+              {showNotice && (
+                <div role="dialog" aria-label={t("voiceNoticeTitle")} className="mb-2 rounded-card border border-neel bg-neel-tint p-3 text-[16px] text-ink">
+                  <p>{t("voiceNotice")}</p>
+                  <button type="button" className="press mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-card bg-neel px-4 font-semibold text-on-neel"
+                    onClick={() => { try { localStorage.setItem(VOICE_NOTICE, "1"); } catch {} setShowNotice(false); }}>
+                    <Check aria-hidden size={18} /> {t("voiceNoticeOk")}
+                  </button>
+                </div>
+              )}
               <div className="flex items-end gap-2">
                 <label htmlFor="sathi-input" className="sr-only">{t("inputLabel")}</label>
                 <textarea
@@ -183,18 +240,39 @@ function SathiHelper({ pid }: { pid: number }) {
                   placeholder={t("placeholder")}
                   className="block max-h-32 min-h-12 flex-1 resize-none rounded-card border border-rule-strong bg-paper px-3 py-2.5 text-[18px] text-ink"
                 />
-                <button
-                  type="button"
-                  onClick={speech.toggle}
-                  aria-pressed={speech.listening}
-                  aria-label={speech.listening ? t("micStop") : t("mic")}
-                  className={cx(
-                    "press inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border",
-                    speech.listening ? "border-red bg-red-tint text-red motion-safe:animate-pulse" : "border-rule-strong text-ink-soft hover:text-ink",
-                  )}
-                >
-                  <Mic aria-hidden size={22} />
-                </button>
+                {serverVoice ? (
+                  <button
+                    type="button"
+                    onPointerDown={(e) => { e.preventDefault(); void startTalk(); }}
+                    onPointerUp={() => void stopTalk()}
+                    onPointerLeave={() => void stopTalk()}
+                    onPointerCancel={() => void stopTalk()}
+                    onKeyDown={(e) => { if ((e.key === " " || e.key === "Enter") && !e.repeat) { e.preventDefault(); void startTalk(); } }}
+                    onKeyUp={(e) => { if (e.key === " " || e.key === "Enter") void stopTalk(); }}
+                    aria-pressed={recording}
+                    aria-label={recording ? t("micRelease") : t("micHold")}
+                    disabled={transcribing}
+                    className={cx(
+                      "press inline-flex h-12 w-12 shrink-0 touch-none select-none items-center justify-center rounded-full border",
+                      recording ? "border-red bg-red-tint text-red motion-safe:animate-pulse" : "border-rule-strong text-ink-soft hover:text-ink",
+                    )}
+                  >
+                    {transcribing ? <Loader2 aria-hidden size={22} className="animate-spin motion-reduce:animate-none" /> : <Mic aria-hidden size={22} />}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={speech.toggle}
+                    aria-pressed={speech.listening}
+                    aria-label={speech.listening ? t("micStop") : t("mic")}
+                    className={cx(
+                      "press inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border",
+                      speech.listening ? "border-red bg-red-tint text-red motion-safe:animate-pulse" : "border-rule-strong text-ink-soft hover:text-ink",
+                    )}
+                  >
+                    <Mic aria-hidden size={22} />
+                  </button>
+                )}
                 <button type="submit" disabled={!input.trim() || busy} aria-label={t("send")} className="press inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-neel text-on-neel disabled:opacity-50">
                   <Send aria-hidden size={20} />
                 </button>

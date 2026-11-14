@@ -29,6 +29,7 @@ class StepContext:
     reviewed: bool = False              # at least one finished review
     passport_seen: bool = False
     refills: list[tuple[str, int]] = field(default_factory=list)  # (brand, days left), soonest first
+    doses_unticked_today: int = 0       # approved doses today with no taken/missed tick yet
 
 
 @dataclass(frozen=True)
@@ -108,6 +109,12 @@ def next_step(ctx: StepContext, pid: int) -> NextStep:
                       f"{med} will last about {days} more days. Check the prescription before buying more.")
         return NextStep("REFILL_DUE", {"med": med, "days": days}, bn, en,
                         "রিপোর্ট দেখুন", "See the report", f"{home}/report")
+    if ctx.doses_unticked_today:
+        n = ctx.doses_unticked_today
+        return NextStep("TICK_TODAY", {"n": n},
+                        f"আজকের {bn_num(n)}টি ওষুধে এখনো টিক দেওয়া হয়নি: খাওয়া হয়েছে কি না জানিয়ে দিন।",
+                        f"{n} of today's medicines have no tick yet: mark whether each was taken.",
+                        "আজকের ওষুধ", "Today's medicines", f"{home}/today")
     return NextStep("ALL_GOOD", {},
                     "এই মুহূর্তে আপনার কিছু করার নেই।",
                     "Nothing for you to do right now.",

@@ -21,16 +21,21 @@ The app never tells a patient to stop or change a medicine.
 ```
 /backend       FastAPI (Python 3.12+), Pydantic, Pydantic-AI, RapidFuzz, httpx, pytest
   app/         main.py (API), rules.py (deterministic engine), brands.py (matching),
-               store.py (SQLite), models.py, llm_router.py, agent.py, research.py,
+               store.py (SQLite or Postgres), models.py, llm_router.py, agent.py, research.py,
                explain.py, triage.py (queue order, no AI), stats.py (Wilson CIs, BP trend),
+               kidney.py (CKD-EPI 2021 eGFR, no AI), notify.py (opt-in email), asr.py (voice:
+               Whisper via NVIDIA), intent_classifier.py (escalate-only, off by default),
+               adherence_features.py + adherence_risk.py (missed-dose model pipeline, reviewer-only),
                prompts/<name>.v<N>.md
-  data/        brand, interaction, Beers and duplicate-class tables (CSV/TXT)
-  scripts/     import_brands.py, import_ddinter.py, seed_demo.py
+  data/        brand, interaction, Beers, duplicate-class, ACB, class-group, renal (kidney dose),
+               WHO AWaRe (non-commercial licence) and STOPP/START (pharmacist-entered) tables
+  scripts/     import_brands.py, import_ddinter.py, import_aware.py, seed_demo.py
   tests/       pytest suite
 /frontend      Next.js (App Router, TypeScript), Tailwind, Recharts, lucide-react, next-intl
 /mcp           our own MCP server (read-only tools)
 /automations   n8n workflow JSON
-/eval          extraction eval set + run_eval.py
+/eval          extraction, BP and Sathi evals; intent-classifier and missed-dose model pipelines
+               (gated on real data, with model cards)
 /docs          design notes, screenshots, video assets
 ```
 

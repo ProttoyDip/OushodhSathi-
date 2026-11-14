@@ -1,0 +1,26 @@
+# WHO AWaRe classification of antibiotics. Source: WHO, "The selection and use of essential medicines, 2025: WHO AWaRe classification", https://www.who.int/publications/i/item/B09489
+# LICENCE: CC BY-NC-SA 3.0 IGO (non-commercial, share-alike). Do not use in a commercial product without permission from WHO.
+# This is a SEED of antibiotics common in Bangladesh; every row must be verified against the WHO 2025 spreadsheet.
+# Regenerate from the official file with: python scripts/import_aware.py backend/data/raw/<WHO file>.xlsx
+generic,group,source
+amoxicillin,Access,seed - verify against WHO 2025 AWaRe
+amoxicillin + clavulanic acid,Access,seed - verify against WHO 2025 AWaRe
+flucloxacillin,Access,seed - verify against WHO 2025 AWaRe
+cefalexin,Access,seed - verify against WHO 2025 AWaRe
+doxycycline,Access,seed - verify against WHO 2025 AWaRe
+metronidazole,Access,seed - verify against WHO 2025 AWaRe
+sulfamethoxazole + trimethoprim,Access,seed - verify against WHO 2025 AWaRe
+nitrofurantoin,Access,seed - verify against WHO 2025 AWaRe
+gentamicin,Access,seed - verify against WHO 2025 AWaRe
+azithromycin,Watch,seed - verify against WHO 2025 AWaRe
+clarithromycin,Watch,seed - verify against WHO 2025 AWaRe
+ciprofloxacin,Watch,seed - verify against WHO 2025 AWaRe
+levofloxacin,Watch,seed - verify against WHO 2025 AWaRe
+cefixime,Watch,seed - verify against WHO 2025 AWaRe
+cefuroxime,Watch,seed - verify against WHO 2025 AWaRe
+ceftriaxone,Watch,seed - verify against WHO 2025 AWaRe
+cefpodoxime,Watch,seed - verify against WHO 2025 AWaRe
+meropenem,Watch,seed - verify against WHO 2025 AWaRe
+linezolid,Reserve,seed - verify against WHO 2025 AWaRe
+colistin,Reserve,seed - verify against WHO 2025 AWaRe
+tigecycline,Reserve,seed - verify against WHO 2025 AWaRe

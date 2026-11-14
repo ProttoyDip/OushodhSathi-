@@ -19,6 +19,9 @@ import { REVIEWER_SESSION, takeInviteFromUrl, type ReviewerSession } from "@/lib
 import { useApi } from "@/lib/useApi";
 import { JudgeBar } from "@/components/JudgeBar";
 import { BPTrendNote } from "@/components/review/BPTrendNote";
+import { KidneyNote } from "@/components/review/KidneyNote";
+import { AdherenceNote } from "@/components/review/AdherenceNote";
+import { StartNotes } from "@/components/review/StartNotes";
 import { CaseSummaryPanel } from "@/components/review/CaseSummaryPanel";
 import { ClinicalEditor } from "@/components/review/ClinicalEditor";
 import { QuestionsBoard } from "@/components/review/QuestionsBoard";
@@ -157,6 +160,7 @@ function Dashboard({ session, onSignOut }: { session: Session; onSignOut: () => 
   const [hidden, setHidden] = useState<Set<number>>(new Set());
   const [note, setNote] = useState("");
   const [noteError, setNoteError] = useState(false);
+  const [checklist, setChecklist] = useState<("pack_unusual" | "unlicensed_seller")[]>([]);
   const [toast, setToast] = useState<Toast | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const noteRef = useRef<HTMLTextAreaElement>(null);
@@ -180,6 +184,7 @@ function Dashboard({ session, onSignOut }: { session: Session; onSignOut: () => 
   useEffect(() => {
     setNote("");
     setNoteError(false);
+    setChecklist([]);
   }, [selected?.id]);
 
   const move = useCallback(
@@ -208,14 +213,14 @@ function Dashboard({ session, onSignOut }: { session: Session; onSignOut: () => 
       setSelectedId(next?.id ?? null);
       setToast({ flag, status, until: Date.now() + 5000 });
       try {
-        await api.review(session.token, flag.id, { status, reviewer: session.name, note: note.trim() || undefined });
+        await api.review(session.token, flag.id, { status, reviewer: session.name, note: note.trim() || undefined, checklist });
       } catch {
         setHidden((h) => { const n = new Set(h); n.delete(flag.id); return n; });
         setToast(null);
         setSelectedId(flag.id);
       }
     },
-    [selected, flags, note, session],
+    [selected, flags, note, session, checklist],
   );
 
   const undo = useCallback(async () => {
@@ -407,6 +412,19 @@ function Dashboard({ session, onSignOut }: { session: Session; onSignOut: () => 
                   placeholder={t("dash.notePh")}
                 />
                 {noteError && <p id="note-err" className="mt-1.5 text-sm font-medium text-red">{t("dash.noteError")}</p>}
+                {/* neutral observations for the record; the app never says a medicine is fake */}
+                <fieldset className="mt-3">
+                  <legend className="text-sm font-semibold text-ink-soft">{t("dash.packTitle")}</legend>
+                  <div className="mt-1 flex flex-wrap gap-x-5 gap-y-1">
+                    {(["pack_unusual", "unlicensed_seller"] as const).map((k) => (
+                      <label key={k} className="inline-flex min-h-9 items-center gap-2 text-sm text-ink">
+                        <input type="checkbox" checked={checklist.includes(k)} className="h-4 w-4 accent-[var(--neel)]"
+                          onChange={(e) => setChecklist((c) => (e.target.checked ? [...c, k] : c.filter((x) => x !== k)))} />
+                        {t(`dash.pack.${k}`)}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
                 <div className="mt-4 flex flex-wrap items-center gap-3">
                   <button type="button" onClick={() => decide("confirmed")} className="press inline-flex h-11 items-center gap-2 rounded-card bg-neel px-5 font-semibold text-on-neel transition-colors hover:bg-neel-hover">
                     <Check aria-hidden size={18} strokeWidth={2.5} /> {t("dash.confirm")} <Kbd tone="onTeal">C</Kbd>
@@ -482,6 +500,9 @@ function Evidence({ flag, now, session, children }: { flag: Flag; now: number; s
       </p>
       {flag.patient && <CaseSummaryPanel token={session.token} reviewer={session.name} patientId={flag.patient.id} />}
       {flag.patient && <BPTrendNote token={session.token} patientId={flag.patient.id} />}
+      {flag.patient && <KidneyNote token={session.token} patientId={flag.patient.id} />}
+      {flag.patient && <AdherenceNote token={session.token} patientId={flag.patient.id} />}
+      {flag.patient && <StartNotes token={session.token} patientId={flag.patient.id} />}
 
       <div className="mt-6">
         {flag.items.length >= 2 ? (

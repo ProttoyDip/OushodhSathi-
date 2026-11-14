@@ -7,7 +7,15 @@ export type FlagCode =
   | "BEERS_65"
   | "EXPIRED"
   | "ANTICHOLINERGIC_BURDEN"
-  | "LOOK_ALIKE_NAMES";
+  | "LOOK_ALIKE_NAMES"
+  | "TRIPLE_WHAMMY"
+  | "KIDNEY_DOSE"
+  | "KIDNEY_TEST_DUE"
+  | "ANTIBIOTIC_NO_PRESCRIPTION"
+  | "STOPP_CRITERION";
+/** Where a medicine came from: picked by the family, never guessed by a model. */
+export type PrescriberKind = "doctor" | "village_doctor" | "drug_shop" | "self" | "unknown";
+export type AwareGroup = "Access" | "Watch" | "Reserve";
 export type MatchMethod = "exact" | "fuzzy" | "web_unverified" | "not_found" | "manual";
 
 export interface Patient {
@@ -30,6 +38,7 @@ export interface Patient {
   family_email?: string | null;
   email_opt_in?: boolean;
   consent_at?: string | null;
+  sex?: "female" | "male" | null;
 }
 
 /** A pharmacist or doctor with a personal, revocable login (is_demo: the shared demo token). */
@@ -70,6 +79,9 @@ export interface MedicineItem {
   needs_review: boolean;
   thumbnail?: string | null;
   per_dose?: number;
+  /** WHO AWaRe group when the generic is a known antibiotic. */
+  aware_group?: AwareGroup | null;
+  prescriber_kind?: PrescriberKind;
   purpose?: string | null;
   purpose_bn?: string | null;
   stopped?: boolean;
@@ -182,6 +194,8 @@ export interface Health {
   web_lookup: { tavily: boolean; perplexity: boolean };
   prompts: Record<string, string>;
   reviewer_login: string;
+  /** server speech to text (Whisper large-v3 via NVIDIA) is configured */
+  voice?: boolean;
   test_count: number;
   patients: number;
 }
@@ -406,4 +420,28 @@ export interface RamadanRequest {
   patient: { id: number; name: string; name_bn: string | null; age: number; conditions: string[]; is_demo: boolean };
   requested_at: string;
   items: { id: number; brand: string; generic: string | null; strength: string | null; schedule: Slot[]; per_dose: number }[];
+}
+
+/** Reviewer only: the latest creatinine and its eGFR (CKD-EPI 2021, computed by the backend). */
+export interface KidneyView {
+  sex: "female" | "male" | null;
+  age: number;
+  latest: {
+    taken_on: string; creatinine_mg_dl: number; source: "reviewer" | "lab_report"; entered_by: string | null;
+    egfr: number | null; stage: string | null;
+  } | null;
+  needs_sex: boolean;
+  tests: number;
+  equation: string;
+}
+
+/** One taken / not-taken tick by the family. */
+export interface DoseTick { item_id: number; day: string; slot: Slot; status: "taken" | "missed"; recorded_at: string }
+
+/** Reviewer only: 14-day adherence from the family's ticks, with 95% Wilson intervals. */
+export interface AdherenceSummary {
+  days: number;
+  medicines: { item_id: number; brand: string; generic: string | null; taken: number; missed: number; recorded: number;
+    expected: number; adherence: Proportion | null }[];
+  household: { taken: number; missed: number; recorded: number; expected: number; adherence: Proportion | null };
 }

@@ -96,6 +96,26 @@ def template(flag: StoredFlag, items: list[MedicineItem]) -> str:
     elif flag.code == "LOOK_ALIKE_NAMES":
         text = (f"{brands} — নাম দেখতে বা শুনতে প্রায় একই, কিন্তু এগুলো আলাদা ওষুধ। "
                 f"বাসায় বা দোকানে একটির জায়গায় আরেকটি চলে আসতে পারে। {reviewer} বিষয়টি দেখেছেন।")
+    elif flag.code == "TRIPLE_WHAMMY":
+        text = (f"{brands} — রক্তচাপের ওষুধ, প্রস্রাব বাড়ানোর ওষুধ আর ব্যথার ওষুধ: এই তিন ধরনের ওষুধ "
+                f"একসাথে কিডনির ওপর চাপ বাড়াতে পারে, বিশেষ করে বয়স্কদের। {reviewer} বিষয়টি দেখেছেন।")
+    elif flag.code == "KIDNEY_DOSE":
+        note = m.get("note_bn") or ""
+        text = (f"{brands} — শেষ রক্ত পরীক্ষায় কিডনির কার্যক্ষমতা কম দেখা গেছে। {note} "
+                f"{reviewer} বিষয়টি দেখেছেন।")
+    elif flag.code == "KIDNEY_TEST_DUE":
+        text = (f"{brands} — এই ওষুধ খেলে বছরে অন্তত একবার কিডনির রক্ত পরীক্ষা (ক্রিয়েটিনিন) করা দরকার; "
+                f"গত এক বছরের কোনো পরীক্ষার ফল তালিকায় নেই। {reviewer} বিষয়টি দেখেছেন।")
+    elif flag.code == "ANTIBIOTIC_NO_PRESCRIPTION":
+        if m.get("aware_group") == "Reserve":
+            text = (f"{brands} একটি বিশেষ এন্টিবায়োটিক, যা সাধারণত শেষ উপায় হিসেবে রাখা হয়। "
+                    f"{reviewer} বিষয়টি দেখেছেন।")
+        else:
+            text = (f"{brands} একটি এন্টিবায়োটিক, যা ডাক্তারের প্রেসক্রিপশন ছাড়া পাওয়া গেছে বলে তালিকায় আছে। "
+                    f"এন্টিবায়োটিক ঠিকমতো না হলে জীবাণু ওষুধে আর কাজ না-ও করতে পারে। {reviewer} বিষয়টি দেখেছেন।")
+    elif flag.code == "STOPP_CRITERION":
+        text = (f"{brands} — বয়স্কদের ওষুধ নিয়ে একটি আন্তর্জাতিক তালিকা অনুযায়ী এই ওষুধটি নিয়ে "
+                f"আবার ভেবে দেখা দরকার হতে পারে। {reviewer} বিষয়টি দেখেছেন।")
     elif flag.code == "EXPIRED":
         if flag.severity == "red":
             text = f"{brands} ওষুধটির মেয়াদ শেষ হয়ে গেছে। {reviewer} বিষয়টি দেখেছেন।"

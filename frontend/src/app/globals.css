@@ -411,6 +411,36 @@ html.reveal-armed:not(.reveal-live) [data-reveal]:not([data-shown]) {
   }
 }
 
+/* ---------- one image per theme (screenshots of the product in light and dark) ---------- */
+.only-dark {
+  display: none;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .only-dark {
+    display: block;
+  }
+  :root:not([data-theme="light"]) .only-light {
+    display: none;
+  }
+}
+:root[data-theme="dark"] .only-dark {
+  display: block;
+}
+:root[data-theme="dark"] .only-light {
+  display: none;
+}
+
+/* ---------- FAQ: native <details>, the marker turns with the open state ---------- */
+.faq summary {
+  list-style: none;
+}
+.faq summary::-webkit-details-marker {
+  display: none;
+}
+.faq[open] .faq-icon {
+  transform: rotate(45deg);
+}
+
 /* ---------- print ---------- */
 @media print {
   /* Paper is always light, whatever theme the device is in: these selectors match the

@@ -1,0 +1,7 @@
+group,drug_class,source
+raas,ACE-inhibitor,"Medsafe NZ, NSAIDs and Acute Kidney Injury (2013) https://medsafe.govt.nz/profs/puarticles/june2013nsaids.htm"
+raas,ARB,"Medsafe NZ, NSAIDs and Acute Kidney Injury (2013) https://medsafe.govt.nz/profs/puarticles/june2013nsaids.htm"
+diuretic,thiazide-diuretic,"Medsafe NZ, NSAIDs and Acute Kidney Injury (2013) https://medsafe.govt.nz/profs/puarticles/june2013nsaids.htm"
+diuretic,loop-diuretic,"Medsafe NZ, NSAIDs and Acute Kidney Injury (2013) https://medsafe.govt.nz/profs/puarticles/june2013nsaids.htm"
+diuretic,potassium-sparing-diuretic,"Medsafe NZ, NSAIDs and Acute Kidney Injury (2013) https://medsafe.govt.nz/profs/puarticles/june2013nsaids.htm"
+nsaid,NSAID,"Medsafe NZ, NSAIDs and Acute Kidney Injury (2013) https://medsafe.govt.nz/profs/puarticles/june2013nsaids.htm"

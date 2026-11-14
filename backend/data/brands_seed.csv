@@ -21,3 +21,5 @@ Naprosyn,naproxen,NSAID,,no,demo seed - verify against MedEx,250 mg,tablet,3.00,
 Flexi,aceclofenac,NSAID,,no,demo seed - verify against MedEx,100 mg,tablet,4.00,demo reference price — verify MRP
 Ecosprin,aspirin,antiplatelet-aspirin,,no,demo seed - verify against MedEx,75 mg,tablet,0.80,demo reference price — verify MRP
 Atova,atorvastatin,statin,,no,demo seed - verify against MedEx,10 mg,tablet,10.00,demo reference price — verify MRP
+Ramace,ramipril,ACE-inhibitor,,no,demo seed - verify against MedEx,2.5 mg,tablet,,
+Lasix,furosemide,loop-diuretic,,no,demo seed - verify against MedEx,40 mg,tablet,,

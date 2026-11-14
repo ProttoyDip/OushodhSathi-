@@ -32,7 +32,8 @@
     "BEERS_65": "Risky for people over 65",
     "EXPIRED": "Expired",
     "ANTICHOLINERGIC_BURDEN": "Risk of confusion and falls",
-    "LOOK_ALIKE_NAMES": "Similar names, different medicines"
+    "LOOK_ALIKE_NAMES": "Similar names, different medicines",
+    "TRIPLE_WHAMMY": "Three medicines together can strain the kidneys"
   },
   "strip": {
     "expiry": "Exp",
@@ -793,7 +794,8 @@
       "BEERS_65": "Beers list, age 65+",
       "EXPIRED": "Expired or expiring strip",
       "ANTICHOLINERGIC_BURDEN": "Anticholinergic burden (ACB ≥ 3)",
-      "LOOK_ALIKE_NAMES": "Look-alike / sound-alike names"
+      "LOOK_ALIKE_NAMES": "Look-alike / sound-alike names",
+      "TRIPLE_WHAMMY": "Triple whammy (ACEi/ARB + diuretic + NSAID)"
     },
     "questions": {
       "title": "Questions from families",

@@ -32,7 +32,8 @@
     "BEERS_65": "বয়স্কদের জন্য ঝুঁকির ওষুধ",
     "EXPIRED": "মেয়াদ শেষ",
     "ANTICHOLINERGIC_BURDEN": "মাথা ঘোরা ও পড়ে যাওয়ার ঝুঁকি",
-    "LOOK_ALIKE_NAMES": "নাম প্রায় একই, ওষুধ আলাদা"
+    "LOOK_ALIKE_NAMES": "নাম প্রায় একই, ওষুধ আলাদা",
+    "TRIPLE_WHAMMY": "তিনটি ওষুধ একসাথে কিডনির ওপর চাপ"
   },
   "strip": {
     "expiry": "মেয়াদ",
@@ -793,7 +794,8 @@
       "BEERS_65": "Beers তালিকা, ৬৫+ বয়স",
       "EXPIRED": "মেয়াদ শেষ বা শেষের পথে",
       "ANTICHOLINERGIC_BURDEN": "অ্যান্টিকোলিনার্জিক বোঝা (ACB ≥ ৩)",
-      "LOOK_ALIKE_NAMES": "দেখতে/শুনতে একই নাম"
+      "LOOK_ALIKE_NAMES": "দেখতে/শুনতে একই নাম",
+      "TRIPLE_WHAMMY": "ট্রিপল হুইমি (ACEi/ARB + মূত্রবর্ধক + NSAID)"
     },
     "questions": {
       "title": "পরিবারের প্রশ্ন",

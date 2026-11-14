@@ -96,6 +96,9 @@ def template(flag: StoredFlag, items: list[MedicineItem]) -> str:
     elif flag.code == "LOOK_ALIKE_NAMES":
         text = (f"{brands} — নাম দেখতে বা শুনতে প্রায় একই, কিন্তু এগুলো আলাদা ওষুধ। "
                 f"বাসায় বা দোকানে একটির জায়গায় আরেকটি চলে আসতে পারে। {reviewer} বিষয়টি দেখেছেন।")
+    elif flag.code == "TRIPLE_WHAMMY":
+        text = (f"{brands} — রক্তচাপের ওষুধ, প্রস্রাব বাড়ানোর ওষুধ আর ব্যথার ওষুধ: এই তিন ধরনের ওষুধ "
+                f"একসাথে কিডনির ওপর চাপ বাড়াতে পারে, বিশেষ করে বয়স্কদের। {reviewer} বিষয়টি দেখেছেন।")
     elif flag.code == "EXPIRED":
         if flag.severity == "red":
             text = f"{brands} ওষুধটির মেয়াদ শেষ হয়ে গেছে। {reviewer} বিষয়টি দেখেছেন।"

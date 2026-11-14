@@ -13,7 +13,7 @@ RoutedTo = Literal["doctor", "pharmacist"]
 FlagStatus = Literal["pending_review", "confirmed", "dismissed"]
 FlagCode = Literal[
     "DUPLICATE_GENERIC", "THERAPEUTIC_DUPLICATION", "INTERACTION", "BEERS_65", "EXPIRED",
-    "ANTICHOLINERGIC_BURDEN", "LOOK_ALIKE_NAMES",
+    "ANTICHOLINERGIC_BURDEN", "LOOK_ALIKE_NAMES", "TRIPLE_WHAMMY",
 ]
 MatchMethod = Literal["exact", "fuzzy", "web_unverified", "not_found", "manual"]
 

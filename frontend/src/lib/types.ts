@@ -7,7 +7,8 @@ export type FlagCode =
   | "BEERS_65"
   | "EXPIRED"
   | "ANTICHOLINERGIC_BURDEN"
-  | "LOOK_ALIKE_NAMES";
+  | "LOOK_ALIKE_NAMES"
+  | "TRIPLE_WHAMMY";
 export type MatchMethod = "exact" | "fuzzy" | "web_unverified" | "not_found" | "manual";
 
 export interface Patient {

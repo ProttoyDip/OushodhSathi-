@@ -55,6 +55,8 @@ class RuleTables:
     duplicate_classes: frozenset[str] = field(default_factory=frozenset)
     # generic -> Anticholinergic Cognitive Burden score (1-3), from acb_seed.csv
     acb: dict[str, int] = field(default_factory=dict)
+    # group ("raas", "diuretic", "nsaid") -> drug classes (lowercase), from class_groups.csv
+    class_groups: dict[str, frozenset[str]] = field(default_factory=dict)
 
 
 def _read_csv(path: Path) -> list[dict[str, str]]:
@@ -116,7 +118,12 @@ def load_rule_tables() -> RuleTables:
     )
     acb_path = DATA_DIR / "acb_seed.csv"
     acb = {r["generic"].lower(): int(r["score"]) for r in _read_csv(acb_path)} if acb_path.exists() else {}
-    return RuleTables(tuple(interactions), tuple(beers), dup, acb)
+    groups: dict[str, set[str]] = {}
+    groups_path = DATA_DIR / "class_groups.csv"
+    for r in _read_csv(groups_path) if groups_path.exists() else []:
+        groups.setdefault(r["group"].lower(), set()).add(r["drug_class"].lower())
+    return RuleTables(tuple(interactions), tuple(beers), dup, acb,
+                      {g: frozenset(c) for g, c in groups.items()})
 
 
 @lru_cache(maxsize=1)

@@ -299,6 +299,56 @@ def look_alike_names(items: list[RuleItem]) -> list[Flag]:
     return flags
 
 
+TRIPLE_WHAMMY_GROUPS = ("raas", "diuretic", "nsaid")
+TRIPLE_WHAMMY_SOURCE = (
+    # An ACE inhibitor or ARB + a diuretic + an NSAID together: a recognised cause of acute
+    # kidney injury, especially in older adults.
+    # - Medsafe NZ, "NSAIDs and Acute Kidney Injury" (2013):
+    #   https://medsafe.govt.nz/profs/puarticles/june2013nsaids.htm
+    # - Lapi F et al., BMJ 2013;346:e8525 (nested case-control; triple therapy RR 1.31 vs double)
+    # - Harężlak T et al., Adv Ther 2022, "Drug Interactions Affecting Kidney Function: Beware of
+    #   Health Threats from Triple Whammy": https://doi.org/10.1007/s12325-021-01939-9
+    "Medsafe NZ 2013 (NSAIDs and AKI); Lapi et al., BMJ 2013;346:e8525; Harężlak et al., Adv Ther 2022 "
+    "(class_groups.csv)"
+)
+
+
+def triple_whammy(items: list[RuleItem], groups: dict[str, frozenset[str]]) -> list[Flag]:
+    """RAAS blocker (ACE inhibitor or ARB) + diuretic + NSAID in the same house.
+
+    Combination products count ingredient by ingredient, so Osartil Plus (losartan +
+    hydrochlorothiazide) covers both RAAS and diuretic. One flag per household. The pairwise
+    NSAID + ARB interaction stays a separate finding.
+    """
+    if not groups or any(g not in groups for g in TRIPLE_WHAMMY_GROUPS):
+        return []
+    found: dict[str, dict[str, RuleItem]] = {g: {} for g in TRIPLE_WHAMMY_GROUPS}
+    members: dict[int, RuleItem] = {}
+    for it in items:
+        for generic, cls in _components(it):
+            for g in TRIPLE_WHAMMY_GROUPS:
+                if cls and cls in groups[g]:
+                    found[g][generic] = it
+                    members[it.id] = it
+    if not all(found[g] for g in TRIPLE_WHAMMY_GROUPS):
+        return []
+    group_items = sorted(members.values(), key=lambda it: it.id)
+    named = {g: sorted(found[g]) for g in TRIPLE_WHAMMY_GROUPS}
+    describe = "; ".join(
+        f"{label}: {', '.join(f'{_label(found[g][gen])} ({gen})' for gen in named[g])}"
+        for g, label in zip(TRIPLE_WHAMMY_GROUPS, ("blood-pressure medicine (ACE inhibitor/ARB)", "diuretic", "NSAID"))
+    )
+    return [Flag(
+        key=_key("TRIPLE_WHAMMY", *sorted(g for gens in named.values() for g in gens)),
+        code="TRIPLE_WHAMMY", severity="red", routed_to="doctor",
+        item_ids=[it.id for it in group_items],
+        evidence=(f"{describe}. An ACE inhibitor or ARB, a diuretic and an NSAID taken together "
+                  "(the \"triple whammy\") can cause acute kidney injury, especially in older adults."),
+        data_source=TRIPLE_WHAMMY_SOURCE,
+        meta=named,
+    )]
+
+
 SEVERITY_ORDER = {"red": 0, "amber": 1}
 
 
@@ -312,6 +362,7 @@ def run_rules(items: list[RuleItem], age: int | None, tables: RuleTables, today:
         + expired(items, today)
         + anticholinergic_burden(items, age, tables.acb)
         + look_alike_names(items)
+        + triple_whammy(items, tables.class_groups)
     )
     unique = {f.key: f for f in flags}  # belt and braces: never two flags with one key
     return sorted(unique.values(), key=lambda f: (SEVERITY_ORDER[f.severity], f.code, f.item_ids))

@@ -4,3 +4,5 @@ CCB-dihydropyridine
 NSAID
 benzodiazepine
 statin
+beta-blocker
+sulfonylurea

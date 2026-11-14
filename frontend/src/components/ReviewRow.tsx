@@ -1,18 +1,17 @@
 "use client";
 
 import { Clock3, Pill, Stethoscope, UserRound } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { forwardRef } from "react";
 import { cx, since } from "@/lib/format";
 import type { Flag } from "@/lib/types";
 import { SeverityBadge } from "./SeverityBadge";
 
-export const RULE_NAME: Record<Flag["code"], string> = {
-  DUPLICATE_GENERIC: "Same generic, two brands",
-  THERAPEUTIC_DUPLICATION: "Two drugs, same class",
-  INTERACTION: "Drug interaction",
-  BEERS_65: "Beers list, age 65+",
-  EXPIRED: "Expired or expiring strip",
-};
+/** The rule's short name in the current language. */
+export function useRuleName() {
+  const t = useTranslations("review.rules");
+  return (code: Flag["code"]) => t(code);
+}
 
 /** One row of the reviewer queue: severity, rule, medicines, patient age, time waiting. */
 export const ReviewRow = forwardRef<
@@ -20,6 +19,8 @@ export const ReviewRow = forwardRef<
   { flag: Flag; selected?: boolean; onSelect?: () => void; now?: number }
 >(function ReviewRow({ flag, selected, onSelect, now }, ref) {
   const brands = flag.items.map((i) => i.brand).join(" + ");
+  const t = useTranslations("review");
+  const ruleName = useRuleName();
   return (
     <button
       ref={ref}
@@ -38,11 +39,11 @@ export const ReviewRow = forwardRef<
         <SeverityBadge
           severity={flag.severity}
           size="sm"
-          label={flag.severity === "red" ? "Red" : "Amber"}
+          label={flag.severity === "red" ? t("dash.red") : t("dash.amber")}
         />
-        <span className="truncate text-[15px] font-semibold text-ink">{RULE_NAME[flag.code]}</span>
+        <span className="truncate text-[15px] font-semibold text-ink">{ruleName(flag.code)}</span>
       </div>
-      <span className="tabular flex items-center gap-1 self-center text-[13px] text-ink-faint" title="Time waiting">
+      <span className="tabular flex items-center gap-1 self-center text-[13px] text-ink-faint" title={t("row.waiting")}>
         <Clock3 aria-hidden size={13} />
         {since(flag.created_at, now)}
       </span>
@@ -54,12 +55,12 @@ export const ReviewRow = forwardRef<
         {flag.patient && (
           <span className="tabular flex shrink-0 items-center gap-1">
             <UserRound aria-hidden size={13} />
-            {flag.patient.age}y
+            {t("row.age", { age: flag.patient.age })}
           </span>
         )}
         <span className="flex shrink-0 items-center gap-1">
           <Stethoscope aria-hidden size={13} />
-          {flag.routed_to}
+          {t(`routes.${flag.routed_to}`)}
         </span>
       </div>
     </button>

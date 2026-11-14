@@ -49,3 +49,19 @@ DEMO_NOTES = {
 def demo_bp_dates(today: date | None = None) -> list[str]:
     today = today or date.today()
     return [(today - timedelta(days=6 - i)).isoformat() for i in range(7)]
+
+# What each medicine is for, as the demo pharmacist wrote it (invented, labelled demo).
+DEMO_PURPOSE = {
+    "Napa": ("Pain or fever", "ব্যথা বা জ্বর"),
+    "Ace": ("Pain or fever", "ব্যথা বা জ্বর"),
+    "Camlodin": ("Blood pressure", "রক্তচাপ"),
+    "Amdocal": ("Blood pressure", "রক্তচাপ"),
+    "Angilock": ("Blood pressure", "রক্তচাপ"),
+    "Clofenac": ("Joint pain", "গিঁটের ব্যথা"),
+    "Rivotril": ("Sleep or worry", "ঘুম বা দুশ্চিন্তা"),
+    "Tryptin": ("Sleep or low mood", "ঘুম বা মন খারাপ"),
+    "Comet": ("Diabetes", "ডায়াবেটিস"),
+}
+DEMO_ALLERGIES = ["Penicillin"]
+# not a real number: the 1000 prefix is not issued in Bangladesh
+DEMO_CONTACT = ("Nusrat (daughter)", "+880 1000 000000")

@@ -19,6 +19,15 @@ class BrandRow:
     verified: bool
     note: str
     source_file: str
+    # the reference pack a demo price refers to (savings.py); blank when unknown
+    strength: str = ""
+    form: str = ""
+    mrp_bdt: float | None = None  # unit price per tablet, BDT
+    pack_source: str = ""
+
+    @property
+    def generics(self) -> tuple[str, ...]:
+        return tuple(g.strip() for g in self.generic.split("+") if g.strip())
 
 
 @dataclass(frozen=True)
@@ -70,8 +79,19 @@ def load_brands() -> dict[str, BrandRow]:
                 verified=r.get("verified", "").lower() in ("yes", "true", "1"),
                 note=r.get("note", ""),
                 source_file=name,
+                strength=(r.get("strength") or "").strip(),
+                form=(r.get("form") or "").strip().lower(),
+                mrp_bdt=_price(r.get("mrp_bdt")),
+                pack_source=(r.get("pack_source") or "").strip(),
             )
     return out
+
+
+def _price(value: str | None) -> float | None:
+    try:
+        return float(value) if value not in (None, "") else None
+    except ValueError:
+        return None
 
 
 @lru_cache(maxsize=1)

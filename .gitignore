@@ -12,3 +12,7 @@ out
 
 # local design-QA captures
 .impeccable/review/
+
+# video recordings: large, regenerate with `cd video && node record.mjs`
+docs/video/clips/
+docs/video/*.mp4

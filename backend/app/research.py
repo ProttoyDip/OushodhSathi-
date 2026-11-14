@@ -1,8 +1,8 @@
 """lookup_unknown_brand: find the generic of a brand that is not in our tables.
 
 Tavily search restricted to Bangladeshi medicine sites -> LLM (brand_lookup prompt)
-reads ONLY those numbered snippets and must cite one -> if unknown, Perplexity Sonar
-with citations. Results are always stored as match_method "web_unverified" with the
+reads ONLY those numbered snippets and must cite one -> if unknown, the Perplexity
+Agent API with citations. Results are always stored as match_method "web_unverified" with the
 source URL, and shown as needing human confirmation. Successes are cached; failures never.
 """
 from __future__ import annotations
@@ -20,7 +20,7 @@ log = logging.getLogger("oushodh.research")
 
 DOMAINS = ["medex.com.bd", "arogga.com", "medeasy.health"]
 TAVILY_URL = "https://api.tavily.com/search"
-PERPLEXITY_URL = "https://api.perplexity.ai/chat/completions"
+PERPLEXITY_URL = "https://api.perplexity.ai/v1/agent"  # Agent API (Sonar chat completions were retired)
 
 
 def _clean_generic(value: object) -> str | None:
@@ -66,24 +66,32 @@ def _from_snippets(brand: str, strength: str, results: list[dict], router: Route
     return None
 
 
+def _perplexity_answer(data: dict) -> tuple[str, list[str]]:
+    """Agent API response -> (answer text, cited URLs in result order)."""
+    text, urls = "", []
+    for item in data.get("output", []):
+        if item.get("type") == "message":
+            text += "".join(c.get("text", "") for c in item.get("content", []) if c.get("type") == "output_text")
+        elif item.get("type") == "search_results":
+            urls += [r["url"] for r in item.get("results", []) if r.get("url")]
+    return text, urls
+
+
 def _perplexity(brand: str, strength: str, client: httpx.Client) -> dict | None:
     key = _env("PERPLEXITY_API_KEY")
     if not key:
         return None
     body = {
-        "model": _env("PERPLEXITY_MODEL") or "sonar",
-        "search_domain_filter": DOMAINS,
-        "messages": [
-            {"role": "system", "content": prompts.load("brand_lookup")
-             + "\nThe numbered search results are your citations; source_index refers to them."},
-            {"role": "user", "content": f"Brand: {brand}\nStrength: {strength or 'not given'}"},
-        ],
+        "effort": _env("PERPLEXITY_EFFORT") or "fast",  # "fast" is the old Sonar tier
+        "input": prompts.load("brand_lookup")
+        + "\nThe numbered search results are your citations; source_index refers to them."
+        + f"\n\nBrand: {brand}\nStrength: {strength or 'not given'}",
+        "tools": [{"type": "web_search", "filters": {"search_domain_filter": DOMAINS}}],
     }
     r = client.post(PERPLEXITY_URL, headers={"Authorization": f"Bearer {key}"}, json=body)
     r.raise_for_status()
-    data = r.json()
-    citations = data.get("citations") or [s.get("url") for s in data.get("search_results", []) if s.get("url")]
-    out = parse_json(data["choices"][0]["message"]["content"])
+    text, citations = _perplexity_answer(r.json())
+    out = parse_json(text)
     generic, idx = _clean_generic(out.get("generic")), out.get("source_index")
     if generic and isinstance(idx, int) and 1 <= idx <= len(citations):
         return _result(generic, citations[idx - 1], "perplexity")

@@ -31,7 +31,7 @@ export function FlagResult({ flag, style, animate = true }: { flag: Flag; style?
     <article
       style={style}
       aria-labelledby={`flag-${flag.id}`}
-      className="min-w-0 rounded-card border border-rule bg-paper-raised p-5 shadow-soft"
+      className="@container min-w-0 rounded-card border border-rule bg-paper-raised p-5 shadow-soft @3xl:p-7"
     >
       <header className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <SeverityBadge severity={flag.severity} />
@@ -40,7 +40,9 @@ export function FlagResult({ flag, style, animate = true }: { flag: Flag; style?
         </h2>
       </header>
 
-      <div className="mt-5">
+      {/* narrow: stacked. wide card (desktop): strips on the left, words on the right */}
+      <div className="mt-5 grid grid-cols-[minmax(0,1fr)] gap-5 @3xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] @3xl:gap-8">
+      <div>
         {flag.items.length >= 2 ? (
           <DuplicateConnector label={pairLabel} tone={flag.severity} animate={animate}>
             {flag.items.map((it) => (
@@ -54,7 +56,8 @@ export function FlagResult({ flag, style, animate = true }: { flag: Flag; style?
         )}
       </div>
 
-      <p className="mt-5 text-ink">{body}</p>
+      <div>
+      <p className="text-ink">{body}</p>
 
       {flag.note && (
         <figure className="mt-4 rounded-card bg-paper-sunk p-4">
@@ -70,6 +73,8 @@ export function FlagResult({ flag, style, animate = true }: { flag: Flag; style?
       )}
 
       <p className="mt-4 border-t border-rule pt-4 font-semibold text-ink">{safety}</p>
+      </div>
+      </div>
     </article>
   );
 }

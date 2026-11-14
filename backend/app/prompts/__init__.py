@@ -11,6 +11,11 @@ ACTIVE: dict[str, str] = {
     "extract_strip": "extract_strip.v1.md",
     "brand_lookup": "brand_lookup.v1.md",
     "explain_bn": "explain_bn.v1.md",
+    "sathi_bn": "sathi_bn.v1.md",
+    "sathi_nextstep": "sathi_nextstep.v1.md",
+    "sathi_intent": "sathi_intent.v1.md",
+    "case_summary": "case_summary.v1.md",
+    "read_bp": "read_bp.v1.md",
 }
 
 

@@ -46,16 +46,19 @@ with note, keyboard driven (J/K/C/D/N), undo for 5 seconds.
 ## Capabilities and Constraints
 
 - Stack (existing codebase): Next.js App Router + TypeScript + Tailwind in /frontend;
-  FastAPI + SQLite in /backend; next-intl (bn default, en).
+  FastAPI in /backend with SQLite locally and Supabase Postgres when deployed (DATABASE_URL);
+  next-intl (bn default, en).
 - Families see ONLY confirmed flags — enforced by the API.
-- Photos are processed in memory and never stored; thumbnails are returned once.
+- Full uploaded photos (strips, boxes and prescriptions, including any prescription header with the patient's name) are processed in memory and discarded after extraction; nothing is stored on the server. For visual strip verification only, a photo of strips or boxes gets a small downscaled thumbnail, returned once and kept only in the family's browser. A photo with a prescription in it gets no thumbnail.
 - Low-confidence (< 0.75) and web-found matches always show as needing confirmation.
 - Demo mode works with no API keys (returns the demo household).
 
 ## Brand Commitments
 
 - Name: OushodhSathi / ওষুধসাথী. Bangla first, English toggle; every string in a locale file.
-- Visual direction is fixed in DESIGN.md ("the pharmacist's ledger") and is binding.
+- Visual direction is fixed in DESIGN.md and is binding: **"Neel"** — Bengal indigo `#2A3B91` on cool
+  porcelain `#F3F5F9`, medicine foil, the kantha running stitch (`--stitch`), Anek Bangla and
+  Schibsted Grotesk for display, Hind Siliguri and Instrument Sans for body text.
 - Closing line used in the video: "build locally, protect globally."
 
 ## Evidence on Hand
@@ -84,7 +87,7 @@ with note, keyboard driven (J/K/C/D/N), undo for 5 seconds.
 2. Never instruct the patient to stop, start or change a medicine or dose.
 3. Every number shown is real or clearly labelled demo data.
 4. Elder- and family-first: plain Bangla words, one action per screen.
-5. Privacy by default: no names or phone numbers to any model; no stored photos.
+5. Privacy by default: no names or phone numbers to any model; no photos stored on the server.
 
 ## Accessibility & Inclusion
 

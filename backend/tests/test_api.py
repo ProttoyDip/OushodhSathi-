@@ -2,8 +2,10 @@ TOKEN = {"X-Reviewer-Token": "test-token"}
 
 
 def make_patient(client, age=68):
+    """Creates a household and, like the family app, sends its private key from then on."""
     r = client.post("/patients", json={"name": "Test Patient", "age": age})
     assert r.status_code == 201
+    client.headers["X-Family-Key"] = r.json()["family_key"]
     return r.json()["id"]
 
 

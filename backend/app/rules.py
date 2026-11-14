@@ -30,10 +30,25 @@ def _generics(item: RuleItem) -> list[str]:
     return [g.strip().lower() for g in item.generic.split("+") if g.strip()]
 
 
-def _matches(target: str, item: RuleItem) -> bool:
+def _components(item: RuleItem) -> list[tuple[str, str]]:
+    """(generic, class) for each active ingredient of a fixed-dose combination.
+
+    "amlodipine + atenolol" with "CCB-dihydropyridine + beta-blocker" pairs by position.
+    A single class for several generics applies to all of them; otherwise unknown ("").
+    """
+    generics = _generics(item)
+    classes = [c.strip().lower() for c in (item.drug_class or "").split("+") if c.strip()]
+    if len(classes) == len(generics):
+        return list(zip(generics, classes))
+    shared = classes[0] if len(classes) == 1 else ""
+    return [(g, shared) for g in generics]
+
+
+def _hits(target: str, generic: str, cls: str) -> bool:
+    """Does a table target ("class:NSAID" or a generic name) match one ingredient?"""
     if target.startswith("class:"):
-        return (item.drug_class or "").lower() == target[6:]
-    return target in _generics(item)
+        return cls == target[6:]
+    return target == generic
 
 
 def _label(item: RuleItem) -> str:
@@ -75,18 +90,20 @@ def duplicate_generic(items: list[RuleItem]) -> list[Flag]:
 
 
 def therapeutic_duplication(items: list[RuleItem], duplicate_classes: frozenset[str]) -> list[Flag]:
-    by_class: dict[str, list[RuleItem]] = defaultdict(list)
+    by_class: dict[str, dict[int, tuple[RuleItem, str]]] = defaultdict(dict)
     for it in items:
-        cls = (it.drug_class or "").lower()
-        if cls in duplicate_classes:
-            by_class[cls].append(it)
+        for generic, cls in _components(it):
+            if cls in duplicate_classes:
+                by_class[cls][it.id] = (it, generic)
     flags = []
-    for cls, group in sorted(by_class.items()):
-        generics = sorted({g for it in group for g in _generics(it)})
+    for cls, members in sorted(by_class.items()):
+        group = [it for it, _ in members.values()]
+        generics = sorted({g for _, g in members.values()})
         if len(generics) < 2:
             continue  # same generic twice is DUPLICATE_GENERIC, not this rule
-        names = ", ".join(f"{_label(it)} ({it.generic})" for it in group)
-        display_cls = group[0].drug_class or cls
+        names = ", ".join(f"{_label(it)} ({g})" for it, g in members.values())
+        display_cls = next((c for it in group for g, c in zip(_generics(it), (it.drug_class or "").split("+"))
+                            if c.strip().lower() == cls), cls).strip()
         flags.append(Flag(
             key=_key("THERAPEUTIC_DUPLICATION", cls, *generics),
             code="THERAPEUTIC_DUPLICATION", severity="amber", routed_to="pharmacist",
@@ -104,24 +121,26 @@ def interactions(items: list[RuleItem], table: tuple[InteractionRow, ...]) -> li
     rank = {"major": 2, "moderate": 1}
     best: dict[tuple[str, str], tuple[InteractionRow, dict[int, RuleItem]]] = {}
     for x, y in combinations(items, 2):
-        if set(_generics(x)) & set(_generics(y)):
-            continue  # same medicine twice: handled by DUPLICATE_GENERIC
-        for row in table:
-            if row.severity not in rank:
-                continue
-            if (_matches(row.a, x) and _matches(row.b, y)) or (_matches(row.a, y) and _matches(row.b, x)):
-                pair = tuple(sorted(((x.generic or "").lower(), (y.generic or "").lower())))
-                current = best.get(pair)
-                if current is None or rank[row.severity] > rank[current[0].severity]:
-                    members = current[1] if current else {}
-                    best[pair] = (row, members)
-                best[pair][1].update({x.id: x, y.id: y})
+        for gx, cx in _components(x):
+            for gy, cy in _components(y):
+                if gx == gy:
+                    continue  # the same ingredient twice is DUPLICATE_GENERIC
+                for row in table:
+                    if row.severity not in rank:
+                        continue
+                    if (_hits(row.a, gx, cx) and _hits(row.b, gy, cy)) or (_hits(row.a, gy, cy) and _hits(row.b, gx, cx)):
+                        pair = tuple(sorted((gx, gy)))
+                        current = best.get(pair)
+                        if current is None or rank[row.severity] > rank[current[0].severity]:
+                            members = current[1] if current else {}
+                            best[pair] = (row, members)
+                        best[pair][1].update({x.id: x, y.id: y})
     flags = []
     for pair, (row, members) in sorted(best.items()):
         group = sorted(members.values(), key=lambda it: it.id)
         major = row.severity == "major"
-        sides = [[it for it in group if (it.generic or "").lower() == g] for g in pair]
-        describe = [" / ".join(_label(it) for it in side) + f" ({side[0].generic})" for side in sides if side]
+        sides = [[it for it in group if g in _generics(it)] for g in pair]
+        describe = [" / ".join(_label(it) for it in side) + f" ({g})" for side, g in zip(sides, pair) if side]
         flags.append(Flag(
             key=_key("INTERACTION", row.a, row.b, *pair),
             code="INTERACTION",
@@ -138,20 +157,23 @@ def interactions(items: list[RuleItem], table: tuple[InteractionRow, ...]) -> li
 def beers(items: list[RuleItem], age: int | None, table: tuple[BeersRow, ...]) -> list[Flag]:
     if age is None or age < BEERS_AGE:
         return []
-    hits: dict[str, tuple[BeersRow, list[RuleItem]]] = {}
+    hits: dict[str, tuple[BeersRow, str, list[RuleItem]]] = {}
     for it in items:
-        for row in table:
-            if _matches(row.target, it):
-                hits.setdefault(row.target + "|" + (it.generic or ""), (row, []))[1].append(it)
-                break
+        for generic, cls in _components(it):
+            for row in table:
+                if _hits(row.target, generic, cls):
+                    entry = hits.setdefault(row.target + "|" + generic, (row, generic, []))
+                    if it not in entry[2]:
+                        entry[2].append(it)
+                    break
     flags = []
-    for _, (row, group) in sorted(hits.items()):
+    for _, (row, generic, group) in sorted(hits.items()):
         names = " and ".join(_label(it) for it in group)
         flags.append(Flag(
-            key=_key("BEERS_65", row.target, group[0].generic or "", *sorted(it.brand for it in group)),
+            key=_key("BEERS_65", row.target, generic, *sorted(it.brand for it in group)),
             code="BEERS_65", severity="amber", routed_to="pharmacist",
             item_ids=sorted(it.id for it in group),
-            evidence=f"{names} ({group[0].generic}): listed in the AGS Beers Criteria for adults 65+. {row.reason}",
+            evidence=f"{names} ({generic}): listed in the AGS Beers Criteria for adults 65+. {row.reason}",
             data_source="AGS Beers Criteria (beers_seed.csv)",
             meta={"target": row.target, "recommendation": row.recommendation, "reason_bn": row.reason_bn},
         ))

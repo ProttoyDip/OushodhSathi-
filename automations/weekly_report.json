@@ -41,7 +41,16 @@
       "parameters": {
         "method": "GET",
         "url": "={{ ($env.OUSHODH_API_URL || 'http://localhost:8000') + '/patients/' + ($env.OUSHODH_PATIENT_ID || 1) + '/report' }}",
-        "options": {}
+        "options": {},
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Family-Key",
+              "value": "={{ $env.OUSHODH_FAMILY_KEY || '' }}"
+            }
+          ]
+        }
       }
     },
     {

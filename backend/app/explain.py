@@ -30,6 +30,26 @@ def is_safe(text: str) -> bool:
     return not any(w in body for w in _FORBIDDEN)
 
 
+# A Bangla vowel sign or hasant must sit on a consonant. Free models sometimes emit
+# broken sequences such as "আে" (a sign on a standalone vowel) that families would see.
+_ORPHAN_SIGN = re.compile(
+    "(?<![ক-হ়ড়ঢ়য়])[া-ৄেৈোৌ্]"
+)
+_BENGALI_LETTER = re.compile("[ঀ-৿]")
+_LATIN_LETTER = re.compile("[A-Za-z]")
+
+
+def is_good_bangla(text: str) -> bool:
+    """Mostly Bangla, and no malformed vowel signs. Brand names may stay in Latin."""
+    body = text.replace(SAFETY_SENTENCE, "")
+    # "ো" and "ৌ" may be typed as two signs (ে + া / ে + ৗ): fold them first
+    body = body.replace("ো", "ো").replace("ৌ", "ৌ")
+    if _ORPHAN_SIGN.search(body):
+        return False
+    bn, latin = len(_BENGALI_LETTER.findall(body)), len(_LATIN_LETTER.findall(body))
+    return bn > 0 and bn >= 3 * latin
+
+
 def with_safety_sentence(text: str) -> str:
     text = text.strip()
     if not text.endswith(SAFETY_SENTENCE):
@@ -116,7 +136,7 @@ def explain_flag(flag: StoredFlag, items: list[MedicineItem], note: str | None,
         log.info("explanation via template (%s)", e)
         return fallback, "template"
     text = result.text.strip().strip('"')
-    if not text or not is_safe(text):
+    if not text or not is_safe(text) or not is_good_bangla(text):
         log.warning("explanation from %s rejected by post-check; using template", result.provider)
         return fallback, "template"
     return with_safety_sentence(text), f"llm:{result.provider}/{result.model}"

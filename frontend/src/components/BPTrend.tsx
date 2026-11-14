@@ -39,7 +39,7 @@ export function BPTrend({
       )}
       <div style={{ height }} aria-hidden>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 8, right: 52, bottom: 0, left: -18 }}>
+          <LineChart accessibilityLayer={false} data={data} margin={{ top: 8, right: 52, bottom: 0, left: -18 }}>
             <CartesianGrid stroke="var(--rule)" strokeDasharray="2 4" vertical={false} />
             <XAxis dataKey="day" tick={{ ...tick, fontSize: 12 }} interval={0} tickLine={false} axisLine={{ stroke: "var(--rule-strong)" }} />
             <YAxis

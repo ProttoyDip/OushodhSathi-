@@ -75,9 +75,13 @@ def test_expired_strip_is_red_and_near_expiry_is_amber():
     assert [(f.code, f.severity) for f in soon] == [("EXPIRED", "amber")]
 
 
-def test_napa_extra_does_not_fuzzy_match_napa():
-    m = match_brand("Napa Extra")
+def test_combination_brand_is_never_force_matched_to_a_single_ingredient_brand():
+    # not in the table: must not become plain "Napa" (paracetamol only)
+    m = match_brand("Napa Rapid")
     assert m.match_method == "not_found" and m.generic is None
+    # in the table: matches its own two-ingredient row exactly
+    m = match_brand("Napa Extra")
+    assert m.match_method == "exact" and m.generic == "paracetamol + caffeine"
 
 
 def test_brand_normalisation_and_fuzzy():

@@ -1,0 +1,11 @@
+{
+  "name": "oushodhsathi-video",
+  "private": true,
+  "type": "module",
+  "description": "Records the 1920x1080 video material and a silent draft cut (see record.mjs)",
+  "scripts": { "record": "node record.mjs" },
+  "dependencies": {
+    "@ffmpeg-installer/ffmpeg": "1.1.0",
+    "puppeteer-core": "23.11.1"
+  }
+}

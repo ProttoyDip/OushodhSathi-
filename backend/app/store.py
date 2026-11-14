@@ -1,8 +1,14 @@
-"""SQLite persistence (stdlib sqlite3). Tables: patients, items, flags, reviews, cache, bp_readings."""
+"""Persistence. Tables: patients, items, flags, reviews, cache, bp_readings.
+
+SQLite (stdlib sqlite3) by default; Postgres (psycopg 3) when DATABASE_URL is set, so data
+survives restarts on hosts without a disk. Both run the same SQL: `?` placeholders become
+`%s` on Postgres, inserts use RETURNING id, upserts use ON CONFLICT.
+"""
 from __future__ import annotations
 
 import json
 import os
+import secrets
 import sqlite3
 import threading
 from datetime import datetime, timezone
@@ -12,85 +18,241 @@ from .models import Flag, MedicineItem, MedicineItemIn, Patient, PatientIn, Revi
 
 DEFAULT_DB = Path(__file__).resolve().parent.parent / "oushodh.db"
 
+TABLES = ("activity", "sathi_events", "questions", "bp_readings", "reviews", "flags", "items", "cache", "patients")
+
+# {id}: auto-increment key, {ref}: foreign key column, {real}: floating point
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS patients (
-  id INTEGER PRIMARY KEY, name TEXT NOT NULL, name_bn TEXT, age INTEGER NOT NULL,
+  id {id}, name TEXT NOT NULL, name_bn TEXT, age INTEGER NOT NULL,
   district TEXT, conditions TEXT NOT NULL DEFAULT '[]', is_demo INTEGER NOT NULL DEFAULT 0,
-  created_at TEXT NOT NULL, last_checked_at TEXT
+  created_at TEXT NOT NULL, last_checked_at TEXT, family_key TEXT
 );
 CREATE TABLE IF NOT EXISTS items (
-  id INTEGER PRIMARY KEY, patient_id INTEGER NOT NULL REFERENCES patients(id),
+  id {id}, patient_id {ref} NOT NULL REFERENCES patients(id),
   brand TEXT NOT NULL, strength TEXT, form TEXT, expiry TEXT, prescriber TEXT, source TEXT,
-  confidence REAL NOT NULL DEFAULT 1, schedule TEXT NOT NULL DEFAULT '[]',
-  pills_left INTEGER, doses_per_day REAL,
+  confidence {real} NOT NULL DEFAULT 1, schedule TEXT NOT NULL DEFAULT '[]',
+  pills_left INTEGER, doses_per_day {real},
   generic TEXT, drug_class TEXT, match_method TEXT NOT NULL DEFAULT 'not_found',
-  match_score REAL, match_source TEXT, prompt_version TEXT, model_id TEXT,
+  match_score {real}, match_source TEXT, prompt_version TEXT, model_id TEXT,
   confirmed INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS flags (
-  id INTEGER PRIMARY KEY, patient_id INTEGER NOT NULL REFERENCES patients(id),
+  id {id}, patient_id {ref} NOT NULL REFERENCES patients(id),
   key TEXT NOT NULL, code TEXT NOT NULL, severity TEXT NOT NULL, item_ids TEXT NOT NULL,
   evidence TEXT NOT NULL, routed_to TEXT NOT NULL, data_source TEXT NOT NULL,
-  meta TEXT NOT NULL DEFAULT '{}', status TEXT NOT NULL DEFAULT 'pending_review',
+  meta TEXT NOT NULL DEFAULT '{{}}', status TEXT NOT NULL DEFAULT 'pending_review',
   active INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL,
   reviewer TEXT, note TEXT, reviewed_at TEXT, explanation_bn TEXT,
   UNIQUE (patient_id, key)
 );
 CREATE TABLE IF NOT EXISTS reviews (
-  id INTEGER PRIMARY KEY, flag_id INTEGER NOT NULL REFERENCES flags(id),
+  id {id}, flag_id {ref} NOT NULL REFERENCES flags(id),
   status TEXT NOT NULL, reviewer TEXT NOT NULL, note TEXT, created_at TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS cache (
   key TEXT PRIMARY KEY, value TEXT NOT NULL, created_at TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS bp_readings (
-  id INTEGER PRIMARY KEY, patient_id INTEGER NOT NULL REFERENCES patients(id),
+  id {id}, patient_id {ref} NOT NULL REFERENCES patients(id),
   taken_on TEXT NOT NULL, systolic INTEGER NOT NULL, diastolic INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS questions (
+  id {id}, patient_id {ref} NOT NULL REFERENCES patients(id),
+  text TEXT NOT NULL, created_at TEXT NOT NULL,
+  reply TEXT, replied_by TEXT, replied_at TEXT, reply_seen_at TEXT
+);
+CREATE TABLE IF NOT EXISTS activity (
+  id {id}, patient_id {ref} NOT NULL REFERENCES patients(id), kind TEXT NOT NULL, n INTEGER,
+  created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS sathi_events (
+  id {id}, patient_id {ref}, kind TEXT NOT NULL, lang TEXT, guide_ids TEXT,
+  latency_ms INTEGER, created_at TEXT NOT NULL
+);
 """
+
+# Columns added after the first release. Applied to fresh and existing databases alike.
+ADDED_COLUMNS = {
+    "patients": {
+        "family_key": "TEXT",
+        "results_seen_at": "TEXT",        # family opened confirmed results
+        "passport_seen_at": "TEXT",       # family opened or printed the passport
+        "allergies": "TEXT NOT NULL DEFAULT '[]'",
+        "allergies_confirmed_by": "TEXT",  # pharmacist who confirmed the family's list
+        "allergies_confirmed_at": "TEXT",
+        "emergency_contact_name": "TEXT",
+        "emergency_contact_phone": "TEXT",
+        "emergency_token": "TEXT",        # read-only emergency page; the family can revoke it
+        "last_visit_at": "TEXT",          # last doctor visit the family marked
+        "visit_questions": "TEXT NOT NULL DEFAULT '[]'",  # the family's questions for the next visit
+        "ramadan_status": "TEXT",          # requested | approved (empty: no Ramadan plan)
+        "ramadan_requested_at": "TEXT",
+        "ramadan_note": "TEXT",            # the clinician's note with the approved plan
+        "ramadan_approved_by": "TEXT",
+        "ramadan_approved_at": "TEXT",
+    },
+    "items": {
+        "purpose": "TEXT",                # what it is for, written by the reviewing pharmacist
+        "purpose_bn": "TEXT",
+        "stopped": "INTEGER NOT NULL DEFAULT 0",  # marked stopped/duplicate by the reviewer
+        "stopped_by": "TEXT",
+        "stopped_at": "TEXT",
+        "set_aside": "INTEGER NOT NULL DEFAULT 0",  # family put the strip away (expired or stopped)
+        "per_dose": "INTEGER NOT NULL DEFAULT 1",   # tablets each time
+        "schedule_approved_by": "TEXT",
+        "schedule_approved_at": "TEXT",
+        "ramadan_slots": "TEXT NOT NULL DEFAULT '[]'",  # sehri / iftar, set only by a reviewer
+    },
+    "flags": {"opened_at": "TEXT"},       # first opened by a reviewer: review-time evidence
+    "reviews": {"seconds": "{real}"},     # opened -> decided
+    "bp_readings": {"pulse": "INTEGER", "source": "TEXT"},
+}
+
+SQLITE_TYPES = {"id": "INTEGER PRIMARY KEY", "ref": "INTEGER", "real": "REAL"}
+PG_TYPES = {"id": "BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY", "ref": "BIGINT", "real": "DOUBLE PRECISION"}
 
 
 def now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
+def new_family_key() -> str:
+    return secrets.token_urlsafe(16)
+
+
 class Store:
-    def __init__(self, path: str | Path | None = None):
-        self.path = str(path or os.getenv("OUSHODH_DB") or DEFAULT_DB)
+    def __init__(self, path: str | Path | None = None, url: str | None = None):
+        # an explicit path (tests, scripts) always means SQLite
+        self.url = url or (None if path else os.getenv("DATABASE_URL") or None)
+        self.pg = bool(self.url)
+        self.path = None if self.pg else str(path or os.getenv("OUSHODH_DB") or DEFAULT_DB)
         self._lock = threading.RLock()
-        self.db = sqlite3.connect(self.path, check_same_thread=False)
-        self.db.row_factory = sqlite3.Row
-        self.db.execute("PRAGMA foreign_keys = ON")
-        self.db.executescript(SCHEMA)
+        self._connect()
+        self._migrate()
 
-    def _exec(self, sql: str, args: tuple = ()) -> sqlite3.Cursor:
+    # ---- connection and dialect -----------------------------------------
+    def _connect(self) -> None:
+        if self.pg:
+            import psycopg
+            from psycopg.rows import dict_row
+
+            # prepare_threshold=None: poolers in transaction mode (Supabase :6543) reject prepared statements
+            self.db = psycopg.connect(self.url, row_factory=dict_row, prepare_threshold=None, connect_timeout=10)
+        else:
+            self.db = sqlite3.connect(self.path, check_same_thread=False)
+            self.db.row_factory = sqlite3.Row
+            self.db.execute("PRAGMA foreign_keys = ON")
+
+    def _migrate(self) -> None:
+        types = PG_TYPES if self.pg else SQLITE_TYPES
         with self._lock:
-            cur = self.db.execute(sql, args)
+            if self.pg:
+                self.db.execute(SCHEMA.format(**types))
+            else:
+                self.db.executescript(SCHEMA.format(**types))
+            for table, cols in ADDED_COLUMNS.items():
+                if self.pg:
+                    for col, ddl in cols.items():
+                        self.db.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {col} {ddl.format(**types)}")
+                else:
+                    have = {r["name"] for r in self.db.execute(f"PRAGMA table_info({table})")}
+                    for col, ddl in cols.items():
+                        if col not in have:
+                            self.db.execute(f"ALTER TABLE {table} ADD COLUMN {col} {ddl.format(**types)}")
             self.db.commit()
-            return cur
+        # households created before private links existed get one now
+        for r in self._all("SELECT id FROM patients WHERE family_key IS NULL"):
+            self._exec("UPDATE patients SET family_key = ? WHERE id = ?", (new_family_key(), r["id"]))
 
-    def _all(self, sql: str, args: tuple = ()) -> list[sqlite3.Row]:
+    def _sql(self, sql: str) -> str:
+        return sql.replace("?", "%s") if self.pg else sql
+
+    def _run(self, fn):
+        """Runs fn() under the lock and commits; rolls back on error. On Postgres a dropped
+        connection (idle pooler timeout, database resumed) is reopened once and retried."""
         with self._lock:
-            return self.db.execute(sql, args).fetchall()
+            for attempt in (0, 1):
+                try:
+                    out = fn()
+                    self.db.commit()
+                    return out
+                except Exception as e:
+                    if self.pg and attempt == 0 and _is_disconnect(e):
+                        self._connect()
+                        continue
+                    try:
+                        self.db.rollback()
+                    except Exception:  # noqa: BLE001 - the original error matters, not this one
+                        pass
+                    raise
+
+    def _exec(self, sql: str, args: tuple = ()) -> int:
+        """Returns the number of rows changed."""
+        return self._run(lambda: self.db.execute(self._sql(sql), args).rowcount)
+
+    def _insert(self, sql: str, args: tuple = ()) -> int:
+        """INSERT ... RETURNING id; returns the new id."""
+        return self._run(lambda: self.db.execute(self._sql(sql + " RETURNING id"), args).fetchone()["id"])
+
+    def _all(self, sql: str, args: tuple = ()) -> list[dict]:
+        return self._run(lambda: [dict(r) for r in self.db.execute(self._sql(sql), args).fetchall()])
+
+    def _many(self, statements: list[tuple[str, tuple]]) -> None:
+        """Several statements in one transaction."""
+        def go():
+            for sql, args in statements:
+                self.db.execute(self._sql(sql), args)
+        self._run(go)
+
+    def reset(self) -> None:
+        """Drops every table and recreates the schema (seed_demo.py --reset)."""
+        self._many([(f"DROP TABLE IF EXISTS {t}", ()) for t in TABLES])
+        self._migrate()
+
+    def close(self) -> None:
+        self.db.close()
 
     # ---- patients -------------------------------------------------------
-    def _patient(self, r: sqlite3.Row) -> Patient:
-        return Patient(
-            id=r["id"], name=r["name"], name_bn=r["name_bn"], age=r["age"], district=r["district"],
-            conditions=json.loads(r["conditions"]), is_demo=bool(r["is_demo"]),
-            created_at=r["created_at"], last_checked_at=r["last_checked_at"],
-        )
+    def _patient(self, r: dict) -> Patient:
+        d = {k: v for k, v in r.items() if k in Patient.model_fields}
+        d["conditions"] = json.loads(r["conditions"])
+        d["allergies"] = json.loads(r.get("allergies") or "[]")
+        d["visit_questions"] = json.loads(r.get("visit_questions") or "[]")
+        d["is_demo"] = bool(r["is_demo"])
+        return Patient(**d)
+
+    def update_patient(self, pid: int, **fields) -> Patient | None:
+        for col in ("allergies", "visit_questions"):
+            if col in fields:
+                fields[col] = json.dumps(fields[col], ensure_ascii=False)
+        if fields:
+            sets = ", ".join(f"{k} = ?" for k in fields)
+            self._exec(f"UPDATE patients SET {sets} WHERE id = ?", (*fields.values(), pid))
+        return self.get_patient(pid)
+
+    def emergency_token(self, pid: int) -> str | None:
+        rows = self._all("SELECT emergency_token FROM patients WHERE id = ?", (pid,))
+        return rows[0]["emergency_token"] if rows else None
+
+    def patient_by_emergency_token(self, token: str) -> Patient | None:
+        rows = self._all("SELECT * FROM patients WHERE emergency_token = ?", (token,))
+        return self._patient(rows[0]) if rows else None
 
     def create_patient(self, p: PatientIn) -> Patient:
-        cur = self._exec(
-            "INSERT INTO patients (name, name_bn, age, district, conditions, is_demo, created_at) VALUES (?,?,?,?,?,?,?)",
-            (p.name, p.name_bn, p.age, p.district, json.dumps(p.conditions), int(p.is_demo), now()),
+        pid = self._insert(
+            "INSERT INTO patients (name, name_bn, age, district, conditions, is_demo, created_at, family_key) "
+            "VALUES (?,?,?,?,?,?,?,?)",
+            (p.name, p.name_bn, p.age, p.district, json.dumps(p.conditions), int(p.is_demo), now(), new_family_key()),
         )
-        return self.get_patient(cur.lastrowid)  # type: ignore[return-value]
+        return self.get_patient(pid)  # type: ignore[return-value]
 
     def get_patient(self, pid: int) -> Patient | None:
         rows = self._all("SELECT * FROM patients WHERE id = ?", (pid,))
         return self._patient(rows[0]) if rows else None
+
+    def family_key(self, pid: int) -> str | None:
+        rows = self._all("SELECT family_key FROM patients WHERE id = ?", (pid,))
+        return rows[0]["family_key"] if rows else None
 
     def list_patients(self) -> list[Patient]:
         return [self._patient(r) for r in self._all("SELECT * FROM patients ORDER BY id")]
@@ -99,11 +261,12 @@ class Store:
         self._exec("UPDATE patients SET last_checked_at = ? WHERE id = ?", (now(), pid))
 
     # ---- items ----------------------------------------------------------
-    def _item(self, r: sqlite3.Row) -> MedicineItem:
+    def _item(self, r: dict) -> MedicineItem:
         d = dict(r)
         d["schedule"] = json.loads(d["schedule"])
-        d["confirmed"] = bool(d["confirmed"])
-        d.pop("created_at")
+        d["ramadan_slots"] = json.loads(d.get("ramadan_slots") or "[]")
+        for b in ("confirmed", "stopped", "set_aside"):
+            d[b] = bool(d[b])
         return MedicineItem(**d)
 
     def add_item(self, pid: int, item: MedicineItemIn, **match) -> MedicineItem:
@@ -116,8 +279,8 @@ class Store:
         cols["created_at"] = now()
         names = ", ".join(cols)
         marks = ", ".join("?" for _ in cols)
-        cur = self._exec(f"INSERT INTO items ({names}) VALUES ({marks})", tuple(cols.values()))
-        return self.get_item(cur.lastrowid)  # type: ignore[return-value]
+        item_id = self._insert(f"INSERT INTO items ({names}) VALUES ({marks})", tuple(cols.values()))
+        return self.get_item(item_id)  # type: ignore[return-value]
 
     def get_item(self, item_id: int) -> MedicineItem | None:
         rows = self._all("SELECT * FROM items WHERE id = ?", (item_id,))
@@ -127,13 +290,22 @@ class Store:
         sql = "SELECT * FROM items WHERE patient_id = ?" + (" AND confirmed = 1" if confirmed_only else "")
         return [self._item(r) for r in self._all(sql + " ORDER BY id", (pid,))]
 
+    def newest_item_at(self, pid: int, confirmed_only: bool = False) -> str | None:
+        sql = "SELECT MAX(created_at) AS t FROM items WHERE patient_id = ?"
+        if confirmed_only:
+            sql += " AND confirmed = 1"
+        rows = self._all(sql, (pid,))
+        return rows[0]["t"] if rows else None
+
     def update_item(self, item_id: int, **fields) -> MedicineItem | None:
         if not fields:
             return self.get_item(item_id)
-        if "schedule" in fields:
-            fields["schedule"] = json.dumps(fields["schedule"])
-        if "confirmed" in fields:
-            fields["confirmed"] = int(bool(fields["confirmed"]))
+        for col in ("schedule", "ramadan_slots"):
+            if col in fields:
+                fields[col] = json.dumps(fields[col])
+        for b in ("confirmed", "stopped", "set_aside"):
+            if b in fields:
+                fields[b] = int(bool(fields[b]))
         sets = ", ".join(f"{k} = ?" for k in fields)
         self._exec(f"UPDATE items SET {sets} WHERE id = ?", (*fields.values(), item_id))
         return self.get_item(item_id)
@@ -142,10 +314,10 @@ class Store:
         self._exec("DELETE FROM items WHERE patient_id = ?", (pid,))
 
     def delete_item(self, item_id: int) -> bool:
-        return self._exec("DELETE FROM items WHERE id = ?", (item_id,)).rowcount > 0
+        return self._exec("DELETE FROM items WHERE id = ?", (item_id,)) > 0
 
     # ---- flags ----------------------------------------------------------
-    def _flag(self, r: sqlite3.Row) -> StoredFlag:
+    def _flag(self, r: dict) -> StoredFlag:
         d = dict(r)
         d["item_ids"] = json.loads(d["item_ids"])
         d["meta"] = json.loads(d["meta"])
@@ -156,23 +328,19 @@ class Store:
         """Upsert flags by key. A flag that already exists keeps its review decision;
         a flag the rules no longer produce is marked inactive (resolved), not deleted."""
         keys = [f.key for f in flags]
-        with self._lock:
-            for f in flags:
-                self.db.execute(
-                    """INSERT INTO flags (patient_id, key, code, severity, item_ids, evidence, routed_to,
-                                          data_source, meta, created_at)
-                       VALUES (?,?,?,?,?,?,?,?,?,?)
-                       ON CONFLICT (patient_id, key) DO UPDATE SET
-                         item_ids = excluded.item_ids, evidence = excluded.evidence,
-                         meta = excluded.meta, active = 1""",
-                    (pid, f.key, f.code, f.severity, json.dumps(f.item_ids), f.evidence, f.routed_to,
-                     f.data_source, json.dumps(f.meta), now()),
-                )
-            marks = ", ".join("?" for _ in keys) or "''"
-            self.db.execute(
-                f"UPDATE flags SET active = 0 WHERE patient_id = ? AND key NOT IN ({marks})", (pid, *keys)
-            )
-            self.db.commit()
+        statements = [(
+            """INSERT INTO flags (patient_id, key, code, severity, item_ids, evidence, routed_to,
+                                  data_source, meta, created_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?)
+               ON CONFLICT (patient_id, key) DO UPDATE SET
+                 item_ids = excluded.item_ids, evidence = excluded.evidence,
+                 meta = excluded.meta, active = 1""",
+            (pid, f.key, f.code, f.severity, json.dumps(f.item_ids), f.evidence, f.routed_to,
+             f.data_source, json.dumps(f.meta), now()),
+        ) for f in flags]
+        marks = ", ".join("?" for _ in keys) or "''"
+        statements.append((f"UPDATE flags SET active = 0 WHERE patient_id = ? AND key NOT IN ({marks})", (pid, *keys)))
+        self._many(statements)
         return self.list_flags(pid)
 
     def list_flags(self, pid: int | None = None, statuses: tuple[str, ...] | None = None,
@@ -193,52 +361,122 @@ class Store:
         rows = self._all("SELECT * FROM flags WHERE id = ?", (flag_id,))
         return self._flag(rows[0]) if rows else None
 
-    def review_flag(self, flag_id: int, review: ReviewIn, explanation_bn: str | None) -> StoredFlag:
+    def mark_flag_opened(self, flag_id: int) -> None:
+        """First time a reviewer opens a finding: the start of the review-time clock."""
+        self._exec("UPDATE flags SET opened_at = ? WHERE id = ? AND opened_at IS NULL", (now(), flag_id))
+
+    def review_flag(self, flag_id: int, review: ReviewIn, explanation_bn: str | None,
+                    seconds: float | None = None) -> StoredFlag:
         ts = now()
-        with self._lock:
-            self.db.execute(
-                "UPDATE flags SET status = ?, reviewer = ?, note = ?, reviewed_at = ?, explanation_bn = ? WHERE id = ?",
-                (review.status, review.reviewer, review.note, ts, explanation_bn, flag_id),
-            )
-            self.db.execute(
-                "INSERT INTO reviews (flag_id, status, reviewer, note, created_at) VALUES (?,?,?,?,?)",
-                (flag_id, review.status, review.reviewer, review.note, ts),
-            )
-            self.db.commit()
+        self._many([
+            ("UPDATE flags SET status = ?, reviewer = ?, note = ?, reviewed_at = ?, explanation_bn = ? WHERE id = ?",
+             (review.status, review.reviewer, review.note, ts, explanation_bn, flag_id)),
+            ("INSERT INTO reviews (flag_id, status, reviewer, note, created_at, seconds) VALUES (?,?,?,?,?,?)",
+             (flag_id, review.status, review.reviewer, review.note, ts, seconds)),
+        ])
         return self.get_flag(flag_id)  # type: ignore[return-value]
 
     def undo_review(self, flag_id: int, reviewer: str) -> StoredFlag:
         ts = now()
-        with self._lock:
-            self.db.execute(
-                "UPDATE flags SET status = 'pending_review', reviewer = NULL, note = NULL, reviewed_at = NULL, "
-                "explanation_bn = NULL WHERE id = ?", (flag_id,),
-            )
-            self.db.execute(
-                "INSERT INTO reviews (flag_id, status, reviewer, note, created_at) VALUES (?,?,?,?,?)",
-                (flag_id, "undone", reviewer, None, ts),
-            )
-            self.db.commit()
+        self._many([
+            ("UPDATE flags SET status = 'pending_review', reviewer = NULL, note = NULL, reviewed_at = NULL, "
+             "explanation_bn = NULL WHERE id = ?", (flag_id,)),
+            ("INSERT INTO reviews (flag_id, status, reviewer, note, created_at) VALUES (?,?,?,?,?)",
+             (flag_id, "undone", reviewer, None, ts)),
+        ])
         return self.get_flag(flag_id)  # type: ignore[return-value]
 
+    def review_seconds(self) -> list[float]:
+        rows = self._all("SELECT seconds FROM reviews WHERE seconds IS NOT NULL AND status IN ('confirmed', 'dismissed')")
+        return [float(r["seconds"]) for r in rows]
+
+    def reviews_by(self, reviewer: str) -> int:
+        rows = self._all("SELECT COUNT(*) AS n FROM reviews WHERE reviewer = ? AND status IN ('confirmed', 'dismissed')",
+                         (reviewer,))
+        return int(rows[0]["n"]) if rows else 0
+
     def list_reviews(self, pid: int) -> list[dict]:
-        rows = self._all(
+        return self._all(
             """SELECT r.*, f.code, f.severity, f.evidence FROM reviews r JOIN flags f ON f.id = r.flag_id
                WHERE f.patient_id = ? ORDER BY r.created_at DESC, r.id DESC""", (pid,),
         )
-        return [dict(r) for r in rows]
 
     # ---- BP readings ----------------------------------------------------
-    def add_bp(self, pid: int, taken_on: str, systolic: int, diastolic: int) -> None:
-        self._exec("INSERT INTO bp_readings (patient_id, taken_on, systolic, diastolic) VALUES (?,?,?,?)",
-                   (pid, taken_on, systolic, diastolic))
+    def add_bp(self, pid: int, taken_on: str, systolic: int, diastolic: int,
+               pulse: int | None = None, source: str = "manual") -> None:
+        self._exec("INSERT INTO bp_readings (patient_id, taken_on, systolic, diastolic, pulse, source) "
+                   "VALUES (?,?,?,?,?,?)", (pid, taken_on, systolic, diastolic, pulse, source))
 
-    def list_bp(self, pid: int, limit: int = 7) -> list[dict]:
-        rows = self._all(
-            "SELECT taken_on, systolic, diastolic FROM bp_readings WHERE patient_id = ? ORDER BY taken_on DESC LIMIT ?",
-            (pid, limit),
-        )
-        return [dict(r) for r in reversed(rows)]
+    def list_bp(self, pid: int, limit: int = 7, since: str | None = None) -> list[dict]:
+        sql, args = "SELECT taken_on, systolic, diastolic FROM bp_readings WHERE patient_id = ?", [pid]
+        if since:
+            sql += " AND taken_on >= ?"
+            args.append(since)
+        rows = self._all(sql + " ORDER BY taken_on DESC, id DESC LIMIT ?", (*args, limit))
+        return list(reversed(rows))
+
+    # ---- questions to the pharmacist -----------------------------------
+    def add_question(self, pid: int, text: str) -> dict:
+        qid = self._insert("INSERT INTO questions (patient_id, text, created_at) VALUES (?,?,?)", (pid, text, now()))
+        return self.get_question(qid)  # type: ignore[return-value]
+
+    def get_question(self, qid: int) -> dict | None:
+        rows = self._all("SELECT * FROM questions WHERE id = ?", (qid,))
+        return rows[0] if rows else None
+
+    def list_questions(self, pid: int | None = None, open_only: bool = False) -> list[dict]:
+        sql, args = "SELECT * FROM questions WHERE 1=1", []
+        if pid is not None:
+            sql += " AND patient_id = ?"
+            args.append(pid)
+        if open_only:
+            sql += " AND reply IS NULL"
+        return self._all(sql + " ORDER BY created_at DESC, id DESC", tuple(args))
+
+    def reply_question(self, qid: int, reply: str, reviewer: str) -> dict:
+        self._exec("UPDATE questions SET reply = ?, replied_by = ?, replied_at = ?, reply_seen_at = NULL WHERE id = ?",
+                   (reply, reviewer, now(), qid))
+        return self.get_question(qid)  # type: ignore[return-value]
+
+    def mark_replies_seen(self, pid: int) -> None:
+        self._exec("UPDATE questions SET reply_seen_at = ? WHERE patient_id = ? AND reply IS NOT NULL "
+                   "AND reply_seen_at IS NULL", (now(), pid))
+
+    # ---- activity: anonymised milestones for the family (a kind and a count, never names) --
+    def log_activity(self, pid: int, kind: str, n: int | None = None) -> None:
+        self._exec("INSERT INTO activity (patient_id, kind, n, created_at) VALUES (?,?,?,?)", (pid, kind, n, now()))
+
+    def list_activity(self, pid: int, limit: int = 30) -> list[dict]:
+        return self._all("SELECT kind, n, created_at FROM activity WHERE patient_id = ? "
+                         "ORDER BY created_at DESC, id DESC LIMIT ?", (pid, limit))
+
+    def reset_household(self, pid: int) -> None:
+        """Back to an empty household (the demo reset). The patient row and its keys stay."""
+        self._many([
+            ("DELETE FROM reviews WHERE flag_id IN (SELECT id FROM flags WHERE patient_id = ?)", (pid,)),
+            ("DELETE FROM flags WHERE patient_id = ?", (pid,)),
+            ("DELETE FROM items WHERE patient_id = ?", (pid,)),
+            ("DELETE FROM bp_readings WHERE patient_id = ?", (pid,)),
+            ("DELETE FROM questions WHERE patient_id = ?", (pid,)),
+            ("DELETE FROM sathi_events WHERE patient_id = ?", (pid,)),
+            ("DELETE FROM activity WHERE patient_id = ?", (pid,)),
+            ("UPDATE patients SET last_checked_at = NULL, results_seen_at = NULL, passport_seen_at = NULL, "
+             "visit_questions = '[]', last_visit_at = NULL, ramadan_status = NULL, ramadan_requested_at = NULL, "
+             "ramadan_note = NULL, ramadan_approved_by = NULL, ramadan_approved_at = NULL WHERE id = ?", (pid,)),
+        ])
+
+    # ---- Sathi events (anonymised: kind, language and guide ids, never the text) --
+    def log_sathi_event(self, pid: int | None, kind: str, lang: str, guide_ids: list[str], latency_ms: int) -> None:
+        self._exec("INSERT INTO sathi_events (patient_id, kind, lang, guide_ids, latency_ms, created_at) "
+                   "VALUES (?,?,?,?,?,?)", (pid, kind, lang, json.dumps(guide_ids), latency_ms, now()))
+
+    def last_sathi_event(self, pid: int, kind: str) -> str | None:
+        rows = self._all("SELECT created_at FROM sathi_events WHERE patient_id = ? AND kind = ? "
+                         "ORDER BY created_at DESC LIMIT 1", (pid, kind))
+        return rows[0]["created_at"] if rows else None
+
+    def sathi_event_counts(self) -> dict[str, int]:
+        return {r["kind"]: r["n"] for r in self._all("SELECT kind, COUNT(*) AS n FROM sathi_events GROUP BY kind")}
 
     # ---- cache ----------------------------------------------------------
     def cache_get(self, key: str) -> str | None:
@@ -246,4 +484,16 @@ class Store:
         return rows[0]["value"] if rows else None
 
     def cache_set(self, key: str, value: str) -> None:
-        self._exec("INSERT OR REPLACE INTO cache (key, value, created_at) VALUES (?,?,?)", (key, value, now()))
+        self._exec(
+            "INSERT INTO cache (key, value, created_at) VALUES (?,?,?) "
+            "ON CONFLICT (key) DO UPDATE SET value = excluded.value, created_at = excluded.created_at",
+            (key, value, now()),
+        )
+
+
+def _is_disconnect(e: Exception) -> bool:
+    try:
+        import psycopg
+    except ImportError:
+        return False
+    return isinstance(e, (psycopg.OperationalError, psycopg.InterfaceError))

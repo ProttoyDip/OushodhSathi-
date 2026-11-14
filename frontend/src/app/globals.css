@@ -172,6 +172,8 @@ html {
   background: var(--paper);
   color: var(--ink);
   -webkit-text-size-adjust: 100%;
+  /* anchors and scrollIntoView land below the pinned top bar */
+  scroll-padding-top: 5.5rem;
 }
 
 body {
@@ -346,7 +348,60 @@ a[class*="rounded"]:active {
   50% { opacity: 1; }
 }
 
+/* ---------- page + scroll motion ----------
+   Page change: opacity only (a transform here would re-anchor the fixed bottom bars).
+   Scroll reveal: blocks rise 24px and settle as they enter the viewport. Content is
+   visible by default; the head script arms reveals only when JS + IntersectionObserver
+   run and motion is allowed, and a fallback shows everything if the controller never starts. */
+@keyframes page-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.page-in {
+  animation: page-in 260ms var(--ease-out-quint) backwards;
+}
+[data-reveal] {
+  transition:
+    opacity 480ms var(--ease-out-quint) var(--reveal-delay, 0ms),
+    transform 620ms var(--ease-out-quint) var(--reveal-delay, 0ms);
+}
+html.reveal-armed [data-reveal]:not([data-shown]) {
+  opacity: 0;
+  transform: translateY(24px);
+}
+@keyframes reveal-fallback {
+  to { opacity: 1; transform: none; }
+}
+html.reveal-armed:not(.reveal-live) [data-reveal]:not([data-shown]) {
+  animation: reveal-fallback 1ms linear 2.5s forwards;
+}
+
+/* Buttons answer a press; linked cards lift 2px on hover (DESIGN.md › Motion). */
+.press {
+  transition-property: transform, background-color, border-color, color, box-shadow;
+  transition-duration: 140ms;
+  transition-timing-function: var(--ease-out-quint);
+}
+.press:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.lift {
+  transition: transform 200ms var(--ease-out-quint), box-shadow 200ms var(--ease-out-quint), border-color 150ms;
+}
+.lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft);
+}
+
 @media (prefers-reduced-motion: reduce) {
+  html.reveal-armed [data-reveal]:not([data-shown]) {
+    opacity: 1;
+    transform: none;
+  }
+  .press:active:not(:disabled),
+  .lift:hover {
+    transform: none;
+  }
   *,
   *::before,
   *::after {
@@ -358,14 +413,50 @@ a[class*="rounded"]:active {
 
 /* ---------- print ---------- */
 @media print {
+  /* Paper is always light, whatever theme the device is in: these selectors match the
+     dark-theme rules' specificity and come later, so they win. */
   :root,
+  :root:not([data-theme="light"]),
   :root[data-theme="dark"] {
+    color-scheme: light;
     --paper: #ffffff;
     --paper-raised: #ffffff;
+    --paper-sunk: #f2f2f2;
     --ink: #000000;
     --ink-soft: #222222;
     --ink-faint: #444444;
     --rule: #999999;
+    --rule-strong: #777777;
+    --foil: #c8cdd6;
+    --foil-hi: #f1f3f7;
+    --foil-lo: #9ea6b4;
+    --foil-ink: #586274;
+    --neel: #2a3b91;
+    --neel-tint: #e4e9f8;
+    --on-neel: #ffffff;
+    --red: #b42318;
+    --red-tint: #fce9e7;
+    --red-line: #f0b9b2;
+    --amber: #b54708;
+    --amber-tint: #fdefe0;
+    --amber-line: #f1c79c;
+    --green: #067647;
+    --green-tint: #e2f3ea;
+    --green-line: #a9d9bf;
+    --shadow-soft: none;
+  }
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000;
+  }
+  [data-reveal],
+  html.reveal-armed [data-reveal]:not([data-shown]) {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .page-in {
+    animation: none;
   }
   .no-print {
     display: none !important;

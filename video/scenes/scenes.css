@@ -1,64 +1,61 @@
-/* Video scenes, 1920×1080. Same tokens as frontend/src/app/globals.css ("the pharmacist's ledger"). */
-@import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Tiro+Bangla&display=swap");
+/* Video scenes, 1920×1080. Same tokens as frontend/src/app/globals.css ("Neel": indigo dye, strip foil, kantha stitch). */
+@import url("https://fonts.googleapis.com/css2?family=Anek+Bangla:wght@500;600;700&family=Hind+Siliguri:wght@400;500;600&family=Instrument+Sans:wght@400;500;600&family=Schibsted+Grotesk:ital,wght@0,500;0,600;0,700;1,500&display=swap");
 
 :root {
-  --paper: #f6f2e9; --paper-raised: #fcfaf5; --paper-sunk: #ede6d6;
-  --ink: #12343b; --ink-soft: #34535a; --ink-faint: #5a7176;
-  --rule: #ddd4c1; --rule-strong: #c5baa3;
-  --foil: #c9ced3; --foil-hi: #eef0f2; --foil-lo: #a3abb3;
-  --teal: #0f6b6b; --teal-tint: #dcebe8;
-  --red: #b42318; --red-tint: #f9e5e2; --red-line: #e6b3ad;
-  --amber: #b54708; --amber-tint: #fcecd9;
-  --green: #067647;
-  --shadow: 0 1px 2px rgb(18 52 59 / .06), 0 18px 40px -18px rgb(18 52 59 / .28);
+  --paper: #f3f5f9; --paper-raised: #ffffff; --paper-sunk: #e7ebf3;
+  --ink: #0e1530; --ink-soft: #3a4466; --ink-faint: #5b6584;
+  --rule: #dfe3ec; --rule-strong: #c4cbdb;
+  --foil: #c8cdd6; --foil-hi: #f1f3f7; --foil-lo: #9ea6b4;
+  --neel: #2a3b91; --neel-tint: #e4e9f8; --on-neel: #ffffff;
+  --stitch: #8f9bd6; --dye: #1f2c6e; --dye-deep: #172259;
+  --red: #b42318; --red-tint: #fce9e7; --red-line: #f0b9b2;
+  --amber: #b54708; --amber-tint: #fdefe0;
+  --green: #067647; --green-tint: #e2f3ea;
+  --shadow: 0 2px 4px rgb(14 21 48 / .06), 0 24px 48px -20px rgb(14 21 48 / .35);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--paper); color: var(--ink); }
 body { font-family: "Instrument Sans", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
 .bn { font-family: "Hind Siliguri", "Noto Sans Bengali", sans-serif; line-height: 1.6; }
-.bn-display { font-family: "Tiro Bangla", serif; line-height: 1.35; }
-.serif { font-family: "Instrument Serif", serif; font-weight: 400; letter-spacing: -0.01em; }
+.bn-display { font-family: "Anek Bangla", "Hind Siliguri", sans-serif; font-weight: 600; line-height: 1.3; }
+.display { font-family: "Schibsted Grotesk", "Instrument Sans", sans-serif; font-weight: 600; letter-spacing: -0.025em; }
 .tab { font-variant-numeric: tabular-nums; }
 
-.scene { position: relative; width: 1920px; height: 1080px; padding: 112px 144px 120px; display: flex; flex-direction: column; }
-/* Ruled-ledger margin line, like prescription paper */
-.scene::before { content: ""; position: absolute; left: 96px; top: 0; bottom: 0; width: 1px; background: var(--red-line); opacity: .55; }
+.scene { position: relative; width: 1920px; height: 1080px; padding: 140px 144px 124px; display: flex; flex-direction: column; }
+/* the kantha running stitch down the margin */
+.scene::before { content: ""; position: absolute; left: 96px; top: 48px; bottom: 48px; width: 0; border-left: 3px dashed var(--stitch); opacity: .7; }
 
-.topbar { position: absolute; top: 56px; left: 144px; right: 144px; display: flex; justify-content: space-between; align-items: center; }
+.topbar { position: absolute; top: 52px; left: 144px; right: 144px; display: flex; justify-content: space-between; align-items: center; }
 .mark { display: flex; align-items: center; gap: 14px; }
 .mark .bn-display { font-size: 34px; line-height: 1; }
-.mark .serif { font-size: 30px; font-style: italic; color: var(--ink-soft); }
+.mark .display { font-size: 28px; font-style: italic; font-weight: 500; color: var(--ink-soft); }
 .step { font-size: 22px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; }
 
-.kicker { font-size: 26px; letter-spacing: .14em; text-transform: uppercase; color: var(--teal); font-weight: 600; }
-h1.serif { font-size: 132px; line-height: .98; margin-top: 28px; max-width: 1500px; }
-.sub-bn { font-size: 54px; margin-top: 26px; color: var(--ink-soft); }
+.kicker { font-size: 26px; letter-spacing: .14em; text-transform: uppercase; color: var(--neel); font-weight: 600; }
+h1.display { font-size: 120px; line-height: 1; margin-top: 26px; max-width: 1560px; }
+.sub-bn { font-size: 50px; margin-top: 24px; color: var(--ink-soft); }
 
-.foot { position: absolute; left: 144px; right: 144px; bottom: 56px; display: flex; justify-content: space-between; font-size: 20px; color: var(--ink-faint); }
-.foot a { color: inherit; }
+.foot { position: absolute; left: 144px; right: 144px; bottom: 50px; display: flex; justify-content: space-between; font-size: 20px; color: var(--ink-faint); }
 
 .chip { display: inline-flex; align-items: center; gap: 10px; padding: 8px 20px; border-radius: 999px; font-size: 24px; font-weight: 500; }
-.chip.teal { background: var(--teal-tint); color: var(--teal); }
-.chip.red { background: var(--red-tint); color: var(--red); border: 1px solid var(--red-line); }
-.chip.amber { background: var(--amber-tint); color: var(--amber); }
+.chip.neel { background: var(--neel-tint); color: var(--neel); }
+.chip.red { background: var(--red-tint); color: var(--red); border: 1.5px solid var(--red-line); }
 
-/* A piece of medicine strip */
-.strip { position: relative; display: grid; grid-template-columns: 84px 1fr; background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 10px; box-shadow: var(--shadow); overflow: hidden; }
-.strip .foil { background: linear-gradient(90deg, var(--foil-lo), var(--foil-hi) 45%, var(--foil) 70%, var(--foil-lo)); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 18px; border-right: 1px solid var(--foil-lo); }
-.strip .foil i { width: 30px; height: 30px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, var(--foil-hi), var(--foil) 60%, var(--foil-lo)); border: 1px solid var(--foil-lo); }
-.strip .body { padding: 26px 34px; }
-.strip .brand { font-size: 40px; font-weight: 600; }
-.strip .brand small { font-size: 28px; font-weight: 400; color: var(--ink-soft); margin-left: 10px; }
-.strip .chip { margin-top: 14px; }
+/* medicine strip with its foil band, as in the app's StripCard */
+.strip { display: flex; background: var(--paper-raised); border: 1px solid var(--rule-strong); border-radius: 10px; overflow: hidden; box-shadow: var(--shadow); }
+.strip .foil { width: 64px; background: linear-gradient(180deg, var(--foil-hi), var(--foil) 45%, var(--foil-lo)); display: grid; place-content: center; gap: 12px; border-right: 1px solid var(--foil-lo); }
+.strip .foil i { display: block; width: 26px; height: 26px; border-radius: 50%; background: radial-gradient(circle at 34% 30%, var(--foil-hi), var(--foil) 58%, var(--foil-lo)); border: 1px solid var(--foil-lo); }
+.strip .body { padding: 26px 30px; display: grid; gap: 14px; }
+.strip .brand { font-size: 44px; font-weight: 600; }
+.strip .brand small { font-size: 28px; color: var(--ink-soft); font-weight: 500; margin-left: 12px; }
 
-@media (prefers-reduced-motion: no-preference) {
-  .rise { animation: rise 600ms cubic-bezier(.2,.7,.2,1) both; }
-  .rise.d1 { animation-delay: 150ms; } .rise.d2 { animation-delay: 300ms; } .rise.d3 { animation-delay: 450ms; } .rise.d4 { animation-delay: 600ms; }
-  @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
-}
+.card { background: var(--paper-raised); border: 1.5px solid var(--rule-strong); border-radius: 12px; padding: 26px 30px; }
+.card b { display: block; font-size: 30px; font-weight: 600; }
+.card span { display: block; font-size: 22px; color: var(--ink-soft); margin-top: 8px; line-height: 1.35; }
+.dye { background: var(--dye); color: #fff; border-color: var(--dye); }
+.dye span { color: rgb(255 255 255 / .78); }
 
-.steps li { display: grid; grid-template-columns: 44px 1fr; }
-/* Flow arrows between architecture boxes */
-.flow > div { position: relative; }
-.flow > div + div::before { content: ""; position: absolute; left: -32px; top: 50%; width: 24px; height: 2px; background: var(--ink-faint); }
-.flow > div + div::after { content: ""; position: absolute; left: -14px; top: calc(50% - 5px); border: 6px solid transparent; border-left: 8px solid var(--ink-faint); border-right: 0; }
+/* gentle entrance; recordings start a fresh page so every scene plays it once */
+.rise { animation: rise .7s cubic-bezier(.22, 1, .36, 1) both; }
+.d1 { animation-delay: .15s; } .d2 { animation-delay: .3s; } .d3 { animation-delay: .5s; } .d4 { animation-delay: .7s; } .d5 { animation-delay: .9s; }
+@keyframes rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }

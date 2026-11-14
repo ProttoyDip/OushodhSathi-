@@ -1,28 +1,26 @@
 # Render Blueprint for the OushodhSathi API.
 # New → Blueprint → pick this repo. Secrets marked `sync: false` are entered in the
-# Render dashboard, never committed. SQLite lives on a persistent disk so the demo
-# household, reviews and audit trail survive restarts and deploys.
+# Render dashboard, never committed.
+#
+# Free plan: no persistent disk. Set DATABASE_URL to a free Supabase Postgres (session
+# pooler, see docs/DEPLOY.md) and households, reviews and the audit trail survive restarts.
+# Without it the API falls back to a local SQLite file that resets on every restart.
+# The invented demo household is seeded on start only when the database is empty.
 services:
   - type: web
     name: oushodhsathi-api
     runtime: python
     rootDir: backend
-    plan: starter            # persistent disks need a paid instance
+    plan: free
     region: singapore        # closest Render region to Bangladesh
     buildCommand: pip install -r requirements.txt
-    preDeployCommand: python scripts/seed_demo.py --if-empty
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    # seed the demo household when the database is empty, then serve
+    startCommand: python scripts/seed_demo.py --if-empty && uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     autoDeploy: true
-    disk:
-      name: oushodh-data
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.7
-      - key: OUSHODH_DB
-        value: /var/data/oushodh.db
       - key: DEMO_MODE
         value: "true"
       - key: OLLAMA_DISABLED     # no Ollama on Render; Bangla explanations use the cloud fallback
@@ -33,6 +31,25 @@ services:
         sync: false              # optional, e.g. ^https://oushodhsathi-.*\.vercel\.app$ for previews
       - key: REVIEWER_TOKEN
         generateValue: true
+      - key: DATABASE_URL
+        sync: false              # postgresql://oushodh_app.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres?sslmode=require
+      # abuse limits per client IP (defaults shown); photo reading spends AI credits
+      - key: SCAN_LIMIT_PER_IP
+        value: "10"              # scans per hour
+      - key: SCAN_LIMIT_GLOBAL
+        value: "200"             # scans per day, all visitors together
+      - key: PATIENT_LIMIT_PER_IP
+        value: "5"               # new households per hour
+      - key: WRITE_LIMIT_PER_IP
+        value: "120"             # item, check and BP writes per hour
+      - key: SATHI_LIMIT_PER_IP
+        value: "60"              # questions to Sathi per hour
+      - key: NVIDIA_API_KEY
+        sync: false
+      - key: NVIDIA_MODEL
+        sync: false
+      - key: NVIDIA_VISION_MODEL
+        sync: false
       - key: OPENROUTER_API_KEY
         sync: false
       - key: OPENROUTER_VISION_MODEL
@@ -42,6 +59,24 @@ services:
       - key: TAVILY_API_KEY
         sync: false
       - key: PERPLEXITY_API_KEY
+        sync: false
+      - key: NARAROUTER_BASE_URL
+        sync: false
+      - key: NARAROUTER_API_KEY
+        sync: false
+      - key: NARAROUTER_MODEL
+        sync: false
+      - key: EXPLAB_BASE_URL
+        sync: false
+      - key: EXPLAB_API_KEY
+        sync: false
+      - key: EXPLAB_MODEL
+        sync: false
+      - key: AGENTROUTER_BASE_URL
+        sync: false
+      - key: AGENTROUTER_API_KEY
+        sync: false
+      - key: AGENTROUTER_MODEL
         sync: false
       - key: N8N_ALERT_WEBHOOK
         sync: false

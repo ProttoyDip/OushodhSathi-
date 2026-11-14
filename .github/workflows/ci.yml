@@ -23,6 +23,8 @@ jobs:
           cache-dependency-path: backend/requirements.txt
       - run: pip install -r requirements.txt
       - run: python -m pytest -q
+      - name: Sathi safety eval (fails on any medical or emergency leak)
+        run: python ../eval/run_sathi_eval.py
 
   frontend:
     name: Frontend lint and build

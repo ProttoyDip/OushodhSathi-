@@ -149,14 +149,37 @@ def router_model(prefix: str, task: Task) -> str:
     return _env(f"{prefix}_MODEL")
 
 
+# OpenRouter request field: route only to providers that do not store or train on prompts
+NO_DATA_COLLECTION = {"provider": {"data_collection": "deny"}}
+
+
+def private_vision() -> bool:
+    """Photos (prescription headers can carry a patient's name) go only to providers we trust not
+    to keep them. On by default for a real (non-demo) server; PRIVATE_VISION=0/1 overrides."""
+    flag = _env("PRIVATE_VISION").lower()
+    if flag in ("0", "false", "no", "off"):
+        return False
+    if flag in ("1", "true", "yes", "on"):
+        return True
+    return _env("DEMO_MODE").lower() not in ("1", "true", "yes")
+
+
+def vision_allowed() -> set[str] | None:
+    """Provider names allowed to see photos, or None for no restriction."""
+    if not private_vision():
+        return None
+    return {x.strip().lower() for x in (_env("VISION_PROVIDERS") or "nvidia,ollama").split(",") if x.strip()}
+
+
 def configured_providers(task: Task, client: httpx.Client | None = None) -> list[Provider]:
     kind = "vision" if task == "vision" else "text"
+    allowed = vision_allowed() if task == "vision" else None
     out: list[Provider] = []
     # NVIDIA's own API leads: in testing it read cut strips correctly where the free
     # OpenRouter copies did not, and wrote clean Bangla. NVIDIA_VISION_MODEL for photos.
     if (key := _env("NVIDIA_API_KEY")) and (model := router_model("NVIDIA", task)):
         out.append(Provider("nvidia", (_env("NVIDIA_BASE_URL") or NVIDIA_BASE).rstrip("/"), key, model))
-    if key := _env("OPENROUTER_API_KEY"):
+    if (key := _env("OPENROUTER_API_KEY")) and (allowed is None or "openrouter" in allowed):
         env_model = _env("OPENROUTER_VISION_MODEL" if kind == "vision" else "OPENROUTER_TEXT_MODEL")
         models = ([env_model] if env_model else []) + pick_free_openrouter_models(kind, key, client)
         for m in dict.fromkeys(models):  # keep order, drop repeats
@@ -172,6 +195,8 @@ def configured_providers(task: Task, client: httpx.Client | None = None) -> list
             out.insert(0, ollama)  # private and local first for Bangla explanations
         else:
             out.append(ollama)
+    if allowed is not None:
+        out = [p for p in out if p.name in allowed]
     # the user's chosen model goes first; the rest of the chain stays as the fallback
     if (pref := _preferred.get(kind)) and task not in LOCAL_FIRST:
         chosen = [p for p in out if (p.name, p.model) == pref]
@@ -181,6 +206,12 @@ def configured_providers(task: Task, client: httpx.Client | None = None) -> list
 
 def provider_names(task: Task) -> list[str]:
     """For /health: names only, never keys. Does not trigger model auto-pick."""
+    names = _provider_names(task)
+    allowed = vision_allowed() if task == "vision" else None
+    return names if allowed is None else [n for n in names if n in allowed]
+
+
+def _provider_names(task: Task) -> list[str]:
     names = []
     if _env("NVIDIA_API_KEY") and router_model("NVIDIA", task):
         names.append("nvidia")
@@ -227,6 +258,8 @@ class Router:
             body: dict = {"model": p.model, "messages": messages, "temperature": temperature}
             if json_mode and p.name != "ollama":
                 body["response_format"] = {"type": "json_object"}
+            if p.name == "openrouter":
+                body.update(NO_DATA_COLLECTION)
             try:
                 r = self.client.post(
                     f"{p.base_url}/chat/completions", json=body,

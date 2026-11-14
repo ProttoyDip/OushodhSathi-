@@ -84,7 +84,9 @@
     "visit": "Before the doctor visit",
     "visitHint": "Everything to show the doctor on one page",
     "cleanup": "Medicines to set aside",
-    "cleanupHint": "Expired strips, and ones the pharmacist stopped"
+    "cleanupHint": "Expired strips, and ones the pharmacist stopped",
+    "settings": "Settings and privacy",
+    "settingsHint": "Email, private link, download or delete"
   },
   "scan": {
     "title": "Photograph the medicines",
@@ -103,7 +105,7 @@
     "reading2": "Matching the names…",
     "reading3": "Putting the list together…",
     "readingNote": "This can take a few seconds. Keep this page open.",
-    "privacy": "Photos are only used to read medicine names. They are not stored.",
+    "privacy": "Photos are only used to read medicine names and are not stored. On a prescription, fold or cover the patient's name before taking the photo.",
     "demoNote": "Demo mode: no AI model is connected, so the demo household's list is shown.",
     "tooMany": "You can add up to 12 photos at a time.",
     "failed": "The photos could not be read. Try again, or type the medicine names yourself.",
@@ -256,23 +258,31 @@
       "safe": "Why it’s safe",
       "docs": "Docs",
       "reviewer": "Reviewer",
-      "home": "OushodhSathi home"
+      "home": "OushodhSathi home",
+      "faq": "Questions"
     },
     "hero": {
       "title1": "Napa and Ace are",
       "title2": "the same medicine.",
       "accent": "নাম আলাদা, ওষুধ একই — প্যারাসিটামল, দুইবার।",
-      "body": "Elderly Bangladeshis collect medicines from a hospital doctor, a village doctor and the local drug shop, under thousands of brand names, and nobody looks at the whole shelf. OushodhSathi reads every strip in the house, catches duplicates and dangerous combinations, and a pharmacist or doctor confirms every finding before the family sees it, in simple Bangla.",
+      "body": "Parents collect medicines from a hospital doctor, a village doctor and the local drug shop, under thousands of brand names, and nobody looks at the whole shelf. OushodhSathi reads every strip, catches duplicates and risky combinations, and a pharmacist or doctor confirms each finding before the family sees it, in simple Bangla.",
       "ctaDemo": "See the demo",
       "ctaReviewer": "Reviewer dashboard",
       "demoNote": "The demo opens the invented household of Rahima Begum, 68, Cumilla.",
       "replay": "Replay the demo animation",
-      "ctaStart": "Start for your family"
+      "ctaStart": "Start for your family",
+      "eyebrow": "Medicine safety for elderly homes in Bangladesh",
+      "trust1": "A pharmacist or doctor confirms every finding",
+      "trust2": "Bangla first",
+      "trust3": "Photos are not stored",
+      "frameReview": "The pharmacist's review queue",
+      "framePhone": "The family's phone"
     },
     "how": {
       "title": "How it works",
       "accent": "ছবি থেকে নিশ্চিত তালিকা",
-      "body": "A family member photographs every strip, box and prescription. Six steps later the family has one clinician-checked list and a passport to carry to every doctor visit."
+      "body": "A family member photographs every strip, box and prescription. Six steps later the family has one clinician-checked list and a passport to carry to every doctor visit.",
+      "step": "Step {n}"
     },
     "flow": {
       "legend": "Legend",
@@ -340,24 +350,29 @@
       "r6": {
         "title": "Photos are not kept.",
         "body": "Photos are read in memory and discarded; the family sees a thumbnail once."
-      }
+      },
+      "docsTitle": "Read the safety design",
+      "docsBody": "Every rule, every guardrail and how each one is tested."
     },
     "evidence": {
       "title": "The shelf problem, in public numbers.",
       "e1": {
-        "figure": "78 per 1,000",
+        "figure": "78",
         "claim": "Hypertension is now the most common illness in Bangladesh.",
-        "source": "BBS Health and Morbidity Status Survey (HMSS) 2025, reported by BSS"
+        "source": "BBS Health and Morbidity Status Survey (HMSS) 2025, reported by BSS",
+        "unit": "per 1,000 people"
       },
       "e2": {
         "figure": "11%",
         "claim": "of people with hypertension in Bangladesh had their blood pressure under control (below 140/90).",
-        "source": "Background figure in the WHO-HEARTS evaluation, Heart (BMJ), 2024"
+        "source": "Background figure in the WHO-HEARTS evaluation, Heart (BMJ), 2024",
+        "unit": ""
       },
       "e3": {
         "figure": "69%",
         "claim": "of geriatric outpatients were prescribed five or more medicines.",
-        "source": "Small 2011 study of 35 patients at a private hospital in Bangladesh"
+        "source": "Small 2011 study of 35 patients at a private hospital in Bangladesh",
+        "unit": ""
       },
       "pilot": "Pilot in progress. We will publish results here only once they are real; nothing on this site is a pilot outcome."
     },
@@ -368,9 +383,58 @@
       "role": "[Role] · [GitHub]"
     },
     "footer": {
-      "disclaimer": "OushodhSathi is a research prototype, not a medical device. It does not give medical advice. All findings must be confirmed by a registered pharmacist or doctor. Demo data is invented.",
+      "disclaimer": "OushodhSathi is a pilot service, not a medical device. It does not give medical advice. Every finding is confirmed by a registered pharmacist or doctor. The demo household is invented.",
       "docs": "Technical docs",
-      "design": "Design system"
+      "design": "Design system",
+      "built": "Built for the International AI Builders Congress 2026 · HealthSphere AI → ChronicCare AI.",
+      "product": "Product",
+      "clinicians": "For clinicians",
+      "trust": "Trust",
+      "project": "Project",
+      "how": "How it works",
+      "demo": "Demo",
+      "start": "Start for your family",
+      "reviewer": "Reviewer sign-in",
+      "pharmacists": "Join as a pharmacist",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "contact": "Contact",
+      "github": "Source code",
+      "family": "In the app, nothing on this phone is a medical decision: every finding is confirmed by a registered pharmacist or doctor."
+    },
+    "faq": {
+      "title": "Questions families ask",
+      "accent": "পরিবারের প্রশ্ন",
+      "q1": {
+        "q": "Is this medical advice?",
+        "a": "No. A fixed set of rules finds possible problems, and a registered pharmacist or doctor confirms each one before you see it. OushodhSathi never tells anyone to stop, start or change a medicine. Talk to the doctor before changing anything."
+      },
+      "q2": {
+        "q": "Who can see our family's information?",
+        "a": "Only people who have your private family link, and the pharmacists and doctors who review it, each with their own login. The patient's name is never sent to an AI model, and photos are read and then discarded."
+      },
+      "q3": {
+        "q": "Who checks the findings?",
+        "a": "Registered pharmacists and doctors. Every decision records who made it, so the family always knows a person, not a machine, confirmed it."
+      },
+      "q4": {
+        "q": "How much does it cost?",
+        "a": "It is free for families during the pilot."
+      },
+      "q5": {
+        "q": "What if we lose the family link?",
+        "a": "On a phone that still opens the list, go to Settings and make a new link. If no phone has it any more, contact us and we will make a new one; the old link stops working."
+      },
+      "q6": {
+        "q": "How accurate is the photo reading?",
+        "a": "Every reading shows how sure the AI is. Anything under 75% is marked for a person to check, and the family confirms the list before it is sent for review. Measured accuracy will be published on the docs page once the evaluation is done."
+      }
+    },
+    "cta": {
+      "title": "Start with one shelf.",
+      "body": "Photograph every medicine in the house. A pharmacist checks the list, and the family gets a plain-Bangla answer and a passport for the next doctor visit.",
+      "start": "Start for your family",
+      "demo": "See the demo first"
     }
   },
   "docs": {
@@ -630,7 +694,10 @@
       "offline": "Can’t reach the review server.",
       "checking": "Checking…",
       "open": "Open the queue",
-      "demo": "Demo server: the reviewer token is <code>demo-reviewer</code>. Set REVIEWER_TOKEN in backend/.env for real use."
+      "demo": "Demo server: the reviewer token is <code>demo-reviewer</code>. Set REVIEWER_TOKEN in backend/.env for real use.",
+      "badInvite": "That invite link is not valid any more. Ask the team for a new one.",
+      "nameNeeded": "Add your name: it is recorded with every decision.",
+      "inviteHint": "Pharmacists and doctors sign in with their personal invite link from the team. Lost it? Ask for a new one."
     },
     "dash": {
       "title": "Review queue",
@@ -798,7 +865,24 @@
     "creating": "Creating…",
     "privateTitle": "Private to your family",
     "privateBody": "This list opens only on this phone and through its private link. The name is never sent to an AI model.",
-    "privateShare": "Afterwards, use \"Share with family\" on the home screen to send the link to brothers, sisters or a carer."
+    "privateShare": "Afterwards, use \"Share with family\" on the home screen to send the link to brothers, sisters or a carer.",
+    "email": "Your email (optional)",
+    "emailPlaceholder": "e.g. nusrat@example.com",
+    "emailInvalid": "This email address doesn't look right.",
+    "emailOptIn": "Email me when the pharmacist has checked the list, and a short weekly report.",
+    "consent": "I have read the <privacy>privacy notice</privacy> and <terms>terms</terms>, and I look after this person's medicines with their agreement.",
+    "saved": {
+      "done": "List created",
+      "title": "Save your family link",
+      "body": "This private link is the only way to open the list on another phone. Keep it somewhere safe and share it only with family.",
+      "linkLabel": "Your private family link",
+      "copy": "Copy the link",
+      "copied": "Copied",
+      "whatsapp": "Send to myself on WhatsApp",
+      "whatsappText": "Our family medicine list on OushodhSathi (private, keep safe):",
+      "warning": "Anyone with this link can open the list. If it reaches the wrong person, make a new link in Settings.",
+      "continue": "Go to the list"
+    }
   },
   "sathi": {
     "name": "Sathi",
@@ -998,5 +1082,201 @@
     "docs": "Docs",
     "reset": "Reset demo household",
     "failed": "Reset failed"
+  },
+  "settings": {
+    "title": "Settings and privacy",
+    "demo": "The demo household is invented data and cannot be changed here.",
+    "email": {
+      "title": "Email updates",
+      "body": "We email only when the pharmacist has checked the list, and a short weekly report. No advertising.",
+      "optIn": "Send me these emails",
+      "save": "Save",
+      "saved": "Saved",
+      "error": "Could not save. Check the connection and try again."
+    },
+    "link": {
+      "title": "Private family link",
+      "body": "If the link reached someone it shouldn't, make a new one. The old link stops working at once; this phone keeps working. Send the new link to the family again.",
+      "rotate": "Make a new link",
+      "confirm": "Yes, make a new link",
+      "cancel": "Cancel",
+      "newLink": "New private link",
+      "error": "Could not make a new link. Try again."
+    },
+    "export": {
+      "title": "Download your data",
+      "body": "A copy of everything about this household: the medicine list, confirmed findings, blood pressure and questions.",
+      "download": "Download (JSON)"
+    },
+    "delete": {
+      "title": "Delete this household",
+      "body": "Deletes the medicine list, findings, blood pressure, questions and the private link, for everyone in the family. This cannot be undone.",
+      "type": "To confirm, type <b>{word}</b>",
+      "word": "DELETE",
+      "button": "Delete everything",
+      "error": "Could not delete. Try again."
+    }
+  },
+  "admin": {
+    "title": "Team admin",
+    "body": "Personal reviewer logins and lost family links. Only for the OushodhSathi team.",
+    "token": "Admin token",
+    "open": "Open",
+    "signOut": "Sign out",
+    "badToken": "That admin token is not right.",
+    "notConfigured": "ADMIN_TOKEN is not set on this server.",
+    "offline": "Can't reach the server.",
+    "reviewers": "Reviewers",
+    "none": "No reviewers yet.",
+    "name": "Name",
+    "namePh": "e.g. Pharm. S. Akter",
+    "roleLabel": "Role",
+    "role": {
+      "pharmacist": "Pharmacist",
+      "doctor": "Doctor"
+    },
+    "reg": "Registration no.",
+    "regPh": "BMDC or Pharmacy Council",
+    "create": "Create invite",
+    "inviteFor": "Invite link for {name}",
+    "onceWarning": "Shown once. Send it privately; it signs this person in.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "done": "Done",
+    "reissue": "New link",
+    "revoke": "Revoke",
+    "revoked": "revoked",
+    "familyTitle": "Lost family link",
+    "familyBody": "A family changed phone or cleared the browser. Make a new private link for their household number; the old link stops working.",
+    "household": "Household no.",
+    "familyButton": "Make a new family link",
+    "familyNew": "New family link",
+    "error": "Something went wrong. Try again."
+  },
+  "legal": {
+    "back": "Back to home",
+    "updated": "Last updated: November 2026 · version 2026-11",
+    "other": "Also read",
+    "privacy": {
+      "title": "Privacy notice",
+      "intro": "OushodhSathi helps a family check the medicines of an older relative. This notice says, in plain words, what we keep, who can see it and what you can do about it.",
+      "sections": [
+        {
+          "h": "What we keep",
+          "p": [
+            "About the person: a name, age, district and long-term conditions you choose to enter.",
+            "Their medicine list, the findings a pharmacist or doctor confirmed, blood pressure readings, allergies, an emergency contact if you add one, and questions you send to the pharmacist.",
+            "Your email address, only if you give it, and whether you want our emails.",
+            "When you accepted this notice, and a short activity log (for example \"3 medicines scanned\") without names."
+          ]
+        },
+        {
+          "h": "Photos are not kept",
+          "p": [
+            "Photos of strips, boxes and prescriptions are read in memory and then discarded. Nothing is stored on our server. A strip photo can come back once as a small picture that stays only in your browser.",
+            "Before photographing a prescription, please fold or cover the patient's name."
+          ]
+        },
+        {
+          "h": "What AI models see",
+          "p": [
+            "To read the photos and look up unknown brands, we send medicine photos and medicine names to an AI provider. We never send the patient's name or any phone number to an AI model.",
+            "On the pilot, photos only go to providers that do not keep them."
+          ]
+        },
+        {
+          "h": "Who can see the household",
+          "p": [
+            "Anyone who has the private family link. Share it only with family; you can make a new link at any time in Settings, and the old one stops working.",
+            "The pharmacists and doctors who review the list, each with a personal login that records every decision they make.",
+            "A small number of OushodhSathi team members, only to help when you ask (for example a lost link)."
+          ]
+        },
+        {
+          "h": "Where it is stored",
+          "p": [
+            "The service runs on Render and the data is kept in a Supabase Postgres database, both in Singapore, the closest region to Bangladesh. Emails, if you want them, are sent through Resend."
+          ]
+        },
+        {
+          "h": "Your choices",
+          "p": [
+            "In Settings you can turn emails on or off, make a new private link, download all the household's data, and delete the household. Deleting removes everything about it and cannot be undone.",
+            "If you no longer have a phone that opens the list, contact us and we will help."
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "title": "Terms of use",
+      "intro": "These terms apply to the OushodhSathi pilot. Please read them before creating a list.",
+      "sections": [
+        {
+          "h": "What OushodhSathi is",
+          "p": [
+            "A medicine-checking service. Photos are read by AI, a fixed set of rules finds possible problems, and a registered pharmacist or doctor confirms each finding before the family sees it.",
+            "It is a pilot service, not a medical device, and not a replacement for the patient's own doctor."
+          ]
+        },
+        {
+          "h": "What it never does",
+          "p": [
+            "It never tells anyone to stop, start or change a medicine or a dose. Decisions about treatment belong to the patient and their doctor. Talk to the doctor before changing anything.",
+            "It is not an emergency service. In an emergency, call 999."
+          ]
+        },
+        {
+          "h": "What we ask of you",
+          "p": [
+            "Create a list only for someone whose medicines you look after, with their agreement.",
+            "Keep the private family link safe and share it only with family.",
+            "Check the medicine list before sending it for review: you know the shelf best."
+          ]
+        },
+        {
+          "h": "The pilot",
+          "p": [
+            "During the pilot the service is free for families. Features may change, and the pilot may end; if it does, we will tell you in advance so you can download your data.",
+            "We do our best to keep the service running and correct, but findings can be incomplete: a medicine that was not photographed, or a brand we do not know yet, cannot be checked."
+          ]
+        }
+      ]
+    },
+    "contact": {
+      "title": "Contact",
+      "intro": "For a lost family link, a question about your data, or to report a problem with the app.",
+      "email": "Email us",
+      "github": "Report a problem on GitHub",
+      "noEmail": "During the pilot, the team is reachable through the project's GitHub page.",
+      "medical": "We cannot answer medical questions here. Ask your pharmacist in the app (Questions), or contact your doctor. In an emergency, call 999."
+    },
+    "pharmacists": {
+      "title": "For pharmacists and doctors",
+      "intro": "OushodhSathi needs registered pharmacists and doctors to confirm or dismiss what the rules find. Every finding is decided by a person, with their name and registration number on it.",
+      "sections": [
+        {
+          "h": "The work",
+          "p": [
+            "A keyboard-driven queue, red findings first. Each finding shows the strip photos, brands, generics, the rule that fired and its source. Most take under a minute.",
+            "You can add what each medicine is for, approve the times of day, confirm allergies and answer family questions. You never need to tell a family to stop a medicine; that stays between the patient and their doctor."
+          ]
+        },
+        {
+          "h": "How to join the pilot",
+          "p": [
+            "Contact us with your name, whether you are a pharmacist or a doctor, and your Pharmacy Council or BMDC registration number. We send you a personal invite link; you can stop at any time and your login is revoked."
+          ]
+        }
+      ],
+      "cta": "Contact the team"
+    }
+  },
+  "errors": {
+    "notFoundTitle": "This page does not exist",
+    "notFoundBody": "The link may be old or typed wrongly. A family list only opens with its private family link.",
+    "errorTitle": "Something went wrong",
+    "errorBody": "Please try again. If it keeps happening, check the connection or come back in a minute.",
+    "retry": "Try again",
+    "home": "Go to the home page"
   }
 }

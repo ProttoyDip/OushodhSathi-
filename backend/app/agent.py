@@ -25,7 +25,7 @@ from pydantic_ai.providers.openai import OpenAIProvider
 
 from . import prompts
 from .brands import match_brand as _match_brand
-from .llm_router import NoProviderAvailable, Provider, Router, configured_providers, parse_json
+from .llm_router import NO_DATA_COLLECTION, NoProviderAvailable, Provider, Router, configured_providers, parse_json
 from .models import MedicineItemIn, RuleItem
 from .research import lookup_unknown_brand as _lookup
 from .rules import run_rules
@@ -160,7 +160,8 @@ def build_agent(model) -> Agent[ShelfDeps, Extraction]:
 
 
 def _pydantic_ai_model(providers: list[Provider]):
-    models = [OpenAIChatModel(p.model, provider=OpenAIProvider(base_url=p.base_url, api_key=p.api_key))
+    models = [OpenAIChatModel(p.model, provider=OpenAIProvider(base_url=p.base_url, api_key=p.api_key),
+                              settings={"extra_body": NO_DATA_COLLECTION} if p.name == "openrouter" else None)
               for p in providers]
     return models[0] if len(models) == 1 else FallbackModel(*models)
 

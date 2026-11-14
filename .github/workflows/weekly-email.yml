@@ -1,0 +1,22 @@
+# Friday evening in Bangladesh: the weekly report email for every pilot household that opted in.
+# The API sends each household at most one weekly email per ISO week, so a re-run is harmless.
+# Needs the repository secret ADMIN_TOKEN (the pilot API's ADMIN_TOKEN from Render).
+name: weekly-email
+
+on:
+  schedule:
+    - cron: "0 12 * * 5"     # Fridays 12:00 UTC = 18:00 in Dhaka
+  workflow_dispatch:
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ask the pilot API to send this week's reports
+        env:
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        run: |
+          if [ -z "$ADMIN_TOKEN" ]; then echo "ADMIN_TOKEN secret not set; skipping"; exit 0; fi
+          api=https://oushodhsathi-api.onrender.com
+          curl -fsS -m 90 "$api/health" > /dev/null || sleep 30   # wake the free instance
+          curl -fsS -m 120 -X POST -H "X-Admin-Token: $ADMIN_TOKEN" "$api/admin/notify/weekly"

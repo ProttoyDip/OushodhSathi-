@@ -63,7 +63,7 @@ def test_items_in_a_duplicate_finding_wait_for_the_reviewer():
 
 
 def test_savings_endpoint_excludes_duplicates(client):
-    pid = client.post("/patients", json={"name": "Savings", "age": 70}).json()
+    pid = client.post("/patients", json={"name": "Savings", "age": 70, "consent": True}).json()
     client.headers["X-Family-Key"] = pid["family_key"]
     pid = pid["id"]
     for brand, strength in (("Angilock", "50 mg"), ("Camlodin", "5 mg"), ("Amdocal", "5 mg")):
@@ -79,7 +79,7 @@ def test_savings_endpoint_excludes_duplicates(client):
 # ---- Ramadan ---------------------------------------------------------------------------------
 
 def household(client):
-    r = client.post("/patients", json={"name": "Ramadan", "age": 66}).json()
+    r = client.post("/patients", json={"name": "Ramadan", "age": 66, "consent": True}).json()
     client.headers["X-Family-Key"] = r["family_key"]
     pid = r["id"]
     ids = [client.post(f"/patients/{pid}/items?confirmed=true",
@@ -120,7 +120,7 @@ def test_only_a_reviewer_approves_a_ramadan_plan(client):
 
 def test_ramadan_plan_rejects_other_households_items(client):
     pid, _ = household(client)
-    other = client.post("/patients", json={"name": "Other", "age": 70}).json()
+    other = client.post("/patients", json={"name": "Other", "age": 70, "consent": True}).json()
     item = client.post(f"/patients/{other['id']}/items?confirmed=true", json={"brand": "Napa"},
                        headers={"X-Family-Key": other["family_key"]}).json()
     r = client.post(f"/patients/{pid}/ramadan-approve", headers=TOKEN,
@@ -179,7 +179,7 @@ def test_demo_reset_gives_both_views_something_to_show(client, store):
 
 def test_demo_reset_never_touches_real_households(client, store):
     _demo(client, store)
-    real = client.post("/patients", json={"name": "Real", "age": 70}).json()
+    real = client.post("/patients", json={"name": "Real", "age": 70, "consent": True}).json()
     h = {"X-Family-Key": real["family_key"]}
     client.post(f"/patients/{real['id']}/items?confirmed=true", json={"brand": "Napa"}, headers=h)
     client.post("/demo/reset")

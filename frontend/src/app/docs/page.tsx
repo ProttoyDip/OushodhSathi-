@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next";
 import { ExternalLink } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -39,6 +40,7 @@ export default async function Docs() {
 
   return (
     <div className="min-h-dvh">
+      <Analytics />
       <div className={stickyBar}>
         <nav className="mx-auto flex max-w-[1200px] items-center justify-between gap-3 px-5 py-3 sm:px-8">
           <Link href="/" title={t("nav.home")} className="shrink-0"><Wordmark /></Link>

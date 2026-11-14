@@ -32,7 +32,7 @@
         0
       ],
       "parameters": {
-        "jsCode": "// The backend sends ids and rule codes only — no patient names, no medicine details.\nconst body = $input.first().json.body ?? $input.first().json;\nconst lines = body.flags.map(f => `- flag #${f.id}: ${f.code} (${f.severity}, for the ${f.routed_to})`).join('\n');\nreturn [{ json: { text: `New red finding(s) waiting for review — patient #${body.patient_id}\n${lines}\n\nOpen the review queue to confirm or dismiss.` } }];"
+        "jsCode": "// The backend sends ids and rule codes only — no patient names, no medicine details.\nconst body = $input.first().json.body ?? $input.first().json;\nif (body.event === 'sathi_emergency') {\n  return [{ json: { text: `EMERGENCY words in Sathi — household #${body.patient_id}. The family was shown the Call 999 message. Contact the family contact now.` } }];\n}\nconst lines = (body.flags || []).map(f => `- flag #${f.id}: ${f.code} (${f.severity}, for the ${f.routed_to})`).join('\n');\nreturn [{ json: { text: `New red finding(s) waiting for review — patient #${body.patient_id}\n${lines}\n\nOpen the review queue to confirm or dismiss.` } }];"
       }
     },
     {

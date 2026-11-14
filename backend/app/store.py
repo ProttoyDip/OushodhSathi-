@@ -6,6 +6,7 @@ survives restarts on hosts without a disk. Both run the same SQL: `?` placeholde
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import secrets
@@ -14,11 +15,14 @@ import threading
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .models import Flag, MedicineItem, MedicineItemIn, Patient, PatientIn, ReviewIn, StoredFlag
+from .models import (
+    CONSENT_VERSION, Flag, MedicineItem, MedicineItemIn, Patient, PatientIn, ReviewerAccount, ReviewIn,
+    StoredFlag,
+)
 
 DEFAULT_DB = Path(__file__).resolve().parent.parent / "oushodh.db"
 
-TABLES = ("activity", "sathi_events", "questions", "bp_readings", "reviews", "flags", "items", "cache", "patients")
+TABLES = ("notifications", "reviewers", "activity", "sathi_events", "questions", "bp_readings", "reviews", "flags", "items", "cache", "patients")
 
 # {id}: auto-increment key, {ref}: foreign key column, {real}: floating point
 SCHEMA = """
@@ -69,6 +73,14 @@ CREATE TABLE IF NOT EXISTS sathi_events (
   id {id}, patient_id {ref}, kind TEXT NOT NULL, lang TEXT, guide_ids TEXT,
   latency_ms INTEGER, created_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS reviewers (
+  id {id}, name TEXT NOT NULL, role TEXT NOT NULL, reg_no TEXT,
+  token_hash TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL, revoked_at TEXT
+);
+CREATE TABLE IF NOT EXISTS notifications (
+  id {id}, patient_id {ref} NOT NULL, kind TEXT NOT NULL, period TEXT NOT NULL, sent_at TEXT NOT NULL,
+  UNIQUE (patient_id, kind, period)
+);
 """
 
 # Columns added after the first release. Applied to fresh and existing databases alike.
@@ -90,6 +102,11 @@ ADDED_COLUMNS = {
         "ramadan_note": "TEXT",            # the clinician's note with the approved plan
         "ramadan_approved_by": "TEXT",
         "ramadan_approved_at": "TEXT",
+        "family_email": "TEXT",            # optional; only for "results ready" and the weekly report
+        "email_opt_in": "INTEGER NOT NULL DEFAULT 0",
+        "consent_at": "TEXT",              # the family accepted the privacy notice at /start
+        "consent_version": "TEXT",
+        "key_rotated_at": "TEXT",
     },
     "items": {
         "purpose": "TEXT",                # what it is for, written by the reviewing pharmacist
@@ -103,8 +120,8 @@ ADDED_COLUMNS = {
         "schedule_approved_at": "TEXT",
         "ramadan_slots": "TEXT NOT NULL DEFAULT '[]'",  # sehri / iftar, set only by a reviewer
     },
-    "flags": {"opened_at": "TEXT"},       # first opened by a reviewer: review-time evidence
-    "reviews": {"seconds": "{real}"},     # opened -> decided
+    "flags": {"opened_at": "TEXT", "reviewer_id": "{ref}"},  # opened_at: review-time evidence
+    "reviews": {"seconds": "{real}", "reviewer_id": "{ref}"},  # seconds: opened -> decided
     "bp_readings": {"pulse": "INTEGER", "source": "TEXT"},
 }
 
@@ -118,6 +135,11 @@ def now() -> str:
 
 def new_family_key() -> str:
     return secrets.token_urlsafe(16)
+
+
+def token_hash(token: str) -> str:
+    """Reviewer tokens are stored only as a SHA-256 hash: a database leak does not leak logins."""
+    return hashlib.sha256(token.encode()).hexdigest()
 
 
 class Store:
@@ -219,12 +241,15 @@ class Store:
         d["allergies"] = json.loads(r.get("allergies") or "[]")
         d["visit_questions"] = json.loads(r.get("visit_questions") or "[]")
         d["is_demo"] = bool(r["is_demo"])
+        d["email_opt_in"] = bool(r.get("email_opt_in"))
         return Patient(**d)
 
     def update_patient(self, pid: int, **fields) -> Patient | None:
         for col in ("allergies", "visit_questions"):
             if col in fields:
                 fields[col] = json.dumps(fields[col], ensure_ascii=False)
+        if "email_opt_in" in fields:
+            fields["email_opt_in"] = int(bool(fields["email_opt_in"]))
         if fields:
             sets = ", ".join(f"{k} = ?" for k in fields)
             self._exec(f"UPDATE patients SET {sets} WHERE id = ?", (*fields.values(), pid))
@@ -238,13 +263,31 @@ class Store:
         rows = self._all("SELECT * FROM patients WHERE emergency_token = ?", (token,))
         return self._patient(rows[0]) if rows else None
 
-    def create_patient(self, p: PatientIn) -> Patient:
+    def create_patient(self, p: PatientIn, family_email: str | None = None, email_opt_in: bool = False,
+                       consent: bool = False) -> Patient:
+        ts = now()
         pid = self._insert(
-            "INSERT INTO patients (name, name_bn, age, district, conditions, is_demo, created_at, family_key) "
-            "VALUES (?,?,?,?,?,?,?,?)",
-            (p.name, p.name_bn, p.age, p.district, json.dumps(p.conditions), int(p.is_demo), now(), new_family_key()),
+            "INSERT INTO patients (name, name_bn, age, district, conditions, is_demo, created_at, family_key, "
+            "family_email, email_opt_in, consent_at, consent_version) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            (p.name, p.name_bn, p.age, p.district, json.dumps(p.conditions), int(p.is_demo), ts, new_family_key(),
+             family_email, int(bool(family_email and email_opt_in)),
+             ts if consent else None, CONSENT_VERSION if consent else None),
         )
         return self.get_patient(pid)  # type: ignore[return-value]
+
+    def rotate_family_key(self, pid: int) -> str:
+        """A new private link; the old one stops working at once (a link was shared too widely)."""
+        key = new_family_key()
+        self._exec("UPDATE patients SET family_key = ?, key_rotated_at = ? WHERE id = ?", (key, now(), pid))
+        return key
+
+    def delete_household(self, pid: int) -> None:
+        """Everything about a household is removed, then the household itself (the family's right to delete)."""
+        self.reset_household(pid)
+        self._many([
+            ("DELETE FROM notifications WHERE patient_id = ?", (pid,)),
+            ("DELETE FROM patients WHERE id = ?", (pid,)),
+        ])
 
     def get_patient(self, pid: int) -> Patient | None:
         rows = self._all("SELECT * FROM patients WHERE id = ?", (pid,))
@@ -366,23 +409,24 @@ class Store:
         self._exec("UPDATE flags SET opened_at = ? WHERE id = ? AND opened_at IS NULL", (now(), flag_id))
 
     def review_flag(self, flag_id: int, review: ReviewIn, explanation_bn: str | None,
-                    seconds: float | None = None) -> StoredFlag:
+                    seconds: float | None = None, reviewer_id: int | None = None) -> StoredFlag:
         ts = now()
         self._many([
-            ("UPDATE flags SET status = ?, reviewer = ?, note = ?, reviewed_at = ?, explanation_bn = ? WHERE id = ?",
-             (review.status, review.reviewer, review.note, ts, explanation_bn, flag_id)),
-            ("INSERT INTO reviews (flag_id, status, reviewer, note, created_at, seconds) VALUES (?,?,?,?,?,?)",
-             (flag_id, review.status, review.reviewer, review.note, ts, seconds)),
+            ("UPDATE flags SET status = ?, reviewer = ?, reviewer_id = ?, note = ?, reviewed_at = ?, "
+             "explanation_bn = ? WHERE id = ?",
+             (review.status, review.reviewer, reviewer_id, review.note, ts, explanation_bn, flag_id)),
+            ("INSERT INTO reviews (flag_id, status, reviewer, reviewer_id, note, created_at, seconds) "
+             "VALUES (?,?,?,?,?,?,?)", (flag_id, review.status, review.reviewer, reviewer_id, review.note, ts, seconds)),
         ])
         return self.get_flag(flag_id)  # type: ignore[return-value]
 
-    def undo_review(self, flag_id: int, reviewer: str) -> StoredFlag:
+    def undo_review(self, flag_id: int, reviewer: str, reviewer_id: int | None = None) -> StoredFlag:
         ts = now()
         self._many([
-            ("UPDATE flags SET status = 'pending_review', reviewer = NULL, note = NULL, reviewed_at = NULL, "
-             "explanation_bn = NULL WHERE id = ?", (flag_id,)),
-            ("INSERT INTO reviews (flag_id, status, reviewer, note, created_at) VALUES (?,?,?,?,?)",
-             (flag_id, "undone", reviewer, None, ts)),
+            ("UPDATE flags SET status = 'pending_review', reviewer = NULL, reviewer_id = NULL, note = NULL, "
+             "reviewed_at = NULL, explanation_bn = NULL WHERE id = ?", (flag_id,)),
+            ("INSERT INTO reviews (flag_id, status, reviewer, reviewer_id, note, created_at) VALUES (?,?,?,?,?,?)",
+             (flag_id, "undone", reviewer, reviewer_id, None, ts)),
         ])
         return self.get_flag(flag_id)  # type: ignore[return-value]
 
@@ -477,6 +521,46 @@ class Store:
 
     def sathi_event_counts(self) -> dict[str, int]:
         return {r["kind"]: r["n"] for r in self._all("SELECT kind, COUNT(*) AS n FROM sathi_events GROUP BY kind")}
+
+    # ---- reviewers: personal, revocable logins ---------------------------
+    def _reviewer(self, r: dict) -> ReviewerAccount:
+        return ReviewerAccount(**{k: v for k, v in r.items() if k in ReviewerAccount.model_fields})
+
+    def create_reviewer(self, name: str, role: str, reg_no: str | None) -> tuple[ReviewerAccount, str]:
+        """Returns the account and its token. The token is shown once and never stored."""
+        token = secrets.token_urlsafe(24)
+        rid = self._insert("INSERT INTO reviewers (name, role, reg_no, token_hash, created_at) VALUES (?,?,?,?,?)",
+                           (name.strip(), role, (reg_no or "").strip() or None, token_hash(token), now()))
+        return self.get_reviewer(rid), token  # type: ignore[return-value]
+
+    def get_reviewer(self, rid: int) -> ReviewerAccount | None:
+        rows = self._all("SELECT * FROM reviewers WHERE id = ?", (rid,))
+        return self._reviewer(rows[0]) if rows else None
+
+    def reviewer_by_token(self, token: str) -> ReviewerAccount | None:
+        """An active (not revoked) reviewer whose token matches."""
+        rows = self._all("SELECT * FROM reviewers WHERE token_hash = ? AND revoked_at IS NULL", (token_hash(token),))
+        return self._reviewer(rows[0]) if rows else None
+
+    def list_reviewers(self) -> list[ReviewerAccount]:
+        return [self._reviewer(r) for r in self._all("SELECT * FROM reviewers ORDER BY id")]
+
+    def revoke_reviewer(self, rid: int) -> ReviewerAccount | None:
+        self._exec("UPDATE reviewers SET revoked_at = ? WHERE id = ? AND revoked_at IS NULL", (now(), rid))
+        return self.get_reviewer(rid)
+
+    def reissue_reviewer(self, rid: int) -> str:
+        """A new token for the same person (lost link); the old token stops working."""
+        token = secrets.token_urlsafe(24)
+        self._exec("UPDATE reviewers SET token_hash = ?, revoked_at = NULL WHERE id = ?", (token_hash(token), rid))
+        return token
+
+    # ---- notifications: each (household, kind, period) is sent at most once --
+    def notification_once(self, pid: int, kind: str, period: str) -> bool:
+        """Records the send and returns True, or False if it was already sent for this period."""
+        n = self._exec("INSERT INTO notifications (patient_id, kind, period, sent_at) VALUES (?,?,?,?) "
+                       "ON CONFLICT (patient_id, kind, period) DO NOTHING", (pid, kind, period, now()))
+        return n > 0
 
     # ---- cache ----------------------------------------------------------
     def cache_get(self, key: str) -> str | None:

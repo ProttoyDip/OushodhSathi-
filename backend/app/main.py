@@ -4,6 +4,7 @@ from __future__ import annotations
 import hmac
 import logging
 import os
+import re
 import threading
 from datetime import date, datetime, timedelta, timezone
 from functools import lru_cache
@@ -23,11 +24,11 @@ from .agent import read_shelf, resolve_brand  # noqa: E402
 from .demo import DEMO_ITEMS, DEMO_LABEL  # noqa: E402
 from .explain import explain_flag  # noqa: E402
 from .ratelimit import limit_new_patient, limit_sathi, limit_scan, limit_writes  # noqa: E402
-from . import llm_router  # noqa: E402
+from . import llm_router, notify  # noqa: E402
 from .llm_router import NoProviderAvailable, Router, _env, configured_providers, provider_names  # noqa: E402
 from .models import (  # noqa: E402
-    ClinicalPatch, MedicineItem, MedicineItemIn, MedicineItemPatch, Patient, PatientIn, PatientPatch, ReviewIn,
-    RuleItem, StoredFlag,
+    ClinicalPatch, MedicineItem, MedicineItemIn, MedicineItemPatch, Patient, PatientCreate, PatientPatch,
+    ReviewerAccount, ReviewerCreate, ReviewIn, RuleItem, StoredFlag,
 )
 from .next_step import StepContext, next_step  # noqa: E402
 from .refills import counts, refills_due  # noqa: E402
@@ -41,6 +42,20 @@ from .tables import load_rule_tables  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("oushodh.api")
+
+
+class _RedactTokens(logging.Filter):
+    """The emergency page token is a secret in the URL path: keep it out of access logs."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if isinstance(record.args, tuple) and len(record.args) >= 3:
+            args = list(record.args)
+            args[2] = re.sub(r"/emergency/[^/?\s]+", "/emergency/[redacted]", str(args[2]))
+            record.args = tuple(args)
+        return True
+
+
+logging.getLogger("uvicorn.access").addFilter(_RedactTokens())
 
 app = FastAPI(
     title="OushodhSathi API",
@@ -71,22 +86,59 @@ def demo_mode() -> bool:
 
 
 def reviewer_token() -> str | None:
-    token = _env("REVIEWER_TOKEN")
-    if token:
-        return token
-    return "demo-reviewer" if demo_mode() else None
+    """The shared demo reviewer token. It works ONLY in DEMO_MODE (the judge instance); a pilot
+    instance accepts personal reviewer tokens only, so every decision belongs to a real person."""
+    if not demo_mode():
+        return None
+    return _env("REVIEWER_TOKEN") or "demo-reviewer"
 
 
 def _same(given: str | None, expected: str | None) -> bool:
     return bool(given and expected) and hmac.compare_digest(given.encode(), expected.encode())  # type: ignore[union-attr]
 
 
-def require_reviewer(x_reviewer_token: str | None = Header(default=None)) -> None:
-    expected = reviewer_token()
+DEMO_REVIEWER_NAME = "Demo reviewer"
+
+
+def _reviewer_from_token(token: str | None, store: Store) -> ReviewerAccount | None:
+    if not token:
+        return None
+    if _same(token, reviewer_token()):
+        return ReviewerAccount(id=0, name=DEMO_REVIEWER_NAME, role="pharmacist", created_at=datetime.now(timezone.utc),
+                               is_demo=True)
+    return store.reviewer_by_token(token)
+
+
+def current_reviewer(x_reviewer_token: str | None = Header(default=None),
+                     store: Store = Depends(get_store)) -> ReviewerAccount:
+    rev = _reviewer_from_token(x_reviewer_token, store)
+    if rev is None:
+        raise HTTPException(401, "Reviewer login required")
+    return rev
+
+
+def require_reviewer(rev: ReviewerAccount = Depends(current_reviewer)) -> None:
+    """For routes that only need to know a reviewer is signed in."""
+
+
+def who(rev: ReviewerAccount, typed: str | None = None) -> str:
+    """The name recorded on a decision. A personal login is always its own stored name; only the
+    shared demo token may carry a typed name (the judge demo)."""
+    if rev.is_demo:
+        return (typed or "").strip() or rev.name
+    return rev.name
+
+
+def _rid(rev: ReviewerAccount) -> int | None:
+    return None if rev.is_demo else rev.id
+
+
+def require_admin(x_admin_token: str | None = Header(default=None)) -> None:
+    expected = _env("ADMIN_TOKEN")
     if not expected:
-        raise HTTPException(503, "REVIEWER_TOKEN is not configured on the server")
-    if not _same(x_reviewer_token, expected):
-        raise HTTPException(401, "Reviewer token required")
+        raise HTTPException(503, "ADMIN_TOKEN is not configured on the server")
+    if not _same(x_admin_token, expected):
+        raise HTTPException(401, "Admin token required")
 
 
 def family_access(
@@ -98,8 +150,8 @@ def family_access(
     """A household opens with its private family link (X-Family-Key) or a reviewer token.
     The invented demo household stays open. Anything else is 'not found', so ids cannot be probed."""
     p = store.get_patient(pid)
-    if p is None or not (p.is_demo or _same(x_reviewer_token, reviewer_token())
-                         or _same(x_family_key, store.family_key(pid))):
+    if p is None or not (p.is_demo or _same(x_family_key, store.family_key(pid))
+                         or _reviewer_from_token(x_reviewer_token, store) is not None):
         raise HTTPException(404, "Patient not found")
 
 
@@ -174,7 +226,8 @@ def health(store: Store = Depends(get_store)) -> dict:
         "ollama_reachable": ollama_up,
         "web_lookup": {"tavily": bool(_env("TAVILY_API_KEY")), "perplexity": bool(_env("PERPLEXITY_API_KEY"))},
         "prompts": {name: prompts.version(name) for name in prompts.ACTIVE},
-        "reviewer_login": "configured" if _env("REVIEWER_TOKEN") else ("demo token" if demo_mode() else "missing"),
+        "reviewer_login": "demo token" if demo_mode() else "personal accounts",
+        "email": notify.configured(),
         "test_count": test_count,
         "patients": len(store.list_patients()),
     }
@@ -184,17 +237,60 @@ def health(store: Store = Depends(get_store)) -> dict:
 
 @app.get("/patients", dependencies=[Depends(require_reviewer)])
 def list_patients(store: Store = Depends(get_store)) -> list[dict]:
-    """Reviewer only. Includes each household's family key so a lost link can be re-shared."""
-    return [{**p.model_dump(mode="json"), "family_key": store.family_key(p.id)} for p in store.list_patients()]
+    """Reviewer only. Never includes family keys: a lost link is re-issued by an admin."""
+    return [p.model_dump(mode="json", exclude={"family_email"}) for p in store.list_patients()]
 
 
 @app.post("/patients", status_code=201, dependencies=[Depends(limit_new_patient)])
-def create_patient(body: PatientIn, store: Store = Depends(get_store)) -> dict:
-    """Creates a household. The response carries its private family key: keep it, it opens the household."""
+def create_patient(body: PatientCreate, store: Store = Depends(get_store)) -> dict:
+    """Creates a household after the family accepts the privacy notice. The response carries
+    its private family key: keep it, it opens the household."""
     if body.is_demo:
         raise HTTPException(422, "Demo households are created by the seed script only")
-    p = store.create_patient(body)
+    p = store.create_patient(body, family_email=body.family_email, email_opt_in=body.email_opt_in, consent=True)
     return {**p.model_dump(mode="json"), "family_key": store.family_key(p.id)}
+
+
+class DeleteIn(BaseModel):
+    confirm: Literal["DELETE"]
+
+
+@app.post("/patients/{pid}/family-key/rotate", dependencies=[Depends(family_access), Depends(limit_writes)])
+def rotate_family_key(pid: int, store: Store = Depends(get_store)) -> dict:
+    """A new private link for the household. The old link stops working immediately."""
+    p = _patient_or_404(store, pid)
+    if p.is_demo:
+        raise HTTPException(403, "The demo household's link cannot be changed")
+    return {"family_key": store.rotate_family_key(pid)}
+
+
+@app.get("/patients/{pid}/export", dependencies=[Depends(family_access)])
+def export_household(pid: int, store: Store = Depends(get_store)) -> dict:
+    """Everything the family can see, as one JSON file. Findings: confirmed only (AGENTS.md rule 2)."""
+    p = _patient_or_404(store, pid)
+    return {
+        "exported_at": now(),
+        "household": p.model_dump(mode="json"),
+        "medicines": [it.model_dump(mode="json") for it in store.list_items(pid)],
+        "confirmed_findings": [
+            {k: f[k] for k in ("code", "severity", "note", "explanation_bn", "reviewer", "reviewed_at")}
+            | {"medicines": [i["brand"] for i in f["items"]]}
+            for f in _with_items(store, store.list_flags(pid, statuses=("confirmed",), active_only=False))
+        ],
+        "blood_pressure": store.list_bp(pid, limit=10_000),
+        "questions": [{k: q[k] for k in ("text", "created_at", "reply", "replied_by", "replied_at")}
+                      for q in store.list_questions(pid)],
+        "activity": store.list_activity(pid, limit=10_000),
+    }
+
+
+@app.delete("/patients/{pid}", status_code=204, dependencies=[Depends(family_access), Depends(limit_writes)])
+def delete_household(pid: int, body: DeleteIn, store: Store = Depends(get_store)) -> None:
+    """The family deletes the household and everything about it. Cannot be undone."""
+    p = _patient_or_404(store, pid)
+    if p.is_demo:
+        raise HTTPException(403, "The demo household cannot be deleted")
+    store.delete_household(pid)
 
 
 @app.get("/patients/{pid}", dependencies=[Depends(family_access)])
@@ -330,7 +426,8 @@ def list_flags(
     """view=family returns ONLY confirmed flags (AGENTS.md rule 2). view=reviewer needs the token."""
     _patient_or_404(store, pid)
     if view == "reviewer":
-        require_reviewer(x_reviewer_token)
+        if _reviewer_from_token(x_reviewer_token, store) is None:
+            raise HTTPException(401, "Reviewer login required")
         return _with_items(store, store.list_flags(pid))
     flags = store.list_flags(pid, statuses=("confirmed",))
     assert all(f.status == "confirmed" for f in flags)
@@ -364,15 +461,16 @@ def review_queue(
     }
 
 
-@app.post("/flags/{flag_id}/review", dependencies=[Depends(require_reviewer)])
-def review_flag(flag_id: int, body: ReviewIn, store: Store = Depends(get_store)) -> dict:
+@app.post("/flags/{flag_id}/review")
+def review_flag(flag_id: int, body: ReviewIn, rev: ReviewerAccount = Depends(current_reviewer),
+                store: Store = Depends(get_store)) -> dict:
     flag = store.get_flag(flag_id)
     if flag is None:
         raise HTTPException(404, "Flag not found")
     note = (body.note or "").strip() or None
     if body.status == "dismissed" and not note:
         raise HTTPException(422, "A short note is required to dismiss a flag")
-    body = body.model_copy(update={"note": note})
+    body = body.model_copy(update={"note": note, "reviewer": who(rev, body.reviewer)})
     explanation = None
     if body.status == "confirmed":
         items = [it for i in flag.item_ids if (it := store.get_item(i))]
@@ -385,18 +483,37 @@ def review_flag(flag_id: int, body: ReviewIn, store: Store = Depends(get_store))
         log.info("flag %s explanation via %s", flag_id, how)
     opened = _parse_ts(flag.opened_at) if flag.opened_at else None
     seconds = (datetime.now(timezone.utc) - opened).total_seconds() if opened else None
-    updated = store.review_flag(flag_id, body, explanation, seconds=seconds)
+    updated = store.review_flag(flag_id, body, explanation, seconds=seconds, reviewer_id=_rid(rev))
     if body.status == "confirmed":
         store.log_activity(flag.patient_id, "finding_confirmed", 1)
+    _maybe_results_email(store, flag.patient_id)
     return _with_items(store, [updated])[0]
 
 
-@app.post("/flags/{flag_id}/undo", dependencies=[Depends(require_reviewer)])
-def undo_review(flag_id: int, reviewer: str = Query(...), store: Store = Depends(get_store)) -> dict:
+def _maybe_results_email(store: Store, pid: int) -> None:
+    """Once a person has decided the last pending finding: one email per batch of decisions,
+    only with the family's opt-in. Counts and brand names only; never notes or explanations."""
+    if not notify.configured():
+        return
+    p = store.get_patient(pid)
+    if p is None or p.is_demo or not (p.family_email and p.email_opt_in) or _review_state(store, pid) != "reviewed":
+        return
+    decided = [f.reviewed_at for f in store.list_flags(pid, statuses=("confirmed", "dismissed")) if f.reviewed_at]
+    if not decided or not store.notification_once(pid, "results_ready", str(max(decided))):
+        return
+    findings = [{"code": f["code"], "brands": [i["brand"] for i in f["items"]]}
+                for f in _with_items(store, store.list_flags(pid, statuses=("confirmed",)))]
+    subject, text = notify.results_ready(pid, findings)
+    notify.send(notify.Email(p.family_email, subject, text))
+
+
+@app.post("/flags/{flag_id}/undo")
+def undo_review(flag_id: int, reviewer: str | None = Query(None), rev: ReviewerAccount = Depends(current_reviewer),
+                store: Store = Depends(get_store)) -> dict:
     flag = store.get_flag(flag_id)
     if flag is None:
         raise HTTPException(404, "Flag not found")
-    return _with_items(store, [store.undo_review(flag_id, reviewer)])[0]
+    return _with_items(store, [store.undo_review(flag_id, who(rev, reviewer), reviewer_id=_rid(rev))])[0]
 
 
 @app.get("/patients/{pid}/reviews", dependencies=[Depends(require_reviewer)])
@@ -487,6 +604,10 @@ def add_bp(pid: int, body: BPIn | None = Body(default=None), systolic: int | Non
 
 @app.get("/patients/{pid}/report", dependencies=[Depends(family_access)])
 def weekly_report(pid: int, store: Store = Depends(get_store)) -> dict:
+    return build_weekly_report(store, pid)
+
+
+def build_weekly_report(store: Store, pid: int) -> dict:
     p = _patient_or_404(store, pid)
     items = store.list_items(pid, confirmed_only=True)
     all_flags = store.list_flags(pid, active_only=False)
@@ -530,12 +651,11 @@ async def scan(pid: int, photos: list[UploadFile] = File(...), store: Store = De
         data.append(b)
 
     if not configured_providers("vision"):
-        if not demo_mode():
+        if not (demo_mode() and patient.is_demo):
+            # a real household never gets the invented demo medicines, even on the demo server
             raise HTTPException(503, "No vision model is configured")
-        # DEMO_MODE without keys: return the demo household so the UI always works.
-        # Only the demo patient's list is replaced; real patients are never touched.
-        if patient.is_demo:
-            store.clear_items(pid)
+        # DEMO_MODE without keys: the demo household's list is replaced so the UI always works.
+        store.clear_items(pid)
         saved = [store.add_item(pid, it, **resolve_brand(it.brand, it.strength, store),
                                 prompt_version="demo", model_id="demo (no model called)")
                  for it in DEMO_ITEMS]
@@ -715,7 +835,7 @@ def _notify_emergency(pid: int) -> None:
 
     def send() -> None:
         try:
-            httpx.post(url, timeout=5, json={"patient_id": pid, "event": "sathi_emergency"})
+            httpx.post(url, timeout=5, json={"patient_id": pid, "event": "sathi_emergency", "flags": []})
         except httpx.HTTPError as e:
             log.warning("n8n emergency alert failed: %s", type(e).__name__)
 
@@ -784,14 +904,15 @@ def reviewer_questions(status: Literal["open", "all"] = "open", store: Store = D
 
 class ReplyIn(BaseModel):
     reply: str = Field(min_length=2, max_length=2000)
-    reviewer: str = Field(min_length=1)
+    reviewer: str | None = None  # ignored for personal logins
 
 
-@app.post("/questions/{qid}/reply", dependencies=[Depends(require_reviewer)])
-def reply_question(qid: int, body: ReplyIn, store: Store = Depends(get_store)) -> dict:
+@app.post("/questions/{qid}/reply")
+def reply_question(qid: int, body: ReplyIn, rev: ReviewerAccount = Depends(current_reviewer),
+                   store: Store = Depends(get_store)) -> dict:
     if store.get_question(qid) is None:
         raise HTTPException(404, "Question not found")
-    q = store.reply_question(qid, body.reply.strip(), body.reviewer.strip())
+    q = store.reply_question(qid, body.reply.strip(), who(rev, body.reviewer))
     store.log_activity(q["patient_id"], "pharmacist_replied", 1)
     return q
 
@@ -842,34 +963,38 @@ def patch_patient(pid: int, body: PatientPatch, store: Store = Depends(get_store
 
 
 class ReviewerIn(BaseModel):
-    reviewer: str = Field(min_length=1)
+    reviewer: str | None = None  # ignored for personal logins
 
 
-@app.post("/patients/{pid}/allergies/confirm", dependencies=[Depends(require_reviewer)])
-def confirm_allergies(pid: int, body: ReviewerIn, store: Store = Depends(get_store)) -> dict:
+@app.post("/patients/{pid}/allergies/confirm")
+def confirm_allergies(pid: int, body: ReviewerIn | None = Body(default=None),
+                      rev: ReviewerAccount = Depends(current_reviewer), store: Store = Depends(get_store)) -> dict:
     _patient_or_404(store, pid)
-    return store.update_patient(pid, allergies_confirmed_by=body.reviewer, allergies_confirmed_at=now()).model_dump()  # type: ignore[union-attr]
+    name = who(rev, body.reviewer if body else None)
+    return store.update_patient(pid, allergies_confirmed_by=name, allergies_confirmed_at=now()).model_dump()  # type: ignore[union-attr]
 
 
-@app.patch("/items/{item_id}/clinical", response_model=MedicineItem, dependencies=[Depends(require_reviewer)])
-def clinical_patch(item_id: int, body: ClinicalPatch, store: Store = Depends(get_store)):
+@app.patch("/items/{item_id}/clinical", response_model=MedicineItem)
+def clinical_patch(item_id: int, body: ClinicalPatch, rev: ReviewerAccount = Depends(current_reviewer),
+                   store: Store = Depends(get_store)):
     """What it is for, and stopped: written by the pharmacist or doctor, never by AI."""
     _item_or_404(store, item_id)
     fields = body.model_dump(exclude_unset=True, exclude={"reviewer"})
     if "stopped" in fields:
-        fields.update(stopped_by=body.reviewer if fields["stopped"] else None,
+        fields.update(stopped_by=who(rev, body.reviewer) if fields["stopped"] else None,
                       stopped_at=now() if fields["stopped"] else None)
     return store.update_item(item_id, **fields)
 
 
-@app.post("/patients/{pid}/schedule/approve", dependencies=[Depends(require_reviewer)])
-def approve_schedule(pid: int, body: ReviewerIn, store: Store = Depends(get_store)) -> dict:
+@app.post("/patients/{pid}/schedule/approve")
+def approve_schedule(pid: int, body: ReviewerIn | None = Body(default=None),
+                     rev: ReviewerAccount = Depends(current_reviewer), store: Store = Depends(get_store)) -> dict:
     """The reviewer approves the times on the list. Only approved times reach Today's medicines."""
     _patient_or_404(store, pid)
-    ts, n = now(), 0
+    ts, n, name = now(), 0, who(rev, body.reviewer if body else None)
     for it in store.list_items(pid, confirmed_only=True):
         if counts(it):
-            store.update_item(it.id, schedule_approved_by=body.reviewer, schedule_approved_at=ts)
+            store.update_item(it.id, schedule_approved_by=name, schedule_approved_at=ts)
             n += 1
     store.log_activity(pid, "schedule_approved", n)
     return {"approved": n}
@@ -891,15 +1016,17 @@ def review_time(store: Store = Depends(get_store)) -> dict:
     return {"reviews": len(secs), "median_seconds": round(statistics.median(secs), 1) if secs else None}
 
 
-@app.get("/patients/{pid}/case-summary", dependencies=[Depends(require_reviewer)])
-def get_case_summary(pid: int, reviewer: str | None = None, store: Store = Depends(get_store)) -> dict:
+@app.get("/patients/{pid}/case-summary")
+def get_case_summary(pid: int, reviewer: str | None = None, rev: ReviewerAccount = Depends(current_reviewer),
+                     store: Store = Depends(get_store)) -> dict:
     """AI summary for the reviewer, facts only; names are checked against the record."""
     p = _patient_or_404(store, pid)
     items = [it for it in store.list_items(pid, confirmed_only=True) if counts(it)]
     flags = store.list_flags(pid, statuses=("pending_review", "confirmed"))
     out = clinical.case_summary(p, items, flags, Router(store=store))
     # automation bias: after a reviewer's first 10 reviews the panel starts collapsed
-    return {**out, "collapsed": bool(reviewer) and store.reviews_by(reviewer) >= 10}
+    name = who(rev, reviewer) if (reviewer or not rev.is_demo) else None
+    return {**out, "collapsed": bool(name) and store.reviews_by(name) >= 10}
 
 
 @app.post("/patients/{pid}/bp/read", dependencies=[Depends(family_access), Depends(limit_scan)])
@@ -1126,13 +1253,14 @@ class RamadanItem(BaseModel):
 
 
 class RamadanApproval(BaseModel):
-    reviewer: str = Field(min_length=1)
+    reviewer: str | None = None  # ignored for personal logins
     note: str = Field(min_length=2, max_length=1000)
     items: list[RamadanItem]
 
 
-@app.post("/patients/{pid}/ramadan-approve", dependencies=[Depends(require_reviewer)])
-def ramadan_approve(pid: int, body: RamadanApproval, store: Store = Depends(get_store)) -> dict:
+@app.post("/patients/{pid}/ramadan-approve")
+def ramadan_approve(pid: int, body: RamadanApproval, rev: ReviewerAccount = Depends(current_reviewer),
+                    store: Store = Depends(get_store)) -> dict:
     """A pharmacist or doctor maps each medicine to sehri and/or iftar, with a note.
     Medicines left without a slot are shown to the family as "not in the Ramadan plan"."""
     _patient_or_404(store, pid)
@@ -1144,7 +1272,7 @@ def ramadan_approve(pid: int, body: RamadanApproval, store: Store = Depends(get_
     for item_id, it in own.items():
         store.update_item(item_id, ramadan_slots=chosen.get(item_id, []))
     store.update_patient(pid, ramadan_status="approved", ramadan_note=body.note.strip(),
-                         ramadan_approved_by=body.reviewer.strip(), ramadan_approved_at=now())
+                         ramadan_approved_by=who(rev, body.reviewer), ramadan_approved_at=now())
     store.log_activity(pid, "ramadan_approved")
     return today(pid, store)
 
@@ -1159,9 +1287,82 @@ def activity(pid: int, limit: int = Query(20, ge=1, le=100), store: Store = Depe
 @app.post("/demo/reset", dependencies=[Depends(limit_writes)])
 def demo_reset(store: Store = Depends(get_store)) -> dict:
     """Fresh demo household for the next judge: some findings confirmed for the family view,
-    some pending for the reviewer queue. Touches only the invented demo household."""
+    some pending for the reviewer queue. Touches only the invented demo household.
+    Exists only on the demo instance (DEMO_MODE)."""
     import time
 
+    if not demo_mode():
+        raise HTTPException(404, "Not found")
     started = time.perf_counter()
     result = seed_demo(store, "judge")
     return {**result, "ms": round((time.perf_counter() - started) * 1000)}
+
+
+# ---- reviewers and admin ----------------------------------------------------------------
+
+@app.get("/reviewer/me")
+def reviewer_me(rev: ReviewerAccount = Depends(current_reviewer)) -> dict:
+    """Who is signed in: shown in the dashboard and recorded on every decision."""
+    return rev.model_dump(mode="json")
+
+
+def _invite(token: str) -> str:
+    return f"{notify.app_url()}/review?invite={token}"
+
+
+@app.post("/admin/reviewers", status_code=201, dependencies=[Depends(require_admin)])
+def create_reviewer(body: ReviewerCreate, store: Store = Depends(get_store)) -> dict:
+    """A personal login for one pharmacist or doctor. The invite link is shown ONCE: send it privately."""
+    rev, token = store.create_reviewer(body.name, body.role, body.reg_no)
+    return {**rev.model_dump(mode="json"), "token": token, "invite_url": _invite(token)}
+
+
+@app.get("/admin/reviewers", dependencies=[Depends(require_admin)])
+def list_reviewers(store: Store = Depends(get_store)) -> list[dict]:
+    return [r.model_dump(mode="json") for r in store.list_reviewers()]
+
+
+@app.post("/admin/reviewers/{rid}/revoke", dependencies=[Depends(require_admin)])
+def revoke_reviewer(rid: int, store: Store = Depends(get_store)) -> dict:
+    rev = store.revoke_reviewer(rid)
+    if rev is None:
+        raise HTTPException(404, "Reviewer not found")
+    return rev.model_dump(mode="json")
+
+
+@app.post("/admin/reviewers/{rid}/reissue", dependencies=[Depends(require_admin)])
+def reissue_reviewer(rid: int, store: Store = Depends(get_store)) -> dict:
+    """A new invite link for the same person; the old one stops working."""
+    if store.get_reviewer(rid) is None:
+        raise HTTPException(404, "Reviewer not found")
+    token = store.reissue_reviewer(rid)
+    return {**store.get_reviewer(rid).model_dump(mode="json"), "token": token, "invite_url": _invite(token)}  # type: ignore[union-attr]
+
+
+@app.post("/admin/patients/{pid}/family-key", dependencies=[Depends(require_admin)])
+def admin_family_key(pid: int, store: Store = Depends(get_store)) -> dict:
+    """A family lost its link (new phone, cleared browser): a fresh link replaces the old one."""
+    p = _patient_or_404(store, pid)
+    if p.is_demo:
+        raise HTTPException(403, "The demo household's link cannot be changed")
+    key = store.rotate_family_key(pid)
+    return {"family_key": key, "family_url": f"{notify.app_url()}/p/{pid}?key={key}"}
+
+
+@app.post("/admin/notify/weekly", dependencies=[Depends(require_admin)])
+def notify_weekly(store: Store = Depends(get_store)) -> dict:
+    """The weekly report email for every household that opted in; at most once per ISO week.
+    Called by a scheduled job (GitHub Actions) with the admin token."""
+    y, w, _ = date.today().isocalendar()
+    period, sent = f"{y}-W{w:02d}", 0
+    if not notify.configured():
+        return {"period": period, "sent": 0, "email": False}
+    for p in store.list_patients():
+        if p.is_demo or not (p.family_email and p.email_opt_in):
+            continue
+        if not store.notification_once(p.id, "weekly", period):
+            continue
+        subject, text = notify.weekly(p.id, build_weekly_report(store, p.id))
+        notify.send(notify.Email(p.family_email, subject, text))
+        sent += 1
+    return {"period": period, "sent": sent, "email": True}

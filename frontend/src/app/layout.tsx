@@ -5,6 +5,7 @@ import { getLocale, getMessages } from "next-intl/server";
 import { MotionProvider } from "@/components/Motion";
 import { RevealController } from "@/components/Reveal";
 import { revealArmScript } from "@/lib/reveal";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const hind = Hind_Siliguri({
@@ -30,10 +31,23 @@ const schibsted = Schibsted_Grotesk({
   display: "swap",
 });
 
+const description =
+  "A pharmacist for every elderly home in Bangladesh: scan every medicine, catch duplicates and interactions, and a clinician confirms every finding before the family sees it.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: { default: "OushodhSathi · ওষুধসাথী", template: "%s · OushodhSathi" },
-  description:
-    "A pharmacist for every elderly home in Bangladesh: scan every medicine, catch duplicates and interactions, and a clinician confirms every finding before the family sees it.",
+  description,
+  applicationName: "OushodhSathi",
+  openGraph: {
+    type: "website",
+    siteName: "OushodhSathi · ওষুধসাথী",
+    title: "OushodhSathi · ওষুধসাথী — Napa and Ace are the same medicine",
+    description,
+    locale: "bn_BD",
+    alternateLocale: ["en_US"],
+  },
+  twitter: { card: "summary_large_image", title: "OushodhSathi · ওষুধসাথী", description },
 };
 
 export const viewport: Viewport = {

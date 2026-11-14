@@ -226,7 +226,7 @@ def test_router_budget_stops_trying_slow_providers(monkeypatch):
 # ---- through the API -----------------------------------------------------------------------
 
 def _household(client):
-    r = client.post("/patients", json={"name": "Sathi Test", "age": 70})
+    r = client.post("/patients", json={"name": "Sathi Test", "age": 70, "consent": True})
     client.headers["X-Family-Key"] = r.json()["family_key"]
     return r.json()["id"]
 

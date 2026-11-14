@@ -9,9 +9,15 @@ PHOTO = ("photos", ("shelf.jpg", b"not-really-a-jpeg", "image/jpeg"))
 
 
 def household(client):
-    r = client.post("/patients", json={"name": "Private Household", "age": 70})
+    r = client.post("/patients", json={"name": "Private Household", "age": 70, "consent": True})
     assert r.status_code == 201
     return r.json()["id"], r.json()["family_key"]
+
+
+def demo_household(store):
+    """Scans without a vision model only work for the invented demo household (demo instance)."""
+    from app.demo_seed import seed_demo
+    return seed_demo(store)["patient_id"], ""
 
 
 # ---- private family links --------------------------------------------------------------
@@ -54,22 +60,23 @@ def test_missing_and_private_households_look_the_same(client):
     assert client.get(f"/patients/{pid}").json() == client.get("/patients/99999").json()
 
 
-def test_patient_list_is_reviewer_only(client):
+def test_patient_list_is_reviewer_only_and_never_carries_keys(client):
     _, key = household(client)
     assert client.get("/patients").status_code == 401
     rows = client.get("/patients", headers=TOKEN).json()
-    assert rows[0]["family_key"] == key
+    assert rows and all("family_key" not in r and "family_email" not in r for r in rows)
+    assert key not in str(rows)
 
 
 def test_nobody_creates_demo_households_over_the_api(client):
-    assert client.post("/patients", json={"name": "X", "age": 70, "is_demo": True}).status_code == 422
+    assert client.post("/patients", json={"name": "X", "age": 70, "is_demo": True, "consent": True}).status_code == 422
 
 
 # ---- rate limits -----------------------------------------------------------------------
 
-def test_scan_is_rate_limited_per_ip(client, monkeypatch):
+def test_scan_is_rate_limited_per_ip(client, store, monkeypatch):
     monkeypatch.setenv("SCAN_LIMIT_PER_IP", "2")
-    pid, key = household(client)
+    pid, key = demo_household(store)
     h = {"X-Family-Key": key, "X-Forwarded-For": "203.0.113.7, 10.0.0.1"}
     assert [client.post(f"/patients/{pid}/scan", files=[PHOTO], headers=h).status_code for _ in range(3)] == [200, 200, 429]
     # another address still gets through
@@ -77,9 +84,9 @@ def test_scan_is_rate_limited_per_ip(client, monkeypatch):
     assert client.post(f"/patients/{pid}/scan", files=[PHOTO], headers=h2).status_code == 200
 
 
-def test_forged_forwarded_for_does_not_reset_the_limit_behind_cloudflare(client, monkeypatch):
+def test_forged_forwarded_for_does_not_reset_the_limit_behind_cloudflare(client, store, monkeypatch):
     monkeypatch.setenv("SCAN_LIMIT_PER_IP", "1")
-    pid, key = household(client)
+    pid, key = demo_household(store)
     codes = [client.post(f"/patients/{pid}/scan", files=[PHOTO],
                          headers={"X-Family-Key": key, "CF-Connecting-IP": "203.0.113.9",
                                   "X-Forwarded-For": f"10.9.9.{i}"}).status_code
@@ -87,9 +94,9 @@ def test_forged_forwarded_for_does_not_reset_the_limit_behind_cloudflare(client,
     assert codes == [200, 429]
 
 
-def test_scan_has_a_global_daily_ceiling(client, monkeypatch):
+def test_scan_has_a_global_daily_ceiling(client, store, monkeypatch):
     monkeypatch.setenv("SCAN_LIMIT_GLOBAL", "2")
-    pid, key = household(client)
+    pid, key = demo_household(store)
     codes = [client.post(f"/patients/{pid}/scan", files=[PHOTO],
                          headers={"X-Family-Key": key, "X-Forwarded-For": f"198.51.100.{i}"}).status_code
              for i in range(3)]
@@ -98,7 +105,7 @@ def test_scan_has_a_global_daily_ceiling(client, monkeypatch):
 
 def test_new_households_are_rate_limited(client, monkeypatch):
     monkeypatch.setenv("PATIENT_LIMIT_PER_IP", "2")
-    codes = [client.post("/patients", json={"name": "H", "age": 70}).status_code for _ in range(3)]
+    codes = [client.post("/patients", json={"name": "H", "age": 70, "consent": True}).status_code for _ in range(3)]
     assert codes == [201, 201, 429]
 
 
@@ -176,3 +183,12 @@ def test_old_databases_get_family_keys(tmp_path):
     db.close()
     s = Store(path)
     assert s.family_key(1) and len(s.family_key(1)) >= 20
+
+
+def test_demo_medicines_never_go_into_a_real_household(client):
+    """Regression: on the demo server without a vision model, a REAL household's scan used to
+    receive the invented demo medicines."""
+    pid, key = household(client)
+    r = client.post(f"/patients/{pid}/scan", files=[PHOTO], headers={"X-Family-Key": key})
+    assert r.status_code == 503
+    assert client.get(f"/patients/{pid}/items", headers={"X-Family-Key": key}).json() == []

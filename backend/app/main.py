@@ -25,7 +25,7 @@ from .agent import read_shelf, resolve_brand  # noqa: E402
 from .demo import DEMO_ITEMS, DEMO_LABEL  # noqa: E402
 from .explain import explain_flag  # noqa: E402
 from .ratelimit import limit_new_patient, limit_sathi, limit_scan, limit_writes  # noqa: E402
-from . import asr, llm_router, notify  # noqa: E402
+from . import adherence_risk, asr, llm_router, notify  # noqa: E402
 from .llm_router import NoProviderAvailable, Router, _env, configured_providers, provider_names  # noqa: E402
 from .models import (  # noqa: E402
     ClinicalPatch, MedicineItem, MedicineItemIn, MedicineItemPatch, Patient, PatientCreate, PatientPatch,
@@ -472,7 +472,8 @@ def review_queue(
             totals = adherence_summary(store, pid)["household"]
             risk[pid] = household_risk(p, store.list_items(pid, confirmed_only=True),
                                        [f for f in pending if f.patient_id == pid], acb,
-                                       adherence=(totals["taken"], totals["missed"]))
+                                       adherence=(totals["taken"], totals["missed"]),
+                                       followup=adherence_risk.followup_suggested(store, p))
     rows = []
     for f in _with_items(store, flags):
         p = patients.get(f["patient_id"])

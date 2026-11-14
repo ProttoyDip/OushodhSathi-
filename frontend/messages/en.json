@@ -897,7 +897,8 @@
       "medicines": "{value} medicines",
       "prescribers": "{value} prescribers",
       "acb": "Anticholinergic score {value}",
-      "adherence_low": "Adherence {value} over 14 days (from family ticks)"
+      "adherence_low": "Adherence {value} over 14 days (from family ticks)",
+      "followup_suggested": "Follow-up suggested (missed-dose model)"
     },
     "bp": {
       "title": "Home blood pressure, last 4 weeks",

@@ -1,0 +1,17 @@
+{
+  "run_at": "2026-11-14T17:30:14+00:00",
+  "households": 0,
+  "household_weeks": 0,
+  "required_households": 30,
+  "required_household_weeks": 300,
+  "features": [
+    "prev2_adherence",
+    "prev2_recorded",
+    "medicines",
+    "doses_per_day",
+    "prescribers",
+    "age",
+    "noon_share"
+  ],
+  "status": "in_progress"
+}

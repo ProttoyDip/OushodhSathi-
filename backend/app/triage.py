@@ -18,8 +18,10 @@ ADHERENCE_MIN_RECORDED = 10  # ...counted only with at least this many recorded 
 
 
 def household_risk(patient: Patient, items: Iterable[MedicineItem], pending: Iterable[StoredFlag],
-                   acb: dict[str, int], adherence: tuple[int, int] | None = None) -> dict:
-    """adherence: (taken, missed) over the last 14 days, from the family's ticks."""
+                   acb: dict[str, int], adherence: tuple[int, int] | None = None,
+                   followup: bool | None = None) -> dict:
+    """adherence: (taken, missed) over the last 14 days, from the family's ticks.
+    followup: the missed-dose risk model's hint (None when no model has passed its gates)."""
     """Return {"score": int, "reasons": [{"code": str, "points": int, "value": ...}]}."""
     items = [it for it in items if not getattr(it, "stopped", False)]
     pending = list(pending)
@@ -52,5 +54,8 @@ def household_risk(patient: Patient, items: Iterable[MedicineItem], pending: Ite
         recorded = taken + missed
         if recorded >= ADHERENCE_MIN_RECORDED and taken / recorded < ADHERENCE_LOW:
             add("adherence_low", 2, round(taken / recorded, 2))
+
+    if followup:
+        add("followup_suggested", 1, True)
 
     return {"score": sum(r["points"] for r in reasons), "reasons": reasons}

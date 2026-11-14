@@ -45,5 +45,5 @@ On macOS / Linux use `.../backend/.venv/bin/python` and `.../mcp/server.py`.
 
 `check_medicines` with Napa (drug shop), Ace (village doctor), Rivotril and Tryptin (expiry
 2026-09), age 68, returns a red `DUPLICATE_GENERIC` (Napa + Ace, both paracetamol), a red
-`EXPIRED` (Tryptin), a red `INTERACTION` (Rivotril + Tryptin, major) and amber `BEERS_65`
-findings — each with `"status": "pending clinician review — not for patients"`.
+`EXPIRED` (Tryptin), a red `INTERACTION` (Rivotril + Tryptin, major), amber `BEERS_65`
+findings and an amber `ANTICHOLINERGIC_BURDEN` (Tryptin, score 3) — each with `"status": "pending clinician review — not for patients"`.

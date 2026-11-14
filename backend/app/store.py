@@ -124,6 +124,7 @@ ADDED_COLUMNS = {
         "schedule_approved_by": "TEXT",
         "schedule_approved_at": "TEXT",
         "ramadan_slots": "TEXT NOT NULL DEFAULT '[]'",  # sehri / iftar, set only by a reviewer
+        "prescriber_kind": "TEXT NOT NULL DEFAULT 'unknown'",  # doctor | village_doctor | drug_shop | self | unknown
     },
     "flags": {"opened_at": "TEXT", "reviewer_id": "{ref}"},  # opened_at: review-time evidence
     "reviews": {"seconds": "{real}", "reviewer_id": "{ref}"},  # seconds: opened -> decided

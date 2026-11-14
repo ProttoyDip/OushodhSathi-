@@ -35,7 +35,8 @@
     "LOOK_ALIKE_NAMES": "Similar names, different medicines",
     "TRIPLE_WHAMMY": "Three medicines together can strain the kidneys",
     "KIDNEY_DOSE": "Needs a look because of the kidney test",
-    "KIDNEY_TEST_DUE": "A kidney blood test is due"
+    "KIDNEY_TEST_DUE": "A kidney blood test is due",
+    "ANTIBIOTIC_NO_PRESCRIPTION": "An antibiotic without a doctor's prescription"
   },
   "strip": {
     "expiry": "Exp",
@@ -48,7 +49,13 @@
     "unknownGeneric": "Ingredient unknown",
     "photo": "Photo of {brand}",
     "source": "Source",
-    "confirmed": "Confirmed"
+    "confirmed": "Confirmed",
+    "aware": "Antibiotic · {group}",
+    "awareGroup": {
+      "Access": "Access",
+      "Watch": "Watch",
+      "Reserve": "Reserve"
+    }
   },
   "connector": {
     "both": "Both are {generic}",
@@ -142,7 +149,15 @@
     "asNeeded": "Only when needed",
     "asNeededHint": "None chosen: listed as \"only when needed\".",
     "pillsLeft": "Pills left (optional)",
-    "editTimes": "Edit times"
+    "editTimes": "Edit times",
+    "from": {
+      "title": "Where did it come from?",
+      "doctor": "Doctor",
+      "village_doctor": "Village doctor",
+      "drug_shop": "Drug shop",
+      "self": "Bought ourselves",
+      "unknown": "Don't know"
+    }
   },
   "status": {
     "title": "A pharmacist or doctor is reviewing",
@@ -799,7 +814,8 @@
       "LOOK_ALIKE_NAMES": "Look-alike / sound-alike names",
       "TRIPLE_WHAMMY": "Triple whammy (ACEi/ARB + diuretic + NSAID)",
       "KIDNEY_DOSE": "Kidney dose (eGFR below threshold)",
-      "KIDNEY_TEST_DUE": "Kidney test due (metformin, no eGFR in 12 months)"
+      "KIDNEY_TEST_DUE": "Kidney test due (metformin, no eGFR in 12 months)",
+      "ANTIBIOTIC_NO_PRESCRIPTION": "Antibiotic (WHO AWaRe Watch/Reserve) without prescription"
     },
     "questions": {
       "title": "Questions from families",

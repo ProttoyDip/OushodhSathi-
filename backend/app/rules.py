@@ -15,7 +15,7 @@ from rapidfuzz.distance import JaroWinkler
 
 from .kidney import KidneyContext, kdigo_stage
 from .models import Flag, RuleItem
-from .tables import BeersRow, InteractionRow, RenalRow, RuleTables
+from .tables import BeersRow, InteractionRow, RenalRow, RuleTables, aware_group
 
 EXPIRY_WARNING_DAYS = 30
 BEERS_AGE = 65
@@ -411,6 +411,42 @@ def kidney_test_due(items: list[RuleItem], kidney: KidneyContext | None, today: 
     )]
 
 
+# A Watch antibiotic without a doctor's prescription, or any Reserve antibiotic. WHO AWaRe 2025
+# ("The selection and use of essential medicines, 2025: WHO AWaRe classification",
+# https://www.who.int/publications/i/item/B09489): Watch antibiotics carry higher resistance
+# potential and should be prioritised for stewardship; Reserve antibiotics are last-resort options.
+# Context: about 36% of antibiotics sold with a registered physician's prescription in a 2024
+# study of 246 Dhaka pharmacies (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12744235/).
+NO_PRESCRIPTION_KINDS = ("drug_shop", "self", "unknown")
+AWARE_SOURCE = "WHO AWaRe classification 2025 (aware_2025.csv; seed - verify)"
+
+
+def antibiotic_no_prescription(items: list[RuleItem]) -> list[Flag]:
+    """Watch antibiotic from a drug shop, self or unknown -> amber, pharmacist.
+    Reserve antibiotic -> red, doctor, always. Access antibiotics: no flag."""
+    flags = []
+    for it in items:
+        group = aware_group(it.generic)
+        if group == "Reserve":
+            severity, routed, why = "red", "doctor", "is a Reserve (last-resort) antibiotic in the WHO AWaRe list"
+        elif group == "Watch" and it.prescriber_kind in NO_PRESCRIPTION_KINDS:
+            how = {"drug_shop": "came from a drug shop", "self": "was bought by the family themselves",
+                   "unknown": "has no known prescriber"}[it.prescriber_kind]
+            severity, routed, why = "amber", "pharmacist", f"is a Watch antibiotic in the WHO AWaRe list and {how}"
+        else:
+            continue
+        generic = it.generic or ""
+        flags.append(Flag(
+            key=_key("ANTIBIOTIC_NO_PRESCRIPTION", generic, group or "", it.brand),
+            code="ANTIBIOTIC_NO_PRESCRIPTION", severity=severity, routed_to=routed,
+            item_ids=[it.id],
+            evidence=f"{_label(it)} ({generic}) {why}.",
+            data_source=AWARE_SOURCE,
+            meta={"aware_group": group, "prescriber_kind": it.prescriber_kind, "generic": generic},
+        ))
+    return flags
+
+
 SEVERITY_ORDER = {"red": 0, "amber": 1}
 
 
@@ -429,6 +465,7 @@ def run_rules(items: list[RuleItem], age: int | None, tables: RuleTables, today:
         + triple_whammy(items, tables.class_groups)
         + kidney_dose(items, kidney, tables.renal)
         + kidney_test_due(items, kidney, today)
+        + antibiotic_no_prescription(items)
     )
     unique = {f.key: f for f in flags}  # belt and braces: never two flags with one key
     return sorted(unique.values(), key=lambda f: (SEVERITY_ORDER[f.severity], f.code, f.item_ids))

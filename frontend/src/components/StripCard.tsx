@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarClock, CircleHelp, ExternalLink, Globe, ScanEye, Stethoscope } from "lucide-react";
+import { CalendarClock, CircleHelp, ExternalLink, Globe, Pill, ScanEye, Stethoscope } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import type { CSSProperties, ReactNode } from "react";
 import { cx, expiry, genericName, num } from "@/lib/format";
@@ -9,7 +9,7 @@ import type { MedicineItem } from "@/lib/types";
 type StripItem = Pick<
   MedicineItem,
   "brand" | "strength" | "expiry" | "prescriber" | "confidence" | "generic" | "match_method" | "match_source"
-> & { thumbnail?: string | null; needs_review?: boolean; confirmed?: boolean };
+> & { thumbnail?: string | null; needs_review?: boolean; confirmed?: boolean; aware_group?: MedicineItem["aware_group"] };
 
 const LOW = 0.75;
 
@@ -105,6 +105,15 @@ export function StripCard({
               ) : (
                 <span className="inline-flex min-h-8 max-w-full items-center gap-1.5 rounded-2xl border border-rule px-3 py-1 text-[15px] leading-snug text-ink-soft">
                   <CircleHelp aria-hidden size={16} className="shrink-0" /> {t("unknownGeneric")}
+                </span>
+              )}
+              {item.aware_group && (
+                // WHO AWaRe group of an antibiotic: always the word, never colour alone
+                <span className={cx(
+                  "ml-1.5 mt-1.5 inline-flex items-center gap-1 rounded-2xl border px-2.5 py-0.5 text-[13px] font-semibold",
+                  item.aware_group === "Access" ? "border-rule text-ink-soft" : "border-amber-line bg-amber-tint text-amber",
+                )}>
+                  <Pill aria-hidden size={13} /> {t("aware", { group: t(`awareGroup.${item.aware_group}`) })}
                 </span>
               )}
             </div>

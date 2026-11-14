@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, CircleCheck, Clock, Cpu, FlaskConical, Pencil, Plus, Send, Trash2 } from "lucide-react";
+import { Check, CircleCheck, CircleHelp, Clock, Cpu, FlaskConical, Pencil, Plus, Send, ShoppingBag, Stethoscope, Trash2, User, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -11,7 +11,7 @@ import { StripCard } from "@/components/StripCard";
 import { api } from "@/lib/api";
 import { cx } from "@/lib/format";
 import { clearThumbs, loadThumbs } from "@/lib/thumbs";
-import type { MedicineItem, Slot } from "@/lib/types";
+import type { MedicineItem, PrescriberKind, Slot } from "@/lib/types";
 import { useApi } from "@/lib/useApi";
 
 export default function ConfirmPage() {
@@ -151,6 +151,7 @@ function Confirm() {
                   ) : (
                     <div className="grid gap-4">
                     <DoseTimes idPrefix={`plan-${item.id}`} plan={plan(item)} onChange={(p) => setPlan(item, p)} />
+                    <WhereFrom item={item} onChange={(kind) => save(item, { prescriber_kind: kind })} />
                     <div className="flex gap-2">
                       <button type="button" onClick={() => confirm(item)} className={cx(buttonStyles.secondary, "flex-1 whitespace-nowrap border-neel px-3 text-neel")}>
                         <Check aria-hidden size={20} strokeWidth={2.5} />
@@ -379,5 +380,36 @@ function AddManual({ pid, onAdded }: { pid: number; onAdded: (i: MedicineItem) =
         <button type="submit" disabled={!brand.trim()} className={buttonStyles.secondary}>{t("add")}</button>
       </form>
     </details>
+  );
+}
+
+const KINDS: { kind: PrescriberKind; Icon: typeof Stethoscope }[] = [
+  { kind: "doctor", Icon: Stethoscope },
+  { kind: "village_doctor", Icon: UserRound },
+  { kind: "drug_shop", Icon: ShoppingBag },
+  { kind: "self", Icon: User },
+  { kind: "unknown", Icon: CircleHelp },
+];
+
+/** Where did this medicine come from? The family picks it (one big tap per choice);
+ * no model ever guesses it. The pharmacist uses it, for example for antibiotics. */
+function WhereFrom({ item, onChange }: { item: MedicineItem; onChange: (kind: PrescriberKind) => void }) {
+  const t = useTranslations("confirm.from");
+  const current = item.prescriber_kind ?? "unknown";
+  return (
+    <fieldset>
+      <legend className="text-base font-semibold text-ink">{t("title")}</legend>
+      <div role="radiogroup" aria-label={t("title")} className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {KINDS.map(({ kind, Icon }) => (
+          <button key={kind} type="button" role="radio" aria-checked={current === kind} onClick={() => onChange(kind)}
+            className={cx(
+              "press inline-flex min-h-12 items-center justify-center gap-1.5 rounded-md border px-2 text-[15px] font-semibold leading-tight",
+              current === kind ? "border-neel bg-neel-tint text-neel" : "border-rule-strong text-ink-soft hover:bg-paper-sunk",
+            )}>
+            <Icon aria-hidden size={18} className="shrink-0" /> {t(kind)}
+          </button>
+        ))}
+      </div>
+    </fieldset>
   );
 }

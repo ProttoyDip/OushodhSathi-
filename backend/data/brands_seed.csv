@@ -23,3 +23,9 @@ Ecosprin,aspirin,antiplatelet-aspirin,,no,demo seed - verify against MedEx,75 mg
 Atova,atorvastatin,statin,,no,demo seed - verify against MedEx,10 mg,tablet,10.00,demo reference price — verify MRP
 Ramace,ramipril,ACE-inhibitor,,no,demo seed - verify against MedEx,2.5 mg,tablet,,
 Lasix,furosemide,loop-diuretic,,no,demo seed - verify against MedEx,40 mg,tablet,,
+Moxacil,amoxicillin,antibiotic-penicillin,,no,demo seed - verify against MedEx,500 mg,capsule
+Zimax,azithromycin,antibiotic-macrolide,,no,demo seed - verify against MedEx,500 mg,tablet
+Ciprocin,ciprofloxacin,antibiotic-fluoroquinolone,,no,demo seed - verify against MedEx,500 mg,tablet
+Cef-3,cefixime,antibiotic-cephalosporin,,no,demo seed - verify against MedEx,200 mg,capsule
+Filmet,metronidazole,antibiotic-nitroimidazole,,no,demo seed - verify against MedEx,400 mg,tablet
+Linez,linezolid,antibiotic-oxazolidinone,,no,demo seed - verify against MedEx,600 mg,tablet

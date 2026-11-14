@@ -73,8 +73,10 @@ class RuleTables:
 
 
 def _read_csv(path: Path) -> list[dict[str, str]]:
+    """Rows of a CSV file; lines starting with "#" (source and licence notes) are skipped."""
     with path.open(encoding="utf-8", newline="") as f:
-        return [{k: (v or "").strip() for k, v in row.items()} for row in csv.DictReader(f)]
+        lines = [line for line in f if not line.lstrip().startswith("#")]
+    return [{k: (v or "").strip() for k, v in row.items()} for row in csv.DictReader(lines)]
 
 
 @lru_cache(maxsize=1)
@@ -149,6 +151,36 @@ def load_rule_tables() -> RuleTables:
 def load_generics_bn() -> dict[str, str]:
     path = DATA_DIR / "generics_bn.csv"
     return {r["generic"].lower(): r["bn"] for r in _read_csv(path)} if path.exists() else {}
+
+
+AWARE_GROUPS = ("Access", "Watch", "Reserve")
+AWARE_RANK = {"Access": 0, "Watch": 1, "Reserve": 2}
+
+
+@lru_cache(maxsize=1)
+def load_aware() -> dict[str, str]:
+    """Generic (lowercase; combinations as "a + b") -> WHO AWaRe group, from aware_2025.csv.
+    WHO AWaRe is CC BY-NC-SA 3.0 IGO (non-commercial): see the file header."""
+    path = DATA_DIR / "aware_2025.csv"
+    out: dict[str, str] = {}
+    for r in _read_csv(path) if path.exists() else []:
+        group = r.get("group", "").strip().capitalize()
+        if r.get("generic") and group in AWARE_RANK:
+            out[" + ".join(g.strip() for g in r["generic"].lower().split("+"))] = group
+    return out
+
+
+def aware_group(generic: str | None) -> str | None:
+    """The AWaRe group of a generic. A combination is looked up whole first, then the
+    most restricted group of its ingredients wins. None when it is not an antibiotic we know."""
+    if not generic:
+        return None
+    table = load_aware()
+    whole = " + ".join(g.strip() for g in generic.lower().split("+") if g.strip())
+    if whole in table:
+        return table[whole]
+    groups = [table[g] for g in whole.split(" + ") if g in table]
+    return max(groups, key=AWARE_RANK.__getitem__) if groups else None
 
 
 def class_for_generic(generic: str) -> str | None:

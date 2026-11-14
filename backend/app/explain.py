@@ -106,6 +106,13 @@ def template(flag: StoredFlag, items: list[MedicineItem]) -> str:
     elif flag.code == "KIDNEY_TEST_DUE":
         text = (f"{brands} — এই ওষুধ খেলে বছরে অন্তত একবার কিডনির রক্ত পরীক্ষা (ক্রিয়েটিনিন) করা দরকার; "
                 f"গত এক বছরের কোনো পরীক্ষার ফল তালিকায় নেই। {reviewer} বিষয়টি দেখেছেন।")
+    elif flag.code == "ANTIBIOTIC_NO_PRESCRIPTION":
+        if m.get("aware_group") == "Reserve":
+            text = (f"{brands} একটি বিশেষ এন্টিবায়োটিক, যা সাধারণত শেষ উপায় হিসেবে রাখা হয়। "
+                    f"{reviewer} বিষয়টি দেখেছেন।")
+        else:
+            text = (f"{brands} একটি এন্টিবায়োটিক, যা ডাক্তারের প্রেসক্রিপশন ছাড়া পাওয়া গেছে বলে তালিকায় আছে। "
+                    f"এন্টিবায়োটিক ঠিকমতো না হলে জীবাণু ওষুধে আর কাজ না-ও করতে পারে। {reviewer} বিষয়টি দেখেছেন।")
     elif flag.code == "EXPIRED":
         if flag.severity == "red":
             text = f"{brands} ওষুধটির মেয়াদ শেষ হয়ে গেছে। {reviewer} বিষয়টি দেখেছেন।"

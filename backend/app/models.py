@@ -14,8 +14,10 @@ FlagStatus = Literal["pending_review", "confirmed", "dismissed"]
 FlagCode = Literal[
     "DUPLICATE_GENERIC", "THERAPEUTIC_DUPLICATION", "INTERACTION", "BEERS_65", "EXPIRED",
     "ANTICHOLINERGIC_BURDEN", "LOOK_ALIKE_NAMES", "TRIPLE_WHAMMY",
-    "KIDNEY_DOSE", "KIDNEY_TEST_DUE",
+    "KIDNEY_DOSE", "KIDNEY_TEST_DUE", "ANTIBIOTIC_NO_PRESCRIPTION",
 ]
+# Where a medicine came from, picked by the family on the confirm screen (never guessed by a model)
+PrescriberKind = Literal["doctor", "village_doctor", "drug_shop", "self", "unknown"]
 MatchMethod = Literal["exact", "fuzzy", "web_unverified", "not_found", "manual"]
 
 
@@ -91,6 +93,7 @@ class MedicineItemIn(BaseModel):
     pills_left: int | None = None
     doses_per_day: float | None = None
     per_dose: int = Field(default=1, ge=1, le=10)  # tablets each time
+    prescriber_kind: PrescriberKind = "unknown"
 
 
 class MedicineItemPatch(BaseModel):
@@ -104,6 +107,7 @@ class MedicineItemPatch(BaseModel):
     per_dose: int | None = Field(default=None, ge=1, le=10)
     confirmed: bool | None = None
     set_aside: bool | None = None
+    prescriber_kind: PrescriberKind | None = None
 
 
 class ClinicalPatch(BaseModel):
@@ -139,6 +143,13 @@ class MedicineItem(MedicineItemIn):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
+    def aware_group(self) -> str | None:
+        """WHO AWaRe group (Access / Watch / Reserve) when the generic is a known antibiotic."""
+        from .tables import aware_group
+        return aware_group(self.generic)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
     def needs_review(self) -> bool:
         return (
             self.confidence < LOW_CONFIDENCE
@@ -156,6 +167,7 @@ class RuleItem(BaseModel):
     strength: str | None = None
     expiry: str | None = None
     prescriber: str | None = None
+    prescriber_kind: PrescriberKind = "unknown"
 
 
 class Flag(BaseModel):

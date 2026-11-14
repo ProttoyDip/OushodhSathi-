@@ -10,7 +10,11 @@ export type FlagCode =
   | "LOOK_ALIKE_NAMES"
   | "TRIPLE_WHAMMY"
   | "KIDNEY_DOSE"
-  | "KIDNEY_TEST_DUE";
+  | "KIDNEY_TEST_DUE"
+  | "ANTIBIOTIC_NO_PRESCRIPTION";
+/** Where a medicine came from: picked by the family, never guessed by a model. */
+export type PrescriberKind = "doctor" | "village_doctor" | "drug_shop" | "self" | "unknown";
+export type AwareGroup = "Access" | "Watch" | "Reserve";
 export type MatchMethod = "exact" | "fuzzy" | "web_unverified" | "not_found" | "manual";
 
 export interface Patient {
@@ -74,6 +78,9 @@ export interface MedicineItem {
   needs_review: boolean;
   thumbnail?: string | null;
   per_dose?: number;
+  /** WHO AWaRe group when the generic is a known antibiotic. */
+  aware_group?: AwareGroup | null;
+  prescriber_kind?: PrescriberKind;
   purpose?: string | null;
   purpose_bn?: string | null;
   stopped?: boolean;

@@ -35,7 +35,8 @@
     "LOOK_ALIKE_NAMES": "নাম প্রায় একই, ওষুধ আলাদা",
     "TRIPLE_WHAMMY": "তিনটি ওষুধ একসাথে কিডনির ওপর চাপ",
     "KIDNEY_DOSE": "কিডনির পরীক্ষার ফল অনুযায়ী দেখা দরকার",
-    "KIDNEY_TEST_DUE": "কিডনির রক্ত পরীক্ষার সময় হয়েছে"
+    "KIDNEY_TEST_DUE": "কিডনির রক্ত পরীক্ষার সময় হয়েছে",
+    "ANTIBIOTIC_NO_PRESCRIPTION": "ডাক্তারের প্রেসক্রিপশন ছাড়া এন্টিবায়োটিক"
   },
   "strip": {
     "expiry": "মেয়াদ",
@@ -48,7 +49,13 @@
     "unknownGeneric": "উপাদান অজানা",
     "photo": "{brand}-এর ছবি",
     "source": "সূত্র",
-    "confirmed": "নিশ্চিত"
+    "confirmed": "নিশ্চিত",
+    "aware": "এন্টিবায়োটিক · {group}",
+    "awareGroup": {
+      "Access": "Access",
+      "Watch": "Watch",
+      "Reserve": "Reserve"
+    }
   },
   "connector": {
     "both": "দুটোই {generic}",
@@ -142,7 +149,15 @@
     "asNeeded": "শুধু দরকার হলে",
     "asNeededHint": "কোনোটি বাছা হয়নি: \"শুধু দরকার হলে\" হিসেবে থাকবে।",
     "pillsLeft": "আর কয়টি বড়ি আছে (ঐচ্ছিক)",
-    "editTimes": "সময় বদলান"
+    "editTimes": "সময় বদলান",
+    "from": {
+      "title": "ওষুধটি কোথা থেকে এসেছে?",
+      "doctor": "ডাক্তার",
+      "village_doctor": "গ্রামের ডাক্তার",
+      "drug_shop": "ওষুধের দোকান",
+      "self": "নিজেরা কিনেছি",
+      "unknown": "জানি না"
+    }
   },
   "status": {
     "title": "ফার্মাসিস্ট/ডাক্তার দেখছেন",
@@ -799,7 +814,8 @@
       "LOOK_ALIKE_NAMES": "দেখতে/শুনতে একই নাম",
       "TRIPLE_WHAMMY": "ট্রিপল হুইমি (ACEi/ARB + মূত্রবর্ধক + NSAID)",
       "KIDNEY_DOSE": "কিডনির ডোজ (eGFR সীমার নিচে)",
-      "KIDNEY_TEST_DUE": "কিডনির পরীক্ষা বাকি (মেটফরমিন, ১২ মাসে eGFR নেই)"
+      "KIDNEY_TEST_DUE": "কিডনির পরীক্ষা বাকি (মেটফরমিন, ১২ মাসে eGFR নেই)",
+      "ANTIBIOTIC_NO_PRESCRIPTION": "প্রেসক্রিপশন ছাড়া এন্টিবায়োটিক (WHO AWaRe Watch/Reserve)"
     },
     "questions": {
       "title": "পরিবারের প্রশ্ন",

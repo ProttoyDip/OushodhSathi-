@@ -1,7 +1,7 @@
 import type {
   AuditEntry, BPPhotoReading, BPTrend, CaseSummary, CleanupItem, EmergencyPage, EvalResult, FamilyStatus, Flag, Health, MedicineItem,
   ActivityEntry, ModelsInfo, NextStep, Passport, Patient, PilotStats, Question, RamadanRequest, Report, ReviewQueue,
-  KidneyView, ReviewerAccount, ReviewerInvite, SathiReply, Savings, Today, VisitPrep,
+  AdherenceSummary, DoseTick, KidneyView, ReviewerAccount, Slot, ReviewerInvite, SathiReply, Savings, Today, VisitPrep,
 } from "./types";
 import { familyKey } from "./familyKey";
 
@@ -118,6 +118,9 @@ export const api = {
   visit: (id: number) => request<VisitPrep>(`/patients/${id}/visit`, { pid: id }),
   visitDone: (id: number) => request<{ next: string }>(`/patients/${id}/visit/done`, { method: "POST", pid: id }),
   cleanup: (id: number) => request<{ to_set_aside: CleanupItem[]; set_aside: CleanupItem[] }>(`/patients/${id}/cleanup`, { pid: id }),
+  doses: (id: number, days = 1) => request<DoseTick[]>(`/patients/${id}/doses?days=${days}`, { pid: id }),
+  recordDose: (id: number, body: { item_id: number; day: string; slot: Slot; status: "taken" | "missed" }) =>
+    request<DoseTick>(`/patients/${id}/doses`, { method: "POST", body: json(body), pid: id }),
   rotateFamilyKey: (id: number) => request<{ family_key: string }>(`/patients/${id}/family-key/rotate`, { method: "POST", pid: id }),
   exportHousehold: (id: number) => request<Record<string, unknown>>(`/patients/${id}/export`, { pid: id }),
   deleteHousehold: (id: number) =>
@@ -138,6 +141,7 @@ export const api = {
     request<{ questions: Question[]; open: number }>(`/questions?status=${status}`, { token }),
   reply: (token: string, qid: number, reply: string, reviewer: string) =>
     request<Question>(`/questions/${qid}/reply`, { method: "POST", body: json({ reply, reviewer }), token }),
+  adherence: (token: string, id: number) => request<AdherenceSummary>(`/patients/${id}/adherence`, { token }),
   kidney: (token: string, id: number) => request<KidneyView>(`/patients/${id}/kidney`, { token }),
   addKidneyTest: (token: string, id: number, body: { creatinine: number; unit: "mg/dL" | "umol/L"; taken_on: string; source: "reviewer" | "lab_report" }) =>
     request<KidneyView>(`/patients/${id}/kidney-tests`, { method: "POST", body: json(body), token }),

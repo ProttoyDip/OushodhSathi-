@@ -431,3 +431,14 @@ export interface KidneyView {
   tests: number;
   equation: string;
 }
+
+/** One taken / not-taken tick by the family. */
+export interface DoseTick { item_id: number; day: string; slot: Slot; status: "taken" | "missed"; recorded_at: string }
+
+/** Reviewer only: 14-day adherence from the family's ticks, with 95% Wilson intervals. */
+export interface AdherenceSummary {
+  days: number;
+  medicines: { item_id: number; brand: string; generic: string | null; taken: number; missed: number; recorded: number;
+    expected: number; adherence: Proportion | null }[];
+  household: { taken: number; missed: number; recorded: number; expected: number; adherence: Proportion | null };
+}

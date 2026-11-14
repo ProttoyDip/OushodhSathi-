@@ -881,7 +881,8 @@
       "age": "Age {value}",
       "medicines": "{value} medicines",
       "prescribers": "{value} prescribers",
-      "acb": "Anticholinergic score {value}"
+      "acb": "Anticholinergic score {value}",
+      "adherence_low": "Adherence {value} over 14 days (from family ticks)"
     },
     "bp": {
       "title": "Home blood pressure, last 4 weeks",
@@ -907,6 +908,14 @@
       "invalid": "Check the value and unit (0.2 to 20 mg/dL).",
       "error": "Could not save. Try again.",
       "caveat": "CKD-EPI 2021 (race-free), arithmetic only. Kidney findings appear in the queue as pending."
+    },
+    "adherence": {
+      "title": "Taken / not taken, last {days} days",
+      "none": "No ticks recorded yet.",
+      "line": "{taken} of {recorded} recorded doses taken ({p}%, 95% CI {lo}–{hi}%)",
+      "noTicks": "no ticks yet",
+      "coverage": "{recorded} of {expected} expected doses recorded",
+      "caveat": "Self-reported by the family; untapped doses are missing data, not missed doses. Families never see these percentages."
     }
   },
   "start": {
@@ -1049,7 +1058,15 @@
     "ramadanTitle": "Fasting in Ramadan?",
     "ramadanBody": "Ask the pharmacist or doctor to plan the medicines around sehri and iftar. Nothing changes here until they approve a plan.",
     "ramadanAsk": "Ask for a Ramadan plan",
-    "ramadanWaiting": "Request sent. Today's medicines stay as they are until a pharmacist or doctor approves a Ramadan plan."
+    "ramadanWaiting": "Request sent. Today's medicines stay as they are until a pharmacist or doctor approves a Ramadan plan.",
+    "tick": {
+      "label": "Was this dose taken?",
+      "taken": "Taken",
+      "missed": "Not taken",
+      "missedNote": "Noted. If you are unsure what to do about a dose, ask the pharmacist.",
+      "ask": "Ask the pharmacist",
+      "error": "Could not save the tick. Check the connection and try again."
+    }
   },
   "visit": {
     "title": "Before the doctor visit",

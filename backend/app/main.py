@@ -285,6 +285,7 @@ def export_household(pid: int, store: Store = Depends(get_store)) -> dict:
         "activity": store.list_activity(pid, limit=10_000),
         "kidney_tests": [{k: t[k] for k in ("taken_on", "creatinine_mg_dl", "source", "entered_by")}
                          for t in store.list_kidney_tests(pid)],
+        "dose_ticks": store.list_doses(pid, since="0000-00-00"),
     }
 
 
@@ -464,8 +465,10 @@ def review_queue(
     risk: dict[int, dict] = {}
     for pid in {f.patient_id for f in flags}:
         if (p := patients.get(pid)) is not None:
+            totals = adherence_summary(store, pid)["household"]
             risk[pid] = household_risk(p, store.list_items(pid, confirmed_only=True),
-                                       [f for f in pending if f.patient_id == pid], acb)
+                                       [f for f in pending if f.patient_id == pid], acb,
+                                       adherence=(totals["taken"], totals["missed"]))
     rows = []
     for f in _with_items(store, flags):
         p = patients.get(f["patient_id"])
@@ -830,6 +833,7 @@ def step_context(store: Store, pid: int) -> StepContext:
         reviewed=state == "reviewed",
         passport_seen=p.passport_seen_at is not None,
         refills=[(it.brand, days) for it, days in refills_due(confirmed)],
+        doses_unticked_today=_unticked_today(store, pid, confirmed),
     )
 
 
@@ -1454,3 +1458,95 @@ def add_kidney_test(pid: int, body: KidneyTestIn, rev: ReviewerAccount = Depends
         _sync_rules(store, p)
     store.log_activity(pid, "kidney_test_added", 1)
     return _kidney_view(store, p)
+
+
+# ---- 12D: taken / missed ticks and adherence ------------------------------------------------
+
+DOSE_DAYS_BACK = 7      # a family can tick today and the previous 7 days
+ADHERENCE_DAYS = 14     # the reviewer's adherence window
+
+
+def _tickable(it: MedicineItem) -> bool:
+    """Only medicines on the pharmacist-approved schedule can be ticked."""
+    return counts(it) and bool(it.schedule) and it.schedule_approved_at is not None
+
+
+def _unticked_today(store: Store, pid: int, confirmed: list[MedicineItem]) -> int:
+    approved = [it for it in confirmed if _tickable(it)]
+    if not approved:
+        return 0
+    day = date.today().isoformat()
+    ticked = {(d["item_id"], d["slot"]) for d in store.list_doses(pid, since=day) if d["day"] == day}
+    return sum(1 for it in approved for slot in it.schedule if (it.id, slot) not in ticked)
+
+
+class DoseIn(BaseModel):
+    item_id: int
+    day: date
+    slot: Literal["morning", "noon", "night"]
+    status: Literal["taken", "missed"]
+
+
+@app.post("/patients/{pid}/doses", status_code=201, dependencies=[Depends(family_access), Depends(limit_writes)])
+def record_dose(pid: int, body: DoseIn, store: Store = Depends(get_store)) -> dict:
+    """The family ticks a dose as taken or not taken. A second tap on the same slot updates it."""
+    _patient_or_404(store, pid)
+    it = store.get_item(body.item_id)
+    if it is None or it.patient_id != pid or not it.confirmed:
+        raise HTTPException(404, "Item not found")
+    if not _tickable(it) or body.slot not in it.schedule:
+        raise HTTPException(422, "Only times the pharmacist approved can be ticked")
+    # one day of slack: the server runs on UTC, families are up to 14 hours ahead of it
+    if body.day > date.today() + timedelta(days=1):
+        raise HTTPException(422, "The day cannot be in the future")
+    if body.day < date.today() - timedelta(days=DOSE_DAYS_BACK):
+        raise HTTPException(422, f"Only the last {DOSE_DAYS_BACK} days can be ticked")
+    approved_on = _parse_ts(it.schedule_approved_at).date()  # type: ignore[union-attr]
+    if body.day < approved_on - timedelta(days=1):
+        raise HTTPException(422, "There was no approved plan on that day")
+    return store.record_dose(pid, it.id, body.day.isoformat(), body.slot, body.status)
+
+
+@app.get("/patients/{pid}/doses", dependencies=[Depends(family_access)])
+def list_doses(pid: int, days: int = Query(7, ge=1, le=DOSE_DAYS_BACK + 1), store: Store = Depends(get_store)) -> list[dict]:
+    """The family's own ticks. Never percentages: adherence numbers are for the pharmacist only."""
+    _patient_or_404(store, pid)
+    return store.list_doses(pid, since=(date.today() - timedelta(days=days - 1)).isoformat())
+
+
+def adherence_summary(store: Store, pid: int, days: int = ADHERENCE_DAYS) -> dict:
+    """Per medicine over the last `days`: taken / (taken + missed) with a 95% Wilson interval,
+    and how many of the expected doses were recorded at all, so missing data is visible."""
+    start = date.today() - timedelta(days=days - 1)
+    events = store.list_doses(pid, since=start.isoformat())
+    meds, all_taken, all_missed, all_expected = [], 0, 0, 0
+    for it in store.list_items(pid, confirmed_only=True):
+        if not _tickable(it):
+            continue
+        approved_on = _parse_ts(it.schedule_approved_at).date()  # type: ignore[union-attr]
+        first = max(start, approved_on)
+        expected = max((date.today() - first).days + 1, 0) * len(it.schedule)
+        mine = [e for e in events if e["item_id"] == it.id]
+        taken = sum(e["status"] == "taken" for e in mine)
+        missed = sum(e["status"] == "missed" for e in mine)
+        recorded = taken + missed
+        meds.append({
+            "item_id": it.id, "brand": it.brand, "generic": it.generic,
+            "taken": taken, "missed": missed, "recorded": recorded, "expected": expected,
+            "adherence": proportion(it.brand, taken, recorded) if recorded else None,
+        })
+        all_taken, all_missed, all_expected = all_taken + taken, all_missed + missed, all_expected + expected
+    recorded = all_taken + all_missed
+    return {
+        "days": days,
+        "medicines": meds,
+        "household": {"taken": all_taken, "missed": all_missed, "recorded": recorded, "expected": all_expected,
+                      "adherence": proportion("household", all_taken, recorded) if recorded else None},
+    }
+
+
+@app.get("/patients/{pid}/adherence", dependencies=[Depends(require_reviewer)])
+def get_adherence(pid: int, store: Store = Depends(get_store)) -> dict:
+    """Reviewer only: 14-day adherence per medicine with 95% Wilson intervals."""
+    _patient_or_404(store, pid)
+    return adherence_summary(store, pid)

@@ -22,7 +22,7 @@ from .models import (
 
 DEFAULT_DB = Path(__file__).resolve().parent.parent / "oushodh.db"
 
-TABLES = ("kidney_tests", "notifications", "reviewers", "activity", "sathi_events", "questions", "bp_readings", "reviews", "flags", "items", "cache", "patients")
+TABLES = ("dose_events", "kidney_tests", "notifications", "reviewers", "activity", "sathi_events", "questions", "bp_readings", "reviews", "flags", "items", "cache", "patients")
 
 # {id}: auto-increment key, {ref}: foreign key column, {real}: floating point
 SCHEMA = """
@@ -76,6 +76,11 @@ CREATE TABLE IF NOT EXISTS sathi_events (
 CREATE TABLE IF NOT EXISTS reviewers (
   id {id}, name TEXT NOT NULL, role TEXT NOT NULL, reg_no TEXT,
   token_hash TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL, revoked_at TEXT
+);
+CREATE TABLE IF NOT EXISTS dose_events (
+  id {id}, patient_id {ref} NOT NULL REFERENCES patients(id), item_id {ref} NOT NULL REFERENCES items(id),
+  day TEXT NOT NULL, slot TEXT NOT NULL, status TEXT NOT NULL, recorded_at TEXT NOT NULL,
+  UNIQUE (patient_id, item_id, day, slot)
 );
 CREATE TABLE IF NOT EXISTS kidney_tests (
   id {id}, patient_id {ref} NOT NULL REFERENCES patients(id), taken_on TEXT NOT NULL,
@@ -363,6 +368,7 @@ class Store:
         self._exec("DELETE FROM items WHERE patient_id = ?", (pid,))
 
     def delete_item(self, item_id: int) -> bool:
+        self._exec("DELETE FROM dose_events WHERE item_id = ?", (item_id,))
         return self._exec("DELETE FROM items WHERE id = ?", (item_id,)) > 0
 
     # ---- flags ----------------------------------------------------------
@@ -465,6 +471,19 @@ class Store:
         rows = self._all(sql + " ORDER BY taken_on DESC, id DESC LIMIT ?", (*args, limit))
         return list(reversed(rows))
 
+    # ---- taken / missed ticks: one row per (medicine, day, slot); a second tap updates it --
+    def record_dose(self, pid: int, item_id: int, day: str, slot: str, status: str) -> dict:
+        self._exec(
+            "INSERT INTO dose_events (patient_id, item_id, day, slot, status, recorded_at) VALUES (?,?,?,?,?,?) "
+            "ON CONFLICT (patient_id, item_id, day, slot) DO UPDATE SET status = excluded.status, "
+            "recorded_at = excluded.recorded_at", (pid, item_id, day, slot, status, now()))
+        return self._all("SELECT item_id, day, slot, status, recorded_at FROM dose_events WHERE patient_id = ? "
+                         "AND item_id = ? AND day = ? AND slot = ?", (pid, item_id, day, slot))[0]
+
+    def list_doses(self, pid: int, since: str) -> list[dict]:
+        return self._all("SELECT item_id, day, slot, status, recorded_at FROM dose_events WHERE patient_id = ? "
+                         "AND day >= ? ORDER BY day, item_id, slot", (pid, since))
+
     # ---- kidney tests: creatinine only; eGFR is computed on read (app/kidney.py) --
     def add_kidney_test(self, pid: int, taken_on: str, creatinine_mg_dl: float, entered_by: str | None,
                         source: str) -> dict:
@@ -519,6 +538,7 @@ class Store:
         self._many([
             ("DELETE FROM reviews WHERE flag_id IN (SELECT id FROM flags WHERE patient_id = ?)", (pid,)),
             ("DELETE FROM flags WHERE patient_id = ?", (pid,)),
+            ("DELETE FROM dose_events WHERE patient_id = ?", (pid,)),
             ("DELETE FROM items WHERE patient_id = ?", (pid,)),
             ("DELETE FROM bp_readings WHERE patient_id = ?", (pid,)),
             ("DELETE FROM questions WHERE patient_id = ?", (pid,)),

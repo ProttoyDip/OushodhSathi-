@@ -13,8 +13,13 @@ POLYPHARMACY = 5        # five or more regular medicines
 HEAVY_POLYPHARMACY = 10
 
 
+ADHERENCE_LOW = 0.80        # 14-day share of recorded doses marked taken
+ADHERENCE_MIN_RECORDED = 10  # ...counted only with at least this many recorded doses
+
+
 def household_risk(patient: Patient, items: Iterable[MedicineItem], pending: Iterable[StoredFlag],
-                   acb: dict[str, int]) -> dict:
+                   acb: dict[str, int], adherence: tuple[int, int] | None = None) -> dict:
+    """adherence: (taken, missed) over the last 14 days, from the family's ticks."""
     """Return {"score": int, "reasons": [{"code": str, "points": int, "value": ...}]}."""
     items = [it for it in items if not getattr(it, "stopped", False)]
     pending = list(pending)
@@ -41,5 +46,11 @@ def household_risk(patient: Patient, items: Iterable[MedicineItem], pending: Ite
     generics = {g.strip().lower() for it in items for g in (it.generic or "").split("+") if g.strip()}
     burden = sum(acb.get(g, 0) for g in generics)
     add("acb", 2 if burden >= 3 else 0, burden)
+
+    if adherence is not None:
+        taken, missed = adherence
+        recorded = taken + missed
+        if recorded >= ADHERENCE_MIN_RECORDED and taken / recorded < ADHERENCE_LOW:
+            add("adherence_low", 2, round(taken / recorded, 2))
 
     return {"score": sum(r["points"] for r in reasons), "reasons": reasons}

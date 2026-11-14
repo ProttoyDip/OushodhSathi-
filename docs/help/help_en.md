@@ -107,6 +107,14 @@ phrasings: choose morning noon night | set the times | change the time of a medi
 route: {home}/confirm
 answer: On each card tap morning, noon or night, as written on the prescription. To change the time of a confirmed medicine, tap "Edit times".
 
+## today.tick
+
+group: Checking the list
+question: How do I mark that a medicine was taken?
+phrasings: tick a medicine | mark as taken | record a missed dose | how to tick today's medicines
+route: {home}/today
+answer: Open "Today's medicines". Under each medicine tap "Taken" or "Not taken". You can change a tick by tapping again, and tick the last 7 days. If a dose was not taken, ask the pharmacist from the same screen.
+
 ## review.who
 
 group: Review

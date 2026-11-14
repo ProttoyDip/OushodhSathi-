@@ -1,0 +1,35 @@
+{
+  "run_at": "2026-11-14T17:25:55+00:00",
+  "heldout_human": 78,
+  "required": 200,
+  "embed_model": "baai/bge-m3",
+  "model_trained": false,
+  "enabled_in_production": false,
+  "status": "in_progress",
+  "guard_only_recall": {
+    "app": {
+      "label": "app",
+      "k": 34,
+      "n": 35,
+      "p": 0.9714,
+      "ci_low": 0.8547,
+      "ci_high": 0.9949
+    },
+    "emergency": {
+      "label": "emergency",
+      "k": 10,
+      "n": 10,
+      "p": 1.0,
+      "ci_low": 0.7225,
+      "ci_high": 1.0
+    },
+    "medical": {
+      "label": "medical",
+      "k": 33,
+      "n": 33,
+      "p": 1.0,
+      "ci_low": 0.8957,
+      "ci_high": 1.0
+    }
+  }
+}

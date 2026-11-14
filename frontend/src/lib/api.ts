@@ -51,6 +51,10 @@ const json = (body: unknown) => JSON.stringify(body);
 
 export const api = {
   health: () => request<Health>("/health"),
+  evalModels: () => request<{
+    intent: { status: string; heldout_human: number; required: number; enabled: boolean };
+    adherence_risk: { status: string; households: number; required_households: number; household_weeks: number; required_household_weeks: number };
+  }>("/eval/models"),
   evalResults: () => request<EvalResult[]>("/eval/results"),
   pilotStats: () => request<PilotStats>("/pilot/stats"),
   models: () => request<ModelsInfo>("/models"),

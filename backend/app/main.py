@@ -1601,3 +1601,35 @@ def get_start_notes(pid: int, store: Store = Depends(get_store)) -> list[dict]:
     items = store.list_items(pid, confirmed_only=True)
     rule_items = [RuleItem(**it.model_dump(include=set(RuleItem.model_fields))) for it in items if counts(it)]
     return start_omissions(rule_items, p.conditions, load_rule_tables().stopp_start)
+
+
+# ---- 12H/12I: model pipelines (evaluation status only; nothing here decides anything) -------
+
+@app.get("/eval/models")
+def eval_models() -> dict:
+    """Status of the escalate-only Sathi intent classifier and the missed-dose risk model, from
+    their evaluation files. Both are off until they pass their data gates; /docs shows this."""
+    import json
+
+    def read(name: str) -> dict | None:
+        f = EVAL_DIR / name
+        try:
+            return json.loads(f.read_text(encoding="utf-8")) if f.exists() else None
+        except ValueError:
+            return None
+
+    intent = read("intent_results.json") or {}
+    risk = read("adherence_model_results.json") or {}
+    return {
+        "intent": {"status": intent.get("status", "in_progress"), "heldout_human": intent.get("heldout_human", 0),
+                   "required": intent.get("required", 200), "enabled": intent_classifier_enabled()},
+        "adherence_risk": {"status": risk.get("status", "in_progress"), "households": risk.get("households", 0),
+                           "required_households": risk.get("required_households", 30),
+                           "household_weeks": risk.get("household_weeks", 0),
+                           "required_household_weeks": risk.get("required_household_weeks", 300)},
+    }
+
+
+def intent_classifier_enabled() -> bool:
+    from . import intent_classifier
+    return intent_classifier.enabled()

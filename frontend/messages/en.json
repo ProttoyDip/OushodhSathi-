@@ -653,7 +653,15 @@
       "seconds": "{n} s",
       "minutes": "{n} min",
       "reviewTimeBody": "median time per decision, over {n} reviews",
-      "reviewTimeNone": "No timed reviews yet. The clock starts when a reviewer opens a finding."
+      "reviewTimeNone": "No timed reviews yet. The clock starts when a reviewer opens a finding.",
+      "intentTitle": "Sathi intent classifier (escalate-only)",
+      "riskTitle": "Missed-dose risk model (reviewer-only)",
+      "modelInProgress": "Evaluation in progress: not enough real data yet, so it is switched off.",
+      "modelDone": "Evaluated on held-out data.",
+      "modelOn": "on",
+      "modelOff": "off",
+      "intentGate": "{n} of {need} human-written held-out questions",
+      "riskGate": "{h} of {needH} real households · {w} of {needW} household-weeks"
     }
   },
   "models": {

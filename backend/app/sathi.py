@@ -20,7 +20,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ValidationError
 
-from . import guard, help_index, prompts
+from . import guard, help_index, intent_classifier, prompts
 from .explain import is_good_bangla, is_safe
 from .llm_router import NoProviderAvailable, Router, parse_json
 from .next_step import NextStep
@@ -102,9 +102,13 @@ def classify_question(question: str, router: Router | None,
         return "MEDICAL", []
     hits = help_index.search(question)
     top = hits[0].score if hits else 0
+    clean = _redact(question, redact or [])
     if top >= help_index.STRONG_MATCH:
-        return "APP", hits
-    intent = guard.classify(_redact(question, redact or []), router)
+        intent = "APP"
+    else:
+        intent = guard.classify(clean, router)
+    # escalate-only classifier (off by default): can move towards MEDICAL / EMERGENCY, never to APP
+    intent = intent_classifier.escalate(clean, intent)
     return intent, hits
 
 

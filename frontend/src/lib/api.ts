@@ -1,5 +1,5 @@
 import type {
-  AuditEntry, BPPhotoReading, CaseSummary, CleanupItem, EmergencyPage, EvalResult, FamilyStatus, Flag, Health, MedicineItem,
+  AuditEntry, BPPhotoReading, BPTrend, CaseSummary, CleanupItem, EmergencyPage, EvalResult, FamilyStatus, Flag, Health, MedicineItem,
   ActivityEntry, ModelsInfo, NextStep, Passport, Patient, PilotStats, Question, RamadanRequest, Report, ReviewQueue,
   ReviewerAccount, ReviewerInvite, SathiReply, Savings, Today, VisitPrep,
 } from "./types";
@@ -138,6 +138,7 @@ export const api = {
     request<{ questions: Question[]; open: number }>(`/questions?status=${status}`, { token }),
   reply: (token: string, qid: number, reply: string, reviewer: string) =>
     request<Question>(`/questions/${qid}/reply`, { method: "POST", body: json({ reply, reviewer }), token }),
+  bpTrend: (token: string, id: number) => request<BPTrend>(`/patients/${id}/bp-trend`, { token }),
   caseSummary: (token: string, id: number, reviewer: string) =>
     request<CaseSummary>(`/patients/${id}/case-summary?reviewer=${encodeURIComponent(reviewer)}`, { token }),
   opened: (token: string, flagId: number) => request<void>(`/flags/${flagId}/opened`, { method: "POST", token }),

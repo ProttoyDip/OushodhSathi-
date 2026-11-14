@@ -18,12 +18,24 @@ MatchMethod = Literal["exact", "fuzzy", "web_unverified", "not_found", "manual"]
 
 
 class PatientIn(BaseModel):
-    name: str
-    name_bn: str | None = None
+    name: str = Field(min_length=1, max_length=80)
+    name_bn: str | None = Field(default=None, max_length=80)
     age: int = Field(ge=0, le=120)
-    district: str | None = None
-    conditions: list[str] = []
+    district: str | None = Field(default=None, max_length=60)
+    conditions: list[str] = Field(default=[], max_length=10)
     is_demo: bool = False
+
+
+CONSENT_VERSION = "2026-11"  # bump when the privacy notice changes; stored with each household
+EMAIL_PATTERN = r"^[^@\s]{1,64}@[^@\s]{1,190}\.[^@\s]{2,}$"
+
+
+class PatientCreate(PatientIn):
+    """A new household from /start. Consent to the privacy notice is required; email is optional."""
+
+    consent: Literal[True]
+    family_email: str | None = Field(default=None, max_length=254, pattern=EMAIL_PATTERN)
+    email_opt_in: bool = False
 
 
 class Patient(PatientIn):
@@ -44,6 +56,10 @@ class Patient(PatientIn):
     ramadan_note: str | None = None
     ramadan_approved_by: str | None = None
     ramadan_approved_at: datetime | None = None
+    family_email: str | None = None
+    email_opt_in: bool = False
+    consent_at: datetime | None = None
+    consent_version: str | None = None
 
 
 class PatientPatch(BaseModel):
@@ -53,6 +69,8 @@ class PatientPatch(BaseModel):
     emergency_contact_name: str | None = Field(default=None, max_length=80)
     emergency_contact_phone: str | None = Field(default=None, max_length=20, pattern=r"^[0-9+\- ]*$")
     visit_questions: list[str] | None = Field(default=None, max_length=20)
+    family_email: str | None = Field(default=None, max_length=254, pattern=EMAIL_PATTERN)
+    email_opt_in: bool | None = None
 
 
 class MedicineItemIn(BaseModel):
@@ -90,7 +108,7 @@ class ClinicalPatch(BaseModel):
     purpose: str | None = Field(default=None, max_length=120)
     purpose_bn: str | None = Field(default=None, max_length=120)
     stopped: bool | None = None
-    reviewer: str = Field(min_length=1)
+    reviewer: str | None = None  # ignored for personal reviewer logins: the server records who it was
 
 
 class MedicineItem(MedicineItemIn):
@@ -156,6 +174,7 @@ class StoredFlag(Flag):
     active: bool = True
     created_at: datetime
     reviewer: str | None = None
+    reviewer_id: int | None = None  # the personal reviewer login that decided it (None: demo token)
     note: str | None = None
     reviewed_at: datetime | None = None
     explanation_bn: str | None = None
@@ -164,8 +183,26 @@ class StoredFlag(Flag):
 
 class ReviewIn(BaseModel):
     status: Literal["confirmed", "dismissed"]
-    reviewer: str = Field(min_length=1)
-    note: str | None = None
+    reviewer: str | None = None  # ignored for personal reviewer logins: the server records who it was
+    note: str | None = Field(default=None, max_length=2000)
+
+
+class ReviewerAccount(BaseModel):
+    """A pharmacist or doctor with a personal, revocable login. The token itself is never stored."""
+
+    id: int
+    name: str
+    role: Literal["pharmacist", "doctor"]
+    reg_no: str | None = None
+    created_at: datetime
+    revoked_at: datetime | None = None
+    is_demo: bool = False  # the shared demo token (DEMO_MODE only), not a real person
+
+
+class ReviewerCreate(BaseModel):
+    name: str = Field(min_length=2, max_length=80)
+    role: Literal["pharmacist", "doctor"]
+    reg_no: str | None = Field(default=None, max_length=40)  # BMDC or Pharmacy Council registration
 
 
 class Review(ReviewIn):

@@ -22,7 +22,7 @@ class FakeRouter:
 
 
 def household(client, **extra):
-    r = client.post("/patients", json={"name": "Clinical Test", "age": 72, **extra})
+    r = client.post("/patients", json={"name": "Clinical Test", "age": 72, **extra, "consent": True})
     client.headers["X-Family-Key"] = r.json()["family_key"]
     return r.json()["id"]
 

@@ -1,49 +1,23 @@
-# Render Blueprint for the OushodhSathi API.
+# Render Blueprint for the OushodhSathi API: two services from one codebase.
 # New → Blueprint → pick this repo. Secrets marked `sync: false` are entered in the
 # Render dashboard, never committed.
 #
-# Free plan: no persistent disk. Set DATABASE_URL to a free Supabase Postgres (session
-# pooler, see docs/DEPLOY.md) and households, reviews and the audit trail survive restarts.
-# Without it the API falls back to a local SQLite file that resets on every restart.
-# The invented demo household is seeded on start only when the database is empty.
-services:
-  - type: web
-    name: oushodhsathi-api
-    runtime: python
-    rootDir: backend
-    plan: free
-    region: singapore        # closest Render region to Bangladesh
-    buildCommand: pip install -r requirements.txt
-    # seed the demo household when the database is empty, then serve
-    startCommand: python scripts/seed_demo.py --if-empty && uvicorn app.main:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /health
-    autoDeploy: true
+#   oushodhsathi-api       the PILOT: real families, personal reviewer logins (DEMO_MODE=false).
+#                          Photos only go to VISION_PROVIDERS. No demo reset.
+#   oushodhsathi-demo-api  the JUDGE DEMO: the invented household, the shared demo reviewer
+#                          token, /demo/reset (DEMO_MODE=true). Its own database, so a demo
+#                          login can never see a real family.
+#
+# Free plan: no persistent disk. Each service needs its own DATABASE_URL (a free Supabase
+# Postgres session pooler, see docs/DEPLOY.md); without one it falls back to a local SQLite file
+# that resets on every restart, which is acceptable for the demo service only.
+envVarGroups:
+  - name: oushodhsathi-ai          # AI provider keys, shared by both services
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.7
-      - key: DEMO_MODE
-        value: "true"
-      - key: OLLAMA_DISABLED     # no Ollama on Render; Bangla explanations use the cloud fallback
+      - key: OLLAMA_DISABLED       # no Ollama on Render; Bangla explanations use the cloud fallback
         value: "1"
-      - key: CORS_ORIGINS
-        sync: false              # e.g. https://oushodhsathi.vercel.app
-      - key: CORS_ORIGIN_REGEX
-        sync: false              # optional, e.g. ^https://oushodhsathi-.*\.vercel\.app$ for previews
-      - key: REVIEWER_TOKEN
-        generateValue: true
-      - key: DATABASE_URL
-        sync: false              # postgresql://oushodh_app.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres?sslmode=require
-      # abuse limits per client IP (defaults shown); photo reading spends AI credits
-      - key: SCAN_LIMIT_PER_IP
-        value: "10"              # scans per hour
-      - key: SCAN_LIMIT_GLOBAL
-        value: "200"             # scans per day, all visitors together
-      - key: PATIENT_LIMIT_PER_IP
-        value: "5"               # new households per hour
-      - key: WRITE_LIMIT_PER_IP
-        value: "120"             # item, check and BP writes per hour
-      - key: SATHI_LIMIT_PER_IP
-        value: "60"              # questions to Sathi per hour
       - key: NVIDIA_API_KEY
         sync: false
       - key: NVIDIA_MODEL
@@ -78,5 +52,72 @@ services:
         sync: false
       - key: AGENTROUTER_MODEL
         sync: false
+      # abuse limits per client IP (defaults shown); photo reading spends AI credits
+      - key: SCAN_LIMIT_PER_IP
+        value: "10"              # scans per hour
+      - key: SCAN_LIMIT_GLOBAL
+        value: "200"             # scans per day, all visitors together
+      - key: PATIENT_LIMIT_PER_IP
+        value: "5"               # new households per hour
+      - key: WRITE_LIMIT_PER_IP
+        value: "120"             # item, check and BP writes per hour
+      - key: SATHI_LIMIT_PER_IP
+        value: "60"              # questions to Sathi per hour
+
+services:
+  - type: web
+    name: oushodhsathi-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    region: singapore        # closest Render region to Bangladesh
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - fromGroup: oushodhsathi-ai
+      - key: DEMO_MODE
+        value: "false"
+      - key: ADMIN_TOKEN       # /admin: reviewer invites, lost family links; keep it private
+        generateValue: true
+      - key: VISION_PROVIDERS  # photos (prescription headers carry names) only go here
+        value: nvidia
+      - key: DATABASE_URL
+        sync: false              # postgresql://oushodh_app.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres?sslmode=require
+      - key: CORS_ORIGINS
+        sync: false              # e.g. https://oushodhsathi.vercel.app
+      - key: PUBLIC_APP_URL
+        sync: false              # e.g. https://oushodhsathi.vercel.app (links in emails and invites)
+      - key: RESEND_API_KEY
+        sync: false              # optional: family emails
+      - key: NOTIFY_FROM
+        sync: false
       - key: N8N_ALERT_WEBHOOK
+        sync: false
+
+  - type: web
+    name: oushodhsathi-demo-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    region: singapore
+    buildCommand: pip install -r requirements.txt
+    # seed the invented demo household when the database is empty, then serve
+    startCommand: python scripts/seed_demo.py --if-empty && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - fromGroup: oushodhsathi-ai
+      - key: DEMO_MODE
+        value: "true"
+      - key: REVIEWER_TOKEN    # the judges' reviewer login; goes in the Judge Access Note
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false              # a SEPARATE database from the pilot
+      - key: CORS_ORIGINS
+        sync: false              # e.g. https://oushodhsathi-demo.vercel.app
+      - key: CORS_ORIGIN_REGEX
+        sync: false              # optional, e.g. ^https://oushodhsathi-.*\.vercel\.app$ for previews
+      - key: PUBLIC_APP_URL
         sync: false

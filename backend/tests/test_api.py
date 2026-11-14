@@ -3,7 +3,7 @@ TOKEN = {"X-Reviewer-Token": "test-token"}
 
 def make_patient(client, age=68):
     """Creates a household and, like the family app, sends its private key from then on."""
-    r = client.post("/patients", json={"name": "Test Patient", "age": age})
+    r = client.post("/patients", json={"name": "Test Patient", "age": age, "consent": True})
     assert r.status_code == 201
     client.headers["X-Family-Key"] = r.json()["family_key"]
     return r.json()["id"]
@@ -122,8 +122,9 @@ def test_family_status_never_exposes_pending_details(client):
     assert "flags" not in s
 
 
-def test_demo_scan_without_keys_returns_demo_household(client):
-    pid = make_patient(client)
+def test_demo_scan_without_keys_returns_demo_household(client, store):
+    from app.demo_seed import seed_demo
+    pid = seed_demo(store)["patient_id"]
     photo = ("photos", ("shelf.jpg", b"not-really-a-jpeg", "image/jpeg"))
     r = client.post(f"/patients/{pid}/scan", files=[photo])
     assert r.status_code == 200

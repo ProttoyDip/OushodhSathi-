@@ -3,7 +3,8 @@
 > How to use this file
 > 1. Put this file in the root of an empty project folder and open the folder in Claude Code.
 > 2. Paste **PROMPT 0** into Claude Code. When it finishes, paste the next one.
->    Order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → **6B (Sathi)** → 8 → 9 → 10, then 7 if time allows.
+>    Order: 0 → 1 → 2 → 3 → 4 → 5 → 6 → **6B (Sathi)** → **6C (AI assist)** → **6D parts 1–3** → 8 → 9 → 10, then 7 if time allows.
+>    Also read the **WIN PLAN** section: the non-code work that decides scores.
 > 3. Each prompt is self-contained. If a session gets long, start a new one and say:
 >    "Read BUILD_PLAN.md, AGENTS.md and DESIGN.md, then do PROMPT N."
 > 4. Deadline is tight. Prompts marked **[MUST]** are needed for the demo video.
@@ -669,6 +670,185 @@ SAFETY RULES (add a "Sathi" section to AGENTS.md with these):
          pharmacist → reviewer replies → reply appears for the family
    Show the real eval numbers on scene 04 of the video scenes. Commit.
 ```
+
+---
+
+## PROMPT 6C — AI assist for reviewers + BP photo reading + passport upgrade [MUST]
+
+Why: judges will ask "who pays for doctor time?" and "where does BP data come from?".
+This phase answers both, and upgrades the passport to match published evidence on
+patient-held medication lists (include what each medicine is for, allergies, and
+emergency access without a password).
+
+```
+Read AGENTS.md and DESIGN.md. Use the frontend-design skill for UI.
+
+1. REVIEWER CASE SUMMARY (AI assists, human decides)
+   - backend/app/prompts/case_summary.v1.md (versioned): input = the patient's age,
+     confirmed medicines (brand, generic, class, prescriber, source) and the rule
+     findings. Output JSON: {"summary": 3 short English lines of FACTS only,
+     "prescribers": [{name, medicines}], "questions_to_check": up to 3 neutral
+     questions for the reviewer}. Forbidden: recommendations, "should", doses,
+     diagnoses. Post-check: every medicine and prescriber named must exist in the
+     input; else drop the summary and show the evidence only.
+   - In the reviewer dashboard, show it in a panel labelled
+     "AI summary — check the evidence" ABOVE the photos, collapsed by default after a
+     reviewer's first 10 reviews (reduces automation bias). The confirm button is
+     never inside the AI panel.
+   - Log review time per flag (opened → decided) to the DB. Show median review time
+     on /docs. This is our unit-economics evidence.
+2. BP MACHINE PHOTO READING
+   - backend/app/prompts/read_bp.v1.md (versioned, vision model): returns
+     {"systolic": int|null, "diastolic": int|null, "pulse": int|null,
+      "confidence": 0-1}. Reject impossible values (systolic 60–260, diastolic 30–160,
+     diastolic < systolic). Below 0.8 confidence → ask the user to confirm/correct.
+   - Family app: "BP লিখুন" screen with "ছবি তুলুন" (take photo) or manual entry.
+     Readings feed the BPTrend chart. No medical interpretation beyond showing the
+     140/90 reference line and "share with your doctor".
+   - Add 20 labelled BP-monitor photos to eval/ and report accuracy.
+3. PASSPORT UPGRADE
+   - Each medicine shows: generic (large), brand (small), strength, when to take it
+     (from the doctor-approved schedule), and "কিসের জন্য" (what it's for), written
+     by the reviewing pharmacist, never by AI.
+   - Allergies field (entered by family, confirmed by pharmacist).
+   - Prescribers listed, and "last reviewed by <role> on <date>".
+   - Emergency view: the QR opens a read-only, no-login page with medicines,
+     allergies and an emergency contact, behind an unguessable token the family can
+     revoke. No name beyond first name, no address.
+   - Print stays excellent in black and white on A5.
+4. FHIR EXPORT (global-readiness, small)
+   - GET /patients/{id}/fhir returns a FHIR R4 Bundle with Patient (no identifiers
+     beyond an internal id) and one MedicationStatement per confirmed medicine.
+     Validate the JSON shape with a test. Mention on /docs and README that this
+     prepares integration with Bangladesh's Shared Health Record / health ID plans.
+5. Tests + Design QA loop on every new screen. Commit.
+```
+
+---
+
+## PROMPT 6D — Made for real Bangladeshi families [MUST: parts 1–3 · LATER: parts 4–6]
+
+Why: most older Bangladeshi women cannot read (UNESCO GRALE 4 reported literacy of
+about 12–24% among women over 60), families pay most health costs out of pocket
+(68.5% of health spending in 2020, over 64% of it on medicines), care is shared
+between siblings, and most adults with diabetes intend to fast in Ramadan.
+
+```
+Read AGENTS.md and DESIGN.md. Use the frontend-design skill and an accessibility
+review for every screen. Same safety rules as always: AI never decides; anything
+that changes what a patient takes is decided by the pharmacist or doctor.
+
+PART 1 — Picture + voice schedule (for parents who can't read)  [MUST]
+- "আজকের ওষুধ" (Today's medicines) screen and passport section designed to work
+  WITHOUT reading: time of day as large icons (sunrise = সকাল, sun = দুপুর,
+  moon = রাত), with the photo of each actual strip next to it (cropped from the
+  confirmed scan) and the number of tablets drawn as tablet shapes, not digits only.
+- A "শুনুন" (Listen) button reads the whole schedule in Bangla
+  (speechSynthesis; if no Bangla voice, play pre-recorded audio clips we ship for
+  the fixed phrases). Optional: the child records the schedule in their own voice
+  once; it plays back for the parent.
+- Printable "fridge sheet" version (A4, black and white, big icons).
+- The schedule comes only from the doctor/pharmacist-approved plan.
+
+PART 2 — Doctor visit prep  [MUST]
+- "ডাক্তারের কাছে যাওয়ার আগে" (Before the doctor visit) page, printable and
+  shareable: current medicines, what changed since the last visit and who changed
+  it, confirmed findings and the pharmacist's notes, BP readings for the last 2–4
+  weeks, and the family's own questions (typed or spoken; Sathi can help phrase a
+  question but never answers it).
+- After the visit, one tap: "Scan the new prescription" → goes back into the
+  normal scan → confirm → review loop.
+
+PART 3 — Leftover & expired medicine clean-up  [MUST]
+- A list of strips to set aside: expired, and medicines the reviewer marked as
+  stopped or duplicate, each with its photo, so nobody takes them by mistake.
+- Simple Bangla guidance on keeping them separate and asking the pharmacist how to
+  dispose of them. Marking an item "set aside" removes it from Today's medicines.
+
+PART 4 — Same medicine, lower price  [LATER]
+- For each confirmed medicine, show other brands of the SAME generic, SAME
+  strength and SAME form with their MRP (price data from a licensed or verified
+  source, with the date it was checked). Label: "আপনার ফার্মাসিস্ট বা ডাক্তারকে
+  জিজ্ঞেস করুন" (ask your pharmacist or doctor). The app never switches a brand;
+  a switch only happens if the reviewer approves it. Show yearly savings computed
+  from the approved schedule.
+
+PART 5 — Family circle  [LATER]
+- Invite siblings by link (no passwords for the parent). Roles: owner (pays),
+  family member (can scan and view confirmed results), parent (simple view).
+- Shared activity log ("Nusrat scanned 3 medicines", "Pharmacist confirmed 2
+  findings") so siblings stop calling each other to ask what happened.
+- Each person chooses Bangla or English and their own notifications.
+
+PART 6 — Ramadan mode  [LATER — before Ramadan 2027, around February]
+- The family asks for a Ramadan schedule; the request goes to the pharmacist/doctor,
+  who approves a Sehri/Iftar-based schedule. Only an APPROVED plan changes Today's
+  medicines. Times follow the user's district.
+- Fixed safety card (no AI): signs of low sugar or dehydration, "break the fast and
+  contact the doctor if…", written and checked by the clinician on the team.
+- Sathi redirects every "can I take X while fasting?" question to the pharmacist.
+
+Tests for every rule (set-aside items leave the schedule; Ramadan schedule never
+applies without approval; price list only shows identical generic/strength/form).
+Design QA loop on every screen at 360×740 and 390×844, light + dark. Commit.
+```
+
+---
+
+## WIN PLAN — what to do OUTSIDE the code (as important as the code)
+
+These come straight from the Congress rules and published evidence. Most cost hours,
+not days.
+
+**Before Oct 31 (preliminary)**
+1. **Add a domain expert and a business lead to the official team.** The Congress FAQ
+   recommends 1 product lead, 2–3 builders, 1 domain expert and 1 growth/business lead,
+   and says teams that skip the domain or business roles consistently score lower.
+   A pharmacy or medical student (or graduate) counts as the domain expert.
+2. **Recruit a real NRB mentor** (a Bangladeshi pharmacist or doctor abroad) and give
+   them a real job: review rules.py tables and the safety design, and record a 20-second
+   comment for the video. The NRB Collaboration Award is judged on depth of
+   integration, and listing an NRB name without real involvement is a policy violation.
+3. **Use the platform's mentor thread.** Mentor notes are recorded on the platform and
+   can be made visible to judges; it's free evidence of guidance and iteration.
+4. **Collect the evidence pack:**
+   - 10–15 real home scans reviewed by a pharmacist → the 4 pilot numbers.
+   - 2–3 short consented family testimonials (phone video, face optional).
+   - 1 quote from a doctor or pharmacist on the problem.
+   - 2–3 one-page letters of intent from model pharmacies or doctors ("we would pilot
+     this service"). Execution scoring explicitly rewards real users or design partners.
+5. **Put global evidence in the pitch:** in a UK multicentre study, 37% of older adults
+   had medication-related harm within 8 weeks of hospital discharge, and 52% of those
+   cases were potentially preventable (Parekh et al., 2018).
+6. **Show policy alignment:** Bangladesh's Digital Health Strategy 2023–2027 calls for
+   a digital health ID, interoperability with private platforms, and AI decision support
+   for frontline workers. Our FHIR export and pharmacist tool fit that direction.
+
+**Before Dec 26 (Congress Day)**
+7. **Model-pharmacy pilot (B2B2C).** DGDA inaugurated 274 model pharmacies in 2016–2020,
+   and a 2025 study found they struggle to retain Grade A pharmacists. A paid medication
+   review service gives pharmacies a new revenue line and pharmacists a better role.
+   Pilot with 1–2 pharmacies; measure review minutes and price per review.
+8. **Before/after impact over 6–8 weeks** with pilot families: duplicates removed,
+   flags resolved, passport shown at a visit, BP trend. This is what the Impact Award
+   looks for (actual users, measurable outcomes).
+9. **People's Choice booth:** let visitors scan their own parents' strips (demo mode,
+   no storage) and leave with a printed demo passport. Voting happens on Congress Day.
+10. **Opportunity Connect:** prepare a one-page investor brief; request meetings in the
+    two weeks before Congress Day. Pharmacy-network B2B is investable in Bangladesh
+    (PulseTech raised $3.0M pre-Series A in Dec 2025 serving 12,000+ pharmacies), and
+    PulseTech-style networks are also a possible distribution partner.
+11. **Zero to Launch:** one team member can also enter the individual one-prompt
+    challenge; it's independent of Idea to Unicorn.
+12. **Sponsor awards:** check the event page for sponsor award criteria (AWS and Lovable
+    are technology partners). If eligible, deploying on AWS or building screens with
+    Lovable can make you a candidate — only if you genuinely use them.
+
+**Pitch for both rubrics.** The Congress page shows two rubrics: one weights Innovation,
+Technical, Business, Impact 20% each (+ Scalability/NRB, Presentation 10%); the other
+weights Impact 25%, Technical 25%, AI & Data 20%, Innovation 15%, Execution 15%. Both
+reward the same things: real users, measured impact, sound AI with evaluation and
+guardrails, and a working end-to-end product.
 
 ---
 

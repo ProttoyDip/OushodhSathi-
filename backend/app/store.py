@@ -131,8 +131,8 @@ ADDED_COLUMNS = {
         "ramadan_slots": "TEXT NOT NULL DEFAULT '[]'",  # sehri / iftar, set only by a reviewer
         "prescriber_kind": "TEXT NOT NULL DEFAULT 'unknown'",  # doctor | village_doctor | drug_shop | self | unknown
     },
-    "flags": {"opened_at": "TEXT", "reviewer_id": "{ref}"},  # opened_at: review-time evidence
-    "reviews": {"seconds": "{real}", "reviewer_id": "{ref}"},  # seconds: opened -> decided
+    "flags": {"opened_at": "TEXT", "reviewer_id": "{ref}", "checklist": "TEXT NOT NULL DEFAULT '[]'"},  # opened_at: review-time evidence
+    "reviews": {"seconds": "{real}", "reviewer_id": "{ref}", "checklist": "TEXT NOT NULL DEFAULT '[]'"},  # seconds: opened -> decided
     "bp_readings": {"pulse": "INTEGER", "source": "TEXT"},
 }
 
@@ -377,6 +377,7 @@ class Store:
         d["item_ids"] = json.loads(d["item_ids"])
         d["meta"] = json.loads(d["meta"])
         d["active"] = bool(d["active"])
+        d["checklist"] = json.loads(d.get("checklist") or "[]")
         return StoredFlag(**d)
 
     def sync_flags(self, pid: int, flags: list[Flag]) -> list[StoredFlag]:
@@ -423,12 +424,14 @@ class Store:
     def review_flag(self, flag_id: int, review: ReviewIn, explanation_bn: str | None,
                     seconds: float | None = None, reviewer_id: int | None = None) -> StoredFlag:
         ts = now()
+        checklist = json.dumps(sorted(set(getattr(review, "checklist", []) or [])))
         self._many([
             ("UPDATE flags SET status = ?, reviewer = ?, reviewer_id = ?, note = ?, reviewed_at = ?, "
-             "explanation_bn = ? WHERE id = ?",
-             (review.status, review.reviewer, reviewer_id, review.note, ts, explanation_bn, flag_id)),
-            ("INSERT INTO reviews (flag_id, status, reviewer, reviewer_id, note, created_at, seconds) "
-             "VALUES (?,?,?,?,?,?,?)", (flag_id, review.status, review.reviewer, reviewer_id, review.note, ts, seconds)),
+             "explanation_bn = ?, checklist = ? WHERE id = ?",
+             (review.status, review.reviewer, reviewer_id, review.note, ts, explanation_bn, checklist, flag_id)),
+            ("INSERT INTO reviews (flag_id, status, reviewer, reviewer_id, note, created_at, seconds, checklist) "
+             "VALUES (?,?,?,?,?,?,?,?)",
+             (flag_id, review.status, review.reviewer, reviewer_id, review.note, ts, seconds, checklist)),
         ])
         return self.get_flag(flag_id)  # type: ignore[return-value]
 
@@ -436,7 +439,7 @@ class Store:
         ts = now()
         self._many([
             ("UPDATE flags SET status = 'pending_review', reviewer = NULL, reviewer_id = NULL, note = NULL, "
-             "reviewed_at = NULL, explanation_bn = NULL WHERE id = ?", (flag_id,)),
+             "reviewed_at = NULL, explanation_bn = NULL, checklist = '[]' WHERE id = ?", (flag_id,)),
             ("INSERT INTO reviews (flag_id, status, reviewer, reviewer_id, note, created_at) VALUES (?,?,?,?,?,?)",
              (flag_id, "undone", reviewer, reviewer_id, None, ts)),
         ])

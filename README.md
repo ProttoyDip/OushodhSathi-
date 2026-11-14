@@ -262,6 +262,7 @@ The 2:58 video is planned second by second in [`docs/video/SHOTLIST.md`](docs/vi
 3. Partner pharmacies as scan points for families without a smartphone.
 4. Bangla voice check-ins for blood pressure and doses.
 5. A pilot with families, with results published only once they are real.
+6. Authenticity checks through DGDA or manufacturer verification codes. The app itself will never judge whether a pack is genuine.
 
 ## Team
 

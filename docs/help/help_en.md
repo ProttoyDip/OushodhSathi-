@@ -115,6 +115,14 @@ phrasings: tick a medicine | mark as taken | record a missed dose | how to tick 
 route: {home}/today
 answer: Open "Today's medicines". Under each medicine tap "Taken" or "Not taken". You can change a tick by tapping again, and tick the last 7 days. If a dose was not taken, ask the pharmacist from the same screen.
 
+## pack.check
+
+group: Medicines
+question: How can I check where a medicine pack came from?
+phrasings: is this medicine real | check the pack | how do i know the medicine is genuine | fake medicine
+route: {home}
+answer: Look at the pack: the seal should be unbroken and the printing clear, and the batch number and expiry on the strip should match the box. Buy from a licensed pharmacy. If the pack has a maker's or DGDA verification code, you can check it as the pack explains; a pack without a code is not necessarily fake. If something looks wrong, ask the pharmacist in the app. OushodhSathi does not judge whether a medicine is genuine.
+
 ## review.who
 
 group: Review

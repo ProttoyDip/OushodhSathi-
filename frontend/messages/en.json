@@ -761,7 +761,12 @@
       "panels": "Panels",
       "mode": "What to review",
       "findings": "Findings",
-      "questionsTab": "Questions"
+      "questionsTab": "Questions",
+      "packTitle": "Pack and source (for the record, not shown to the family)",
+      "pack": {
+        "pack_unusual": "Pack looked unusual",
+        "unlicensed_seller": "Bought from an unlicensed seller"
+      }
     },
     "ev": {
       "badge": "{sev} · for the {route}",

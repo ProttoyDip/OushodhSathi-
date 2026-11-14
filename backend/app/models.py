@@ -195,12 +195,19 @@ class StoredFlag(Flag):
     reviewed_at: datetime | None = None
     explanation_bn: str | None = None
     opened_at: datetime | None = None  # first opened by a reviewer
+    checklist: list[str] = []  # reviewer-only pack observations (never shown to the family)
+
+
+# Where-did-it-come-from observations the pharmacist can tick with a review. Neutral notes for the
+# record: the app never says a medicine is fake, and no model judges authenticity.
+PackCheck = Literal["pack_unusual", "unlicensed_seller"]
 
 
 class ReviewIn(BaseModel):
     status: Literal["confirmed", "dismissed"]
     reviewer: str | None = None  # ignored for personal reviewer logins: the server records who it was
     note: str | None = Field(default=None, max_length=2000)
+    checklist: list[PackCheck] = Field(default=[], max_length=2)
 
 
 class ReviewerAccount(BaseModel):

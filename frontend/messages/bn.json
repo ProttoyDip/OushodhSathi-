@@ -761,7 +761,12 @@
       "panels": "প্যানেল",
       "mode": "কী দেখবেন",
       "findings": "ফলাফল",
-      "questionsTab": "প্রশ্ন"
+      "questionsTab": "প্রশ্ন",
+      "packTitle": "প্যাক ও উৎস (রেকর্ডের জন্য, পরিবার দেখে না)",
+      "pack": {
+        "pack_unusual": "প্যাক অস্বাভাবিক লেগেছে",
+        "unlicensed_seller": "লাইসেন্সবিহীন বিক্রেতার কাছ থেকে কেনা"
+      }
     },
     "ev": {
       "badge": "{sev} · {route}-এর জন্য",

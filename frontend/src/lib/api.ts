@@ -141,7 +141,8 @@ export const api = {
   patients: (token: string) => request<Patient[]>("/patients", { token }),
   queue: (token: string, status = "pending_review") => request<ReviewQueue>(`/flags?status=${status}`, { token }),
   reviewerFlags: (token: string, id: number) => request<Flag[]>(`/patients/${id}/flags?view=reviewer`, { token }),
-  review: (token: string, flagId: number, body: { status: "confirmed" | "dismissed"; reviewer: string; note?: string }) =>
+  review: (token: string, flagId: number, body: { status: "confirmed" | "dismissed"; reviewer: string; note?: string;
+    checklist?: ("pack_unusual" | "unlicensed_seller")[] }) =>
     request<Flag>(`/flags/${flagId}/review`, { method: "POST", body: json(body), token }),
   undo: (token: string, flagId: number, reviewer: string) =>
     request<Flag>(`/flags/${flagId}/undo?reviewer=${encodeURIComponent(reviewer)}`, { method: "POST", token }),

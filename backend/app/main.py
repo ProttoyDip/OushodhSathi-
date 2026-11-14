@@ -449,7 +449,8 @@ def list_flags(
         return _with_items(store, store.list_flags(pid))
     flags = store.list_flags(pid, statuses=("confirmed",))
     assert all(f.status == "confirmed" for f in flags)
-    return _with_items(store, flags)
+    # the pharmacist's pack checklist is for the record, never shown to the family
+    return [{k: v for k, v in f.items() if k != "checklist"} for f in _with_items(store, flags)]
 
 
 @app.get("/flags", dependencies=[Depends(require_reviewer)])

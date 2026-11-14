@@ -29,6 +29,8 @@ CODE_BN = {
     "ANTICHOLINERGIC_BURDEN": "মাথা ঘোরা ও পড়ে যাওয়ার ঝুঁকি",
     "LOOK_ALIKE_NAMES": "নাম প্রায় একই, ওষুধ আলাদা",
     "TRIPLE_WHAMMY": "তিনটি ওষুধ একসাথে কিডনির ঝুঁকি",
+    "KIDNEY_DOSE": "কিডনির কার্যক্ষমতা অনুযায়ী দেখা দরকার",
+    "KIDNEY_TEST_DUE": "কিডনির পরীক্ষার সময় হয়েছে",
 }
 CODE_EN = {
     "DUPLICATE_GENERIC": "Same medicine twice",
@@ -39,6 +41,8 @@ CODE_EN = {
     "ANTICHOLINERGIC_BURDEN": "Risk of confusion and falls",
     "LOOK_ALIKE_NAMES": "Similar names, different medicines",
     "TRIPLE_WHAMMY": "Three medicines together: kidney risk",
+    "KIDNEY_DOSE": "Needs a look at the kidney test result",
+    "KIDNEY_TEST_DUE": "Kidney test due",
 }
 FOOTER = (
     "\n\n—\nওষুধসাথী কখনো কোনো ওষুধ বন্ধ বা পরিবর্তন করতে বলে না। ডাক্তারের সাথে কথা না বলে কোনো ওষুধ বন্ধ করবেন না।\n"

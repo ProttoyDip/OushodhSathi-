@@ -13,8 +13,9 @@ from itertools import combinations
 
 from rapidfuzz.distance import JaroWinkler
 
+from .kidney import KidneyContext, kdigo_stage
 from .models import Flag, RuleItem
-from .tables import BeersRow, InteractionRow, RuleTables
+from .tables import BeersRow, InteractionRow, RenalRow, RuleTables
 
 EXPIRY_WARNING_DAYS = 30
 BEERS_AGE = 65
@@ -349,11 +350,74 @@ def triple_whammy(items: list[RuleItem], groups: dict[str, frozenset[str]]) -> l
     )]
 
 
+KIDNEY_TEST_MAX_DAYS = 365
+# FDA Drug Safety Communication, 8 Apr 2016 (metformin): "obtain an eGFR at least annually":
+# https://www.fda.gov/drugs/drug-safety-and-availability/fda-drug-safety-communication-fda-revises-warnings-regarding-use-diabetes-medicine-metformin-certain
+KIDNEY_TEST_DUE_GENERICS = ("metformin",)
+KIDNEY_TEST_SOURCE = "FDA Drug Safety Communication on metformin, 8 Apr 2016 (eGFR at least annually)"
+
+
+def kidney_dose(items: list[RuleItem], kidney: KidneyContext | None, table: tuple[RenalRow, ...]) -> list[Flag]:
+    """A medicine that needs care at the household's latest eGFR (renal_seed.csv).
+    One flag per (generic, band); when several bands match, the lowest threshold wins."""
+    if kidney is None or kidney.egfr is None or not table:
+        return []
+    egfr = kidney.egfr
+    hits: dict[str, tuple[RenalRow, list[RuleItem]]] = {}
+    for it in items:
+        for generic, cls in _components(it):
+            for row in table:
+                if _hits(row.target, generic, cls) and egfr < row.egfr_below:
+                    current = hits.get(generic)
+                    if current is None or row.egfr_below < current[0].egfr_below:
+                        hits[generic] = (row, current[1] if current else [])
+                    if it not in hits[generic][1]:
+                        hits[generic][1].append(it)
+    flags = []
+    when = kidney.taken_on.isoformat() if kidney.taken_on else "unknown date"
+    for generic, (row, group) in sorted(hits.items()):
+        flags.append(Flag(
+            key=_key("KIDNEY_DOSE", generic, f"{row.egfr_below:g}"),
+            code="KIDNEY_DOSE", severity=row.severity, routed_to=row.routed_to,
+            item_ids=sorted(it.id for it in group),
+            evidence=(f"{' and '.join(_label(it) for it in group)} ({generic}): eGFR {egfr:.0f} mL/min/1.73 m² "
+                      f"({kdigo_stage(egfr)}, creatinine test of {when}) is below {row.egfr_below:g}. {row.note}"),
+            data_source=row.source,
+            meta={"egfr": round(egfr, 1), "stage": kdigo_stage(egfr), "taken_on": when,
+                  "threshold": row.egfr_below, "generic": generic, "note_bn": row.note_bn},
+        ))
+    return flags
+
+
+def kidney_test_due(items: list[RuleItem], kidney: KidneyContext | None, today: date) -> list[Flag]:
+    """Metformin in the house and no kidney test in the last year (or never)."""
+    if kidney is None:
+        return []
+    group = [it for it in items if any(g in KIDNEY_TEST_DUE_GENERICS for g in _generics(it))]
+    if not group:
+        return []
+    if kidney.taken_on is not None and (today - kidney.taken_on).days <= KIDNEY_TEST_MAX_DAYS:
+        return []
+    last = f"the last kidney test was on {kidney.taken_on.isoformat()}" if kidney.taken_on else "no kidney test is recorded"
+    generics = sorted({g for it in group for g in _generics(it) if g in KIDNEY_TEST_DUE_GENERICS})
+    return [Flag(
+        key=_key("KIDNEY_TEST_DUE", *generics),
+        code="KIDNEY_TEST_DUE", severity="amber", routed_to="pharmacist",
+        item_ids=sorted(it.id for it in group),
+        evidence=(f"{' and '.join(_label(it) for it in group)} ({', '.join(generics)}): {last}. "
+                  "Kidney function (eGFR) should be checked at least once a year."),
+        data_source=KIDNEY_TEST_SOURCE,
+        meta={"last_test": kidney.taken_on.isoformat() if kidney.taken_on else None, "generics": generics},
+    )]
+
+
 SEVERITY_ORDER = {"red": 0, "amber": 1}
 
 
-def run_rules(items: list[RuleItem], age: int | None, tables: RuleTables, today: date) -> list[Flag]:
-    """Run every rule on the confirmed items. Red first, then by code."""
+def run_rules(items: list[RuleItem], age: int | None, tables: RuleTables, today: date,
+              kidney: KidneyContext | None = None) -> list[Flag]:
+    """Run every rule on the confirmed items. Red first, then by code.
+    kidney: the household's latest kidney test; None skips the kidney rules (unknown context)."""
     flags = (
         duplicate_generic(items)
         + therapeutic_duplication(items, tables.duplicate_classes)
@@ -363,6 +427,8 @@ def run_rules(items: list[RuleItem], age: int | None, tables: RuleTables, today:
         + anticholinergic_burden(items, age, tables.acb)
         + look_alike_names(items)
         + triple_whammy(items, tables.class_groups)
+        + kidney_dose(items, kidney, tables.renal)
+        + kidney_test_due(items, kidney, today)
     )
     unique = {f.key: f for f in flags}  # belt and braces: never two flags with one key
     return sorted(unique.values(), key=lambda f: (SEVERITY_ORDER[f.severity], f.code, f.item_ids))

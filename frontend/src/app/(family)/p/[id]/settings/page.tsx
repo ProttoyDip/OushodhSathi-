@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Download, KeyRound, Mail, Trash2 } from "lucide-react";
+import { Check, Download, KeyRound, Mail, Trash2, UserRound } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
@@ -35,6 +35,7 @@ export default function SettingsPage() {
         ) : (
           <div className="mt-6 grid max-w-[640px] gap-6">
             <EmailCard pid={pid} email={patient.data.family_email ?? ""} optIn={!!patient.data.email_opt_in} />
+            <SexCard pid={pid} sex={patient.data.sex ?? null} />
             <LinkCard pid={pid} />
             <ExportCard pid={pid} />
             <DeleteCard pid={pid} />
@@ -88,6 +89,40 @@ function EmailCard({ pid, email: initial, optIn: initialOptIn }: { pid: number; 
       <button type="button" disabled={!ok || state === "busy"} onClick={save} className={buttonStyles.secondary}>
         {state === "saved" ? <><Check aria-hidden size={18} /> {t("saved")}</> : t("save")}
       </button>
+      {state === "error" && <p role="alert" className="text-red">{t("error")}</p>}
+    </Card>
+  );
+}
+
+/** Sex is used only to work out kidney function (eGFR) from a blood test. Optional. */
+function SexCard({ pid, sex: initial }: { pid: number; sex: "female" | "male" | null }) {
+  const t = useTranslations("settings.sex");
+  const [sex, setSex] = useState(initial);
+  const [state, setState] = useState<"idle" | "saved" | "error">("idle");
+
+  async function choose(value: "female" | "male") {
+    setSex(value);
+    try {
+      await api.patchPatient(pid, { sex: value });
+      setState("saved");
+    } catch {
+      setState("error");
+    }
+  }
+
+  return (
+    <Card Icon={UserRound} title={t("title")}>
+      <p>{t("body")}</p>
+      <div role="radiogroup" aria-label={t("title")} className="grid grid-cols-2 gap-3">
+        {(["female", "male"] as const).map((v) => (
+          <button key={v} type="button" role="radio" aria-checked={sex === v} onClick={() => choose(v)}
+            className={cx("press inline-flex min-h-12 items-center justify-center gap-2 rounded-card border px-4 text-base font-semibold",
+              sex === v ? "border-neel bg-neel-tint text-neel" : "border-rule-strong text-ink-soft hover:bg-paper-sunk")}>
+            {sex === v && <Check aria-hidden size={18} />} {t(v)}
+          </button>
+        ))}
+      </div>
+      {state === "saved" && <p className="text-green" aria-live="polite">{t("saved")}</p>}
       {state === "error" && <p role="alert" className="text-red">{t("error")}</p>}
     </Card>
   );

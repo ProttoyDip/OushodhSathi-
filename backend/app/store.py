@@ -22,7 +22,7 @@ from .models import (
 
 DEFAULT_DB = Path(__file__).resolve().parent.parent / "oushodh.db"
 
-TABLES = ("notifications", "reviewers", "activity", "sathi_events", "questions", "bp_readings", "reviews", "flags", "items", "cache", "patients")
+TABLES = ("kidney_tests", "notifications", "reviewers", "activity", "sathi_events", "questions", "bp_readings", "reviews", "flags", "items", "cache", "patients")
 
 # {id}: auto-increment key, {ref}: foreign key column, {real}: floating point
 SCHEMA = """
@@ -77,6 +77,10 @@ CREATE TABLE IF NOT EXISTS reviewers (
   id {id}, name TEXT NOT NULL, role TEXT NOT NULL, reg_no TEXT,
   token_hash TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL, revoked_at TEXT
 );
+CREATE TABLE IF NOT EXISTS kidney_tests (
+  id {id}, patient_id {ref} NOT NULL REFERENCES patients(id), taken_on TEXT NOT NULL,
+  creatinine_mg_dl {real} NOT NULL, entered_by TEXT, source TEXT NOT NULL, created_at TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS notifications (
   id {id}, patient_id {ref} NOT NULL, kind TEXT NOT NULL, period TEXT NOT NULL, sent_at TEXT NOT NULL,
   UNIQUE (patient_id, kind, period)
@@ -107,6 +111,7 @@ ADDED_COLUMNS = {
         "consent_at": "TEXT",              # the family accepted the privacy notice at /start
         "consent_version": "TEXT",
         "key_rotated_at": "TEXT",
+        "sex": "TEXT",                     # female | male, for eGFR; optional
     },
     "items": {
         "purpose": "TEXT",                # what it is for, written by the reviewing pharmacist
@@ -459,6 +464,20 @@ class Store:
         rows = self._all(sql + " ORDER BY taken_on DESC, id DESC LIMIT ?", (*args, limit))
         return list(reversed(rows))
 
+    # ---- kidney tests: creatinine only; eGFR is computed on read (app/kidney.py) --
+    def add_kidney_test(self, pid: int, taken_on: str, creatinine_mg_dl: float, entered_by: str | None,
+                        source: str) -> dict:
+        kid = self._insert("INSERT INTO kidney_tests (patient_id, taken_on, creatinine_mg_dl, entered_by, source, "
+                           "created_at) VALUES (?,?,?,?,?,?)", (pid, taken_on, creatinine_mg_dl, entered_by, source, now()))
+        return self._all("SELECT * FROM kidney_tests WHERE id = ?", (kid,))[0]
+
+    def list_kidney_tests(self, pid: int) -> list[dict]:
+        return self._all("SELECT * FROM kidney_tests WHERE patient_id = ? ORDER BY taken_on DESC, id DESC", (pid,))
+
+    def latest_kidney_test(self, pid: int) -> dict | None:
+        rows = self.list_kidney_tests(pid)
+        return rows[0] if rows else None
+
     # ---- questions to the pharmacist -----------------------------------
     def add_question(self, pid: int, text: str) -> dict:
         qid = self._insert("INSERT INTO questions (patient_id, text, created_at) VALUES (?,?,?)", (pid, text, now()))
@@ -504,6 +523,7 @@ class Store:
             ("DELETE FROM questions WHERE patient_id = ?", (pid,)),
             ("DELETE FROM sathi_events WHERE patient_id = ?", (pid,)),
             ("DELETE FROM activity WHERE patient_id = ?", (pid,)),
+            ("DELETE FROM kidney_tests WHERE patient_id = ?", (pid,)),
             ("UPDATE patients SET last_checked_at = NULL, results_seen_at = NULL, passport_seen_at = NULL, "
              "visit_questions = '[]', last_visit_at = NULL, ramadan_status = NULL, ramadan_requested_at = NULL, "
              "ramadan_note = NULL, ramadan_approved_by = NULL, ramadan_approved_at = NULL WHERE id = ?", (pid,)),

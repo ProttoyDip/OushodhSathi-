@@ -1,7 +1,7 @@
 import type {
   AuditEntry, BPPhotoReading, BPTrend, CaseSummary, CleanupItem, EmergencyPage, EvalResult, FamilyStatus, Flag, Health, MedicineItem,
   ActivityEntry, ModelsInfo, NextStep, Passport, Patient, PilotStats, Question, RamadanRequest, Report, ReviewQueue,
-  ReviewerAccount, ReviewerInvite, SathiReply, Savings, Today, VisitPrep,
+  KidneyView, ReviewerAccount, ReviewerInvite, SathiReply, Savings, Today, VisitPrep,
 } from "./types";
 import { familyKey } from "./familyKey";
 
@@ -97,7 +97,7 @@ export const api = {
   seen: (id: number, what: "results" | "passport") =>
     request<void>(`/patients/${id}/seen`, { method: "POST", body: json({ what }), pid: id }),
   patchPatient: (id: number, body: { allergies?: string[]; emergency_contact_name?: string | null;
-    emergency_contact_phone?: string | null; visit_questions?: string[]; family_email?: string | null; email_opt_in?: boolean }) =>
+    emergency_contact_phone?: string | null; visit_questions?: string[]; family_email?: string | null; email_opt_in?: boolean; sex?: "female" | "male" | null }) =>
     request<Patient>(`/patients/${id}`, { method: "PATCH", body: json(body), pid: id }),
   emergencyToken: (id: number) => request<{ token: string | null }>(`/patients/${id}/emergency`, { pid: id }),
   enableEmergency: (id: number) => request<{ token: string }>(`/patients/${id}/emergency`, { method: "POST", pid: id }),
@@ -138,6 +138,9 @@ export const api = {
     request<{ questions: Question[]; open: number }>(`/questions?status=${status}`, { token }),
   reply: (token: string, qid: number, reply: string, reviewer: string) =>
     request<Question>(`/questions/${qid}/reply`, { method: "POST", body: json({ reply, reviewer }), token }),
+  kidney: (token: string, id: number) => request<KidneyView>(`/patients/${id}/kidney`, { token }),
+  addKidneyTest: (token: string, id: number, body: { creatinine: number; unit: "mg/dL" | "umol/L"; taken_on: string; source: "reviewer" | "lab_report" }) =>
+    request<KidneyView>(`/patients/${id}/kidney-tests`, { method: "POST", body: json(body), token }),
   bpTrend: (token: string, id: number) => request<BPTrend>(`/patients/${id}/bp-trend`, { token }),
   caseSummary: (token: string, id: number, reviewer: string) =>
     request<CaseSummary>(`/patients/${id}/case-summary?reviewer=${encodeURIComponent(reviewer)}`, { token }),

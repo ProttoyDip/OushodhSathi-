@@ -14,6 +14,7 @@ FlagStatus = Literal["pending_review", "confirmed", "dismissed"]
 FlagCode = Literal[
     "DUPLICATE_GENERIC", "THERAPEUTIC_DUPLICATION", "INTERACTION", "BEERS_65", "EXPIRED",
     "ANTICHOLINERGIC_BURDEN", "LOOK_ALIKE_NAMES", "TRIPLE_WHAMMY",
+    "KIDNEY_DOSE", "KIDNEY_TEST_DUE",
 ]
 MatchMethod = Literal["exact", "fuzzy", "web_unverified", "not_found", "manual"]
 
@@ -61,6 +62,7 @@ class Patient(PatientIn):
     email_opt_in: bool = False
     consent_at: datetime | None = None
     consent_version: str | None = None
+    sex: Literal["female", "male"] | None = None  # needed for eGFR (CKD-EPI 2021); optional
 
 
 class PatientPatch(BaseModel):
@@ -72,6 +74,7 @@ class PatientPatch(BaseModel):
     visit_questions: list[str] | None = Field(default=None, max_length=20)
     family_email: str | None = Field(default=None, max_length=254, pattern=EMAIL_PATTERN)
     email_opt_in: bool | None = None
+    sex: Literal["female", "male"] | None = None
 
 
 class MedicineItemIn(BaseModel):

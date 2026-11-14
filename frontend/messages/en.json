@@ -33,7 +33,9 @@
     "EXPIRED": "Expired",
     "ANTICHOLINERGIC_BURDEN": "Risk of confusion and falls",
     "LOOK_ALIKE_NAMES": "Similar names, different medicines",
-    "TRIPLE_WHAMMY": "Three medicines together can strain the kidneys"
+    "TRIPLE_WHAMMY": "Three medicines together can strain the kidneys",
+    "KIDNEY_DOSE": "Needs a look because of the kidney test",
+    "KIDNEY_TEST_DUE": "A kidney blood test is due"
   },
   "strip": {
     "expiry": "Exp",
@@ -795,7 +797,9 @@
       "EXPIRED": "Expired or expiring strip",
       "ANTICHOLINERGIC_BURDEN": "Anticholinergic burden (ACB ≥ 3)",
       "LOOK_ALIKE_NAMES": "Look-alike / sound-alike names",
-      "TRIPLE_WHAMMY": "Triple whammy (ACEi/ARB + diuretic + NSAID)"
+      "TRIPLE_WHAMMY": "Triple whammy (ACEi/ARB + diuretic + NSAID)",
+      "KIDNEY_DOSE": "Kidney dose (eGFR below threshold)",
+      "KIDNEY_TEST_DUE": "Kidney test due (metformin, no eGFR in 12 months)"
     },
     "questions": {
       "title": "Questions from families",
@@ -872,6 +876,21 @@
       "flat": "No clear change in systolic ({v} per week, 95% CI {lo} to {hi}).",
       "above": "{k} of {n} readings at or above {s}/{d}. Average {ms}/{md}.",
       "caveat": "Straight-line fit, arithmetic only. Home readings vary; check the readings themselves."
+    },
+    "kidney": {
+      "title": "Kidney function",
+      "none": "No creatinine result yet.",
+      "egfr": "eGFR {egfr} mL/min/1.73 m² ({stage}) from creatinine {cr} mg/dL.",
+      "noEgfr": "Creatinine {cr} mg/dL. eGFR needs the patient's sex (Settings).",
+      "taken": "Test of {date}.",
+      "needsSex": "Sex not recorded: eGFR cannot be calculated.",
+      "creatinine": "Creatinine",
+      "unit": "Unit",
+      "date": "Test date",
+      "save": "Add result",
+      "invalid": "Check the value and unit (0.2 to 20 mg/dL).",
+      "error": "Could not save. Try again.",
+      "caveat": "CKD-EPI 2021 (race-free), arithmetic only. Kidney findings appear in the queue as pending."
     }
   },
   "start": {
@@ -1140,6 +1159,14 @@
       "word": "DELETE",
       "button": "Delete everything",
       "error": "Could not delete. Try again."
+    },
+    "sex": {
+      "title": "Sex",
+      "body": "Used only to work out kidney function from a blood test result. You can leave it empty.",
+      "female": "Female",
+      "male": "Male",
+      "saved": "Saved",
+      "error": "Could not save. Try again."
     }
   },
   "admin": {

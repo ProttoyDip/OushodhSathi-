@@ -1,0 +1,3 @@
+target,egfr_below,severity,routed_to,note,note_bn,source
+metformin,30,red,doctor,"Contraindicated below eGFR 30.","কিডনির কার্যক্ষমতা অনেক কম থাকলে এই ওষুধটি নিয়ে ডাক্তারের সিদ্ধান্ত দরকার।","FDA Drug Safety Communication, 8 Apr 2016: https://www.fda.gov/drugs/drug-safety-and-availability/fda-drug-safety-communication-fda-revises-warnings-regarding-use-diabetes-medicine-metformin-certain"
+metformin,45,amber,pharmacist,"Below 45: weigh benefits and risks of continuing.","কিডনির কার্যক্ষমতা কিছুটা কম থাকলে এই ওষুধটি নিয়ে ফার্মাসিস্ট বা ডাক্তারের দেখা দরকার।","FDA Drug Safety Communication, 8 Apr 2016: https://www.fda.gov/drugs/drug-safety-and-availability/fda-drug-safety-communication-fda-revises-warnings-regarding-use-diabetes-medicine-metformin-certain"

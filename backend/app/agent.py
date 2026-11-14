@@ -153,7 +153,8 @@ def build_agent(model) -> Agent[ShelfDeps, Extraction]:
         for i, b in enumerate(brands):
             m = _match_brand(b)
             items.append(RuleItem(id=i, brand=b, generic=m.generic, drug_class=m.drug_class))
-        flags = run_rules(items, ctx.deps.age, load_rule_tables(), date.today())
+        # a preview has no kidney test to go on: kidney rules are skipped (None), never guessed
+        flags = run_rules(items, ctx.deps.age, load_rule_tables(), date.today(), kidney=None)
         return [{"code": f.code, "severity": f.severity, "brands": [brands[i] for i in f.item_ids]} for f in flags]
 
     return agent

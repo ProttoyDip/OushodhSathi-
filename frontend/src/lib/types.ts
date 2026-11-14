@@ -8,7 +8,9 @@ export type FlagCode =
   | "EXPIRED"
   | "ANTICHOLINERGIC_BURDEN"
   | "LOOK_ALIKE_NAMES"
-  | "TRIPLE_WHAMMY";
+  | "TRIPLE_WHAMMY"
+  | "KIDNEY_DOSE"
+  | "KIDNEY_TEST_DUE";
 export type MatchMethod = "exact" | "fuzzy" | "web_unverified" | "not_found" | "manual";
 
 export interface Patient {
@@ -31,6 +33,7 @@ export interface Patient {
   family_email?: string | null;
   email_opt_in?: boolean;
   consent_at?: string | null;
+  sex?: "female" | "male" | null;
 }
 
 /** A pharmacist or doctor with a personal, revocable login (is_demo: the shared demo token). */
@@ -407,4 +410,17 @@ export interface RamadanRequest {
   patient: { id: number; name: string; name_bn: string | null; age: number; conditions: string[]; is_demo: boolean };
   requested_at: string;
   items: { id: number; brand: string; generic: string | null; strength: string | null; schedule: Slot[]; per_dose: number }[];
+}
+
+/** Reviewer only: the latest creatinine and its eGFR (CKD-EPI 2021, computed by the backend). */
+export interface KidneyView {
+  sex: "female" | "male" | null;
+  age: number;
+  latest: {
+    taken_on: string; creatinine_mg_dl: number; source: "reviewer" | "lab_report"; entered_by: string | null;
+    egfr: number | null; stage: string | null;
+  } | null;
+  needs_sex: boolean;
+  tests: number;
+  equation: string;
 }

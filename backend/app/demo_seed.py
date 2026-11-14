@@ -15,11 +15,15 @@ the same every time. Safety flags still come only from rules.py.
 from __future__ import annotations
 
 import secrets
-from datetime import date
+from datetime import date, timedelta
 from typing import Literal
 
 from .agent import resolve_brand
-from .demo import DEMO_ALLERGIES, DEMO_BP, DEMO_CONTACT, DEMO_ITEMS, DEMO_NOTES, DEMO_PATIENT, DEMO_PURPOSE, demo_bp_dates
+from .demo import (
+    DEMO_ALLERGIES, DEMO_BP, DEMO_CONTACT, DEMO_CREATININE_MG_DL, DEMO_ITEMS, DEMO_KIDNEY_DAYS_AGO, DEMO_NOTES,
+    DEMO_PATIENT, DEMO_PURPOSE, DEMO_SEX, demo_bp_dates,
+)
+from .kidney import context_from
 from .explain import template
 from .models import ReviewIn, RuleItem
 from .rules import run_rules
@@ -63,7 +67,9 @@ def seed_demo(store: Store, mode: Mode = "judge") -> dict:
                           schedule_approved_by=DEMO_REVIEWER, schedule_approved_at=ts)
     store.update_patient(pid, allergies=DEMO_ALLERGIES, allergies_confirmed_by=DEMO_REVIEWER,
                          allergies_confirmed_at=ts, emergency_contact_name=DEMO_CONTACT[0],
-                         emergency_contact_phone=DEMO_CONTACT[1])
+                         emergency_contact_phone=DEMO_CONTACT[1], sex=DEMO_SEX)
+    kidney_day = (date.today() - timedelta(days=DEMO_KIDNEY_DAYS_AGO)).isoformat()
+    store.add_kidney_test(pid, kidney_day, DEMO_CREATININE_MG_DL, DEMO_REVIEWER, "lab_report")
     if not store.emergency_token(pid):
         store.update_patient(pid, emergency_token=secrets.token_urlsafe(18))
 
@@ -72,7 +78,8 @@ def seed_demo(store: Store, mode: Mode = "judge") -> dict:
     items = store.list_items(pid, confirmed_only=True)
     by_id = {it.id: it for it in items}
     rule_items = [RuleItem(**it.model_dump(include=set(RuleItem.model_fields))) for it in items]
-    stored = store.sync_flags(pid, run_rules(rule_items, patient.age, load_rule_tables(), date.today()))
+    kidney = context_from(store.latest_kidney_test(pid), patient.age, patient.sex)
+    stored = store.sync_flags(pid, run_rules(rule_items, patient.age, load_rule_tables(), date.today(), kidney))
     store.mark_checked(pid)
     store.log_activity(pid, "scanned", len(items))
     store.log_activity(pid, "sent_for_review", len(items))

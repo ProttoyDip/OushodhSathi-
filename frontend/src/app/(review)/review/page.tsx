@@ -19,6 +19,7 @@ import { REVIEWER_SESSION, takeInviteFromUrl, type ReviewerSession } from "@/lib
 import { useApi } from "@/lib/useApi";
 import { JudgeBar } from "@/components/JudgeBar";
 import { BPTrendNote } from "@/components/review/BPTrendNote";
+import { KidneyNote } from "@/components/review/KidneyNote";
 import { CaseSummaryPanel } from "@/components/review/CaseSummaryPanel";
 import { ClinicalEditor } from "@/components/review/ClinicalEditor";
 import { QuestionsBoard } from "@/components/review/QuestionsBoard";
@@ -482,6 +483,7 @@ function Evidence({ flag, now, session, children }: { flag: Flag; now: number; s
       </p>
       {flag.patient && <CaseSummaryPanel token={session.token} reviewer={session.name} patientId={flag.patient.id} />}
       {flag.patient && <BPTrendNote token={session.token} patientId={flag.patient.id} />}
+      {flag.patient && <KidneyNote token={session.token} patientId={flag.patient.id} />}
 
       <div className="mt-6">
         {flag.items.length >= 2 ? (

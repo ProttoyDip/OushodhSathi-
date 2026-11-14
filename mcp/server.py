@@ -22,6 +22,7 @@ from pydantic import BaseModel, Field  # noqa: E402
 load_dotenv(Path(__file__).resolve().parent.parent / "backend" / ".env")
 
 from app.brands import match_brand as _match_brand  # noqa: E402
+from app.kidney import KidneyContext  # noqa: E402
 from app.models import RuleItem  # noqa: E402
 from app.research import lookup_unknown_brand as _lookup  # noqa: E402
 from app.rules import run_rules  # noqa: E402
@@ -82,9 +83,12 @@ class MedicineIn(BaseModel):
 
 
 @server.tool(annotations=READ_ONLY)
-def check_medicines(items: list[MedicineIn], age: int | None = None) -> dict:
+def check_medicines(items: list[MedicineIn], age: int | None = None, egfr: float | None = None,
+                   kidney_test_date: str | None = None) -> dict:
     """Run the deterministic safety rules (duplicate generic, same-class duplication,
-    interactions, AGS Beers 65+, expiry) on a medicine list. Read-only: nothing is saved.
+    interactions, AGS Beers 65+, expiry, anticholinergic burden, look-alike names, triple whammy,
+    and kidney dose when egfr / kidney_test_date (YYYY-MM-DD) are given) on a medicine list.
+    Read-only: nothing is saved.
     Every finding still needs a pharmacist or doctor to confirm it."""
     rule_items, unmatched = [], []
     for i, it in enumerate(items, 1):
@@ -93,7 +97,10 @@ def check_medicines(items: list[MedicineIn], age: int | None = None) -> dict:
             unmatched.append(it.brand)
         rule_items.append(RuleItem(id=i, brand=it.brand, generic=m.generic, drug_class=m.drug_class,
                                    strength=it.strength, expiry=it.expiry, prescriber=it.prescriber))
-    flags = run_rules(rule_items, age, load_rule_tables(), date.today())
+    kidney = None
+    if egfr is not None or kidney_test_date:
+        kidney = KidneyContext(egfr=egfr, taken_on=date.fromisoformat(kidney_test_date) if kidney_test_date else None)
+    flags = run_rules(rule_items, age, load_rule_tables(), date.today(), kidney)
     return {
         "findings": [
             {"code": f.code, "severity": f.severity, "routed_to": f.routed_to,

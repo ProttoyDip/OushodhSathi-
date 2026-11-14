@@ -99,6 +99,13 @@ def template(flag: StoredFlag, items: list[MedicineItem]) -> str:
     elif flag.code == "TRIPLE_WHAMMY":
         text = (f"{brands} — রক্তচাপের ওষুধ, প্রস্রাব বাড়ানোর ওষুধ আর ব্যথার ওষুধ: এই তিন ধরনের ওষুধ "
                 f"একসাথে কিডনির ওপর চাপ বাড়াতে পারে, বিশেষ করে বয়স্কদের। {reviewer} বিষয়টি দেখেছেন।")
+    elif flag.code == "KIDNEY_DOSE":
+        note = m.get("note_bn") or ""
+        text = (f"{brands} — শেষ রক্ত পরীক্ষায় কিডনির কার্যক্ষমতা কম দেখা গেছে। {note} "
+                f"{reviewer} বিষয়টি দেখেছেন।")
+    elif flag.code == "KIDNEY_TEST_DUE":
+        text = (f"{brands} — এই ওষুধ খেলে বছরে অন্তত একবার কিডনির রক্ত পরীক্ষা (ক্রিয়েটিনিন) করা দরকার; "
+                f"গত এক বছরের কোনো পরীক্ষার ফল তালিকায় নেই। {reviewer} বিষয়টি দেখেছেন।")
     elif flag.code == "EXPIRED":
         if flag.severity == "red":
             text = f"{brands} ওষুধটির মেয়াদ শেষ হয়ে গেছে। {reviewer} বিষয়টি দেখেছেন।"

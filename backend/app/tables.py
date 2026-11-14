@@ -49,6 +49,18 @@ class BeersRow:
 
 
 @dataclass(frozen=True)
+class RenalRow:
+    """A kidney-dose rule: below this eGFR the medicine needs a clinician's look (renal_seed.csv)."""
+    target: str          # a generic, or "class:<drug class>"
+    egfr_below: float
+    severity: str        # red | amber
+    routed_to: str       # doctor | pharmacist
+    note: str
+    note_bn: str
+    source: str
+
+
+@dataclass(frozen=True)
 class RuleTables:
     interactions: tuple[InteractionRow, ...] = ()
     beers: tuple[BeersRow, ...] = ()
@@ -57,6 +69,7 @@ class RuleTables:
     acb: dict[str, int] = field(default_factory=dict)
     # group ("raas", "diuretic", "nsaid") -> drug classes (lowercase), from class_groups.csv
     class_groups: dict[str, frozenset[str]] = field(default_factory=dict)
+    renal: tuple[RenalRow, ...] = ()
 
 
 def _read_csv(path: Path) -> list[dict[str, str]]:
@@ -122,8 +135,14 @@ def load_rule_tables() -> RuleTables:
     groups_path = DATA_DIR / "class_groups.csv"
     for r in _read_csv(groups_path) if groups_path.exists() else []:
         groups.setdefault(r["group"].lower(), set()).add(r["drug_class"].lower())
+    renal_path = DATA_DIR / "renal_seed.csv"
+    renal = tuple(
+        RenalRow(r["target"].lower(), float(r["egfr_below"]), r["severity"].lower(), r["routed_to"].lower(),
+                 r["note"], r.get("note_bn", ""), r["source"])
+        for r in (_read_csv(renal_path) if renal_path.exists() else [])
+    )
     return RuleTables(tuple(interactions), tuple(beers), dup, acb,
-                      {g: frozenset(c) for g, c in groups.items()})
+                      {g: frozenset(c) for g, c in groups.items()}, renal)
 
 
 @lru_cache(maxsize=1)

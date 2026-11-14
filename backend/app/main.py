@@ -33,6 +33,7 @@ from .models import (  # noqa: E402
 from .next_step import StepContext, next_step  # noqa: E402
 from .refills import counts, refills_due  # noqa: E402
 from .rules import run_rules  # noqa: E402
+from . import kidney as kidney_fn  # noqa: E402
 from . import clinical, sathi  # noqa: E402
 from .demo_seed import demo_patient_id, seed_demo  # noqa: E402
 from .savings import find_savings  # noqa: E402
@@ -282,6 +283,8 @@ def export_household(pid: int, store: Store = Depends(get_store)) -> dict:
         "questions": [{k: q[k] for k in ("text", "created_at", "reply", "replied_by", "replied_at")}
                       for q in store.list_questions(pid)],
         "activity": store.list_activity(pid, limit=10_000),
+        "kidney_tests": [{k: t[k] for k in ("taken_on", "creatinine_mg_dl", "source", "entered_by")}
+                         for t in store.list_kidney_tests(pid)],
     }
 
 
@@ -380,9 +383,7 @@ def run_check(pid: int, store: Store = Depends(get_store)) -> dict:
     patient = _patient_or_404(store, pid)
     before = {f.key for f in store.list_flags(pid, active_only=False)}
     confirmed = store.list_items(pid, confirmed_only=True)
-    rule_items = [RuleItem(**it.model_dump(include=set(RuleItem.model_fields))) for it in confirmed]
-    flags = run_rules(rule_items, patient.age, load_rule_tables(), date.today())
-    stored = store.sync_flags(pid, flags)
+    stored = _sync_rules(store, patient, confirmed)
     store.mark_checked(pid)
     store.log_activity(pid, "sent_for_review", len(confirmed))
     new = [f for f in stored if f.key not in before]
@@ -394,6 +395,19 @@ def run_check(pid: int, store: Store = Depends(get_store)) -> dict:
         "flags_new": len(new),
         "review_state": _review_state(store, pid),
     }
+
+
+def kidney_context(store: Store, patient: Patient) -> kidney_fn.KidneyContext:
+    return kidney_fn.context_from(store.latest_kidney_test(patient.id), patient.age, patient.sex)
+
+
+def _sync_rules(store: Store, patient: Patient, confirmed: list[MedicineItem] | None = None) -> list[StoredFlag]:
+    """Runs the rules on the confirmed items with the household's kidney context and stores the result."""
+    if confirmed is None:
+        confirmed = store.list_items(patient.id, confirmed_only=True)
+    rule_items = [RuleItem(**it.model_dump(include=set(RuleItem.model_fields))) for it in confirmed]
+    flags = run_rules(rule_items, patient.age, load_rule_tables(), date.today(), kidney_context(store, patient))
+    return store.sync_flags(patient.id, flags)
 
 
 def _review_state(store: Store, pid: int) -> str:
@@ -1385,3 +1399,58 @@ def notify_weekly(store: Store = Depends(get_store)) -> dict:
         notify.send(notify.Email(p.family_email, subject, text))
         sent += 1
     return {"period": period, "sent": sent, "email": True}
+
+
+# ---- 12B: kidney function ------------------------------------------------------------------
+
+class KidneyTestIn(BaseModel):
+    creatinine: float = Field(gt=0, le=2000)
+    unit: Literal["mg/dL", "umol/L"] = "mg/dL"
+    taken_on: date
+    source: Literal["reviewer", "lab_report"] = "lab_report"
+
+    @model_validator(mode="after")
+    def _plausible(self) -> "KidneyTestIn":
+        mg = kidney_fn.to_mg_dl(self.creatinine, self.unit)
+        if not kidney_fn.MIN_CREATININE_MG_DL <= mg <= kidney_fn.MAX_CREATININE_MG_DL:
+            raise ValueError("Creatinine must be between 0.2 and 20 mg/dL (18 and 1768 umol/L): check the value and unit")
+        if self.taken_on > date.today() + timedelta(days=1):
+            raise ValueError("The test date cannot be in the future")
+        return self
+
+
+def _kidney_view(store: Store, p: Patient) -> dict:
+    latest = store.latest_kidney_test(p.id)
+    ctx = kidney_fn.context_from(latest, p.age, p.sex)
+    return {
+        "sex": p.sex, "age": p.age,
+        "latest": None if latest is None else {
+            "taken_on": latest["taken_on"], "creatinine_mg_dl": round(float(latest["creatinine_mg_dl"]), 2),
+            "source": latest["source"], "entered_by": latest["entered_by"],
+            "egfr": round(ctx.egfr, 1) if ctx.egfr is not None else None,
+            "stage": kidney_fn.kdigo_stage(ctx.egfr) if ctx.egfr is not None else None,
+        },
+        "needs_sex": latest is not None and p.sex is None,
+        "tests": len(store.list_kidney_tests(p.id)),
+        "equation": "CKD-EPI 2021 (race-free)",
+    }
+
+
+@app.get("/patients/{pid}/kidney", dependencies=[Depends(require_reviewer)])
+def get_kidney(pid: int, store: Store = Depends(get_store)) -> dict:
+    """Reviewer only: the latest creatinine, its eGFR (CKD-EPI 2021) and KDIGO stage."""
+    return _kidney_view(store, _patient_or_404(store, pid))
+
+
+@app.post("/patients/{pid}/kidney-tests", status_code=201)
+def add_kidney_test(pid: int, body: KidneyTestIn, rev: ReviewerAccount = Depends(current_reviewer),
+                    store: Store = Depends(get_store)) -> dict:
+    """Reviewer only: a creatinine result (mg/dL or umol/L). Only creatinine is stored; eGFR is
+    computed on read. The rules re-run, so kidney findings appear in the queue as pending."""
+    p = _patient_or_404(store, pid)
+    mg = round(kidney_fn.to_mg_dl(body.creatinine, body.unit), 3)
+    store.add_kidney_test(pid, body.taken_on.isoformat(), mg, who(rev), body.source)
+    if p.last_checked_at is not None:
+        _sync_rules(store, p)
+    store.log_activity(pid, "kidney_test_added", 1)
+    return _kidney_view(store, p)

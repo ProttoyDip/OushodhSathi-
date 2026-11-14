@@ -61,6 +61,18 @@ class RenalRow:
 
 
 @dataclass(frozen=True)
+class StoppStartRow:
+    """One STOPP/START v3 criterion as entered by our pharmacist (stopp_start.csv)."""
+    id: str
+    kind: str            # STOPP | START
+    condition: str       # patient condition code, "" = any
+    drug_target: str     # "class:X" or a generic ("" allowed for START)
+    absent_target: str   # STOPP: fire only if absent; START: the possibly omitted medicine
+    text_en: str
+    source: str
+
+
+@dataclass(frozen=True)
 class RuleTables:
     interactions: tuple[InteractionRow, ...] = ()
     beers: tuple[BeersRow, ...] = ()
@@ -70,6 +82,7 @@ class RuleTables:
     # group ("raas", "diuretic", "nsaid") -> drug classes (lowercase), from class_groups.csv
     class_groups: dict[str, frozenset[str]] = field(default_factory=dict)
     renal: tuple[RenalRow, ...] = ()
+    stopp_start: tuple[StoppStartRow, ...] = ()   # verified rows only
 
 
 def _read_csv(path: Path) -> list[dict[str, str]]:
@@ -144,7 +157,20 @@ def load_rule_tables() -> RuleTables:
         for r in (_read_csv(renal_path) if renal_path.exists() else [])
     )
     return RuleTables(tuple(interactions), tuple(beers), dup, acb,
-                      {g: frozenset(c) for g, c in groups.items()}, renal)
+                      {g: frozenset(c) for g, c in groups.items()}, renal, load_stopp_start())
+
+
+def load_stopp_start(path: Path | None = None) -> tuple[StoppStartRow, ...]:
+    """Verified STOPP/START rows only. The shipped file is empty until our pharmacist fills it."""
+    path = path or DATA_DIR / "stopp_start.csv"
+    rows = []
+    for r in _read_csv(path) if path.exists() else []:
+        if r.get("verified", "").lower() != "yes" or r.get("kind", "").upper() not in ("STOPP", "START"):
+            continue
+        rows.append(StoppStartRow(r["id"], r["kind"].upper(), r.get("condition", "").lower(),
+                                  r.get("drug_target", "").lower(), r.get("absent_target", "").lower(),
+                                  r.get("text_en", ""), r.get("source", "")))
+    return tuple(rows)
 
 
 @lru_cache(maxsize=1)

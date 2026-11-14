@@ -150,6 +150,8 @@ export const api = {
     request<{ questions: Question[]; open: number }>(`/questions?status=${status}`, { token }),
   reply: (token: string, qid: number, reply: string, reviewer: string) =>
     request<Question>(`/questions/${qid}/reply`, { method: "POST", body: json({ reply, reviewer }), token }),
+  startNotes: (token: string, id: number) =>
+    request<{ criterion: string; text: string; omitted: string; source: string }[]>(`/patients/${id}/start-notes`, { token }),
   adherence: (token: string, id: number) => request<AdherenceSummary>(`/patients/${id}/adherence`, { token }),
   kidney: (token: string, id: number) => request<KidneyView>(`/patients/${id}/kidney`, { token }),
   addKidneyTest: (token: string, id: number, body: { creatinine: number; unit: "mg/dL" | "umol/L"; taken_on: string; source: "reviewer" | "lab_report" }) =>

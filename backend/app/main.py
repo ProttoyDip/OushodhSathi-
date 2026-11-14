@@ -33,7 +33,7 @@ from .models import (  # noqa: E402
 )
 from .next_step import StepContext, next_step  # noqa: E402
 from .refills import counts, refills_due  # noqa: E402
-from .rules import run_rules  # noqa: E402
+from .rules import run_rules, start_omissions  # noqa: E402
 from . import kidney as kidney_fn  # noqa: E402
 from . import clinical, sathi  # noqa: E402
 from .demo_seed import demo_patient_id, seed_demo  # noqa: E402
@@ -409,7 +409,8 @@ def _sync_rules(store: Store, patient: Patient, confirmed: list[MedicineItem] | 
     if confirmed is None:
         confirmed = store.list_items(patient.id, confirmed_only=True)
     rule_items = [RuleItem(**it.model_dump(include=set(RuleItem.model_fields))) for it in confirmed]
-    flags = run_rules(rule_items, patient.age, load_rule_tables(), date.today(), kidney_context(store, patient))
+    flags = run_rules(rule_items, patient.age, load_rule_tables(), date.today(), kidney_context(store, patient),
+                      conditions=patient.conditions)
     return store.sync_flags(patient.id, flags)
 
 
@@ -1588,3 +1589,15 @@ async def transcribe(
     finally:
         del parsed
     return {"text": text}
+
+
+# ---- 12G: STOPP/START v3 (reviewer-only notes for START) ------------------------------------
+
+@app.get("/patients/{pid}/start-notes", dependencies=[Depends(require_reviewer)])
+def get_start_notes(pid: int, store: Store = Depends(get_store)) -> list[dict]:
+    """Possible omissions (START v3), for the doctor. Never a family finding: the family is
+    never told to start a medicine. Empty until our pharmacist enters and verifies criteria."""
+    p = _patient_or_404(store, pid)
+    items = store.list_items(pid, confirmed_only=True)
+    rule_items = [RuleItem(**it.model_dump(include=set(RuleItem.model_fields))) for it in items if counts(it)]
+    return start_omissions(rule_items, p.conditions, load_rule_tables().stopp_start)

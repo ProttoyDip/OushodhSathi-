@@ -263,6 +263,7 @@ The 2:58 video is planned second by second in [`docs/video/SHOTLIST.md`](docs/vi
 4. Bangla voice check-ins for blood pressure and doses.
 5. A pilot with families, with results published only once they are real.
 6. Authenticity checks through DGDA or manufacturer verification codes. The app itself will never judge whether a pack is genuine.
+7. STOPP/START v3 engine ready; criteria to be entered and verified by our pharmacist (O'Mahony et al., Eur Geriatr Med 2023, doi:10.1007/s41999-023-00777-y).
 
 ## Team
 

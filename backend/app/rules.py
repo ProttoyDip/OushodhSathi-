@@ -15,7 +15,7 @@ from rapidfuzz.distance import JaroWinkler
 
 from .kidney import KidneyContext, kdigo_stage
 from .models import Flag, RuleItem
-from .tables import BeersRow, InteractionRow, RenalRow, RuleTables, aware_group
+from .tables import BeersRow, InteractionRow, RenalRow, RuleTables, StoppStartRow, aware_group
 
 EXPIRY_WARNING_DAYS = 30
 BEERS_AGE = 65
@@ -447,11 +447,69 @@ def antibiotic_no_prescription(items: list[RuleItem]) -> list[Flag]:
     return flags
 
 
+# STOPP/START v3: O'Mahony D et al., Eur Geriatr Med 2023;14(4):625-632,
+# https://doi.org/10.1007/s41999-023-00777-y. Criteria come only from stopp_start.csv rows our
+# pharmacist entered and verified; nothing is written from memory.
+STOPP_START_SOURCE = "STOPP/START v3 (O'Mahony et al., Eur Geriatr Med 2023)"
+
+
+def _present(items: list[RuleItem], target: str) -> list[RuleItem]:
+    return [it for it in items if any(_hits(target, g, c) for g, c in _components(it))]
+
+
+def _condition_ok(row: StoppStartRow, conditions: set[str]) -> bool:
+    return not row.condition or row.condition in conditions
+
+
+def stopp_criteria(items: list[RuleItem], conditions: list[str] | None,
+                   rows: tuple[StoppStartRow, ...]) -> list[Flag]:
+    """Verified STOPP rows -> STOPP_CRITERION (amber, pharmacist). None conditions = skip."""
+    if conditions is None or not rows:
+        return []
+    have = {c.lower() for c in conditions}
+    flags = []
+    for row in rows:
+        if row.kind != "STOPP" or not row.drug_target or not _condition_ok(row, have):
+            continue
+        group = _present(items, row.drug_target)
+        if not group or (row.absent_target and _present(items, row.absent_target)):
+            continue
+        flags.append(Flag(
+            key=_key("STOPP_CRITERION", row.id, *sorted(it.brand for it in group)),
+            code="STOPP_CRITERION", severity="amber", routed_to="pharmacist",
+            item_ids=sorted(it.id for it in group),
+            evidence=f"{' and '.join(_label(it) for it in group)}: {row.id}. {row.text_en}",
+            data_source=f"{STOPP_START_SOURCE}; {row.source}".strip("; "),
+            meta={"criterion": row.id},
+        ))
+    return flags
+
+
+def start_omissions(items: list[RuleItem], conditions: list[str] | None,
+                    rows: tuple[StoppStartRow, ...]) -> list[dict]:
+    """Verified START rows: possible omissions, as REVIEWER NOTES only. Never a flag, because the
+    family must never be told to start a medicine; the doctor decides."""
+    if conditions is None or not rows:
+        return []
+    have = {c.lower() for c in conditions}
+    notes = []
+    for row in rows:
+        if row.kind != "START" or not row.absent_target or not _condition_ok(row, have):
+            continue
+        if row.drug_target and not _present(items, row.drug_target):
+            continue
+        if _present(items, row.absent_target):
+            continue
+        notes.append({"criterion": row.id, "text": row.text_en, "omitted": row.absent_target,
+                      "source": f"{STOPP_START_SOURCE}; {row.source}".strip("; ")})
+    return notes
+
+
 SEVERITY_ORDER = {"red": 0, "amber": 1}
 
 
 def run_rules(items: list[RuleItem], age: int | None, tables: RuleTables, today: date,
-              kidney: KidneyContext | None = None) -> list[Flag]:
+              kidney: KidneyContext | None = None, conditions: list[str] | None = None) -> list[Flag]:
     """Run every rule on the confirmed items. Red first, then by code.
     kidney: the household's latest kidney test; None skips the kidney rules (unknown context)."""
     flags = (
@@ -466,6 +524,7 @@ def run_rules(items: list[RuleItem], age: int | None, tables: RuleTables, today:
         + kidney_dose(items, kidney, tables.renal)
         + kidney_test_due(items, kidney, today)
         + antibiotic_no_prescription(items)
+        + stopp_criteria(items, conditions, tables.stopp_start)
     )
     unique = {f.key: f for f in flags}  # belt and braces: never two flags with one key
     return sorted(unique.values(), key=lambda f: (SEVERITY_ORDER[f.severity], f.code, f.item_ids))

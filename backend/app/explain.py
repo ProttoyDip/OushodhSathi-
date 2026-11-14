@@ -113,6 +113,9 @@ def template(flag: StoredFlag, items: list[MedicineItem]) -> str:
         else:
             text = (f"{brands} একটি এন্টিবায়োটিক, যা ডাক্তারের প্রেসক্রিপশন ছাড়া পাওয়া গেছে বলে তালিকায় আছে। "
                     f"এন্টিবায়োটিক ঠিকমতো না হলে জীবাণু ওষুধে আর কাজ না-ও করতে পারে। {reviewer} বিষয়টি দেখেছেন।")
+    elif flag.code == "STOPP_CRITERION":
+        text = (f"{brands} — বয়স্কদের ওষুধ নিয়ে একটি আন্তর্জাতিক তালিকা অনুযায়ী এই ওষুধটি নিয়ে "
+                f"আবার ভেবে দেখা দরকার হতে পারে। {reviewer} বিষয়টি দেখেছেন।")
     elif flag.code == "EXPIRED":
         if flag.severity == "red":
             text = f"{brands} ওষুধটির মেয়াদ শেষ হয়ে গেছে। {reviewer} বিষয়টি দেখেছেন।"

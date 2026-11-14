@@ -36,7 +36,8 @@
     "TRIPLE_WHAMMY": "Three medicines together can strain the kidneys",
     "KIDNEY_DOSE": "Needs a look because of the kidney test",
     "KIDNEY_TEST_DUE": "A kidney blood test is due",
-    "ANTIBIOTIC_NO_PRESCRIPTION": "An antibiotic without a doctor's prescription"
+    "ANTIBIOTIC_NO_PRESCRIPTION": "An antibiotic without a doctor's prescription",
+    "STOPP_CRITERION": "Worth reviewing for an older adult"
   },
   "strip": {
     "expiry": "Exp",
@@ -820,7 +821,8 @@
       "TRIPLE_WHAMMY": "Triple whammy (ACEi/ARB + diuretic + NSAID)",
       "KIDNEY_DOSE": "Kidney dose (eGFR below threshold)",
       "KIDNEY_TEST_DUE": "Kidney test due (metformin, no eGFR in 12 months)",
-      "ANTIBIOTIC_NO_PRESCRIPTION": "Antibiotic (WHO AWaRe Watch/Reserve) without prescription"
+      "ANTIBIOTIC_NO_PRESCRIPTION": "Antibiotic (WHO AWaRe Watch/Reserve) without prescription",
+      "STOPP_CRITERION": "STOPP v3 criterion (verified by our pharmacist)"
     },
     "questions": {
       "title": "Questions from families",
@@ -921,6 +923,10 @@
       "noTicks": "no ticks yet",
       "coverage": "{recorded} of {expected} expected doses recorded",
       "caveat": "Self-reported by the family; untapped doses are missing data, not missed doses. Families never see these percentages."
+    },
+    "start": {
+      "title": "Possible omission — for the doctor (START v3)",
+      "caveat": "From criteria our pharmacist verified. Never shown to the family: only the doctor decides whether to start a medicine."
     }
   },
   "start": {

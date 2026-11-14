@@ -14,7 +14,7 @@ FlagStatus = Literal["pending_review", "confirmed", "dismissed"]
 FlagCode = Literal[
     "DUPLICATE_GENERIC", "THERAPEUTIC_DUPLICATION", "INTERACTION", "BEERS_65", "EXPIRED",
     "ANTICHOLINERGIC_BURDEN", "LOOK_ALIKE_NAMES", "TRIPLE_WHAMMY",
-    "KIDNEY_DOSE", "KIDNEY_TEST_DUE", "ANTIBIOTIC_NO_PRESCRIPTION",
+    "KIDNEY_DOSE", "KIDNEY_TEST_DUE", "ANTIBIOTIC_NO_PRESCRIPTION", "STOPP_CRITERION",
 ]
 # Where a medicine came from, picked by the family on the confirm screen (never guessed by a model)
 PrescriberKind = Literal["doctor", "village_doctor", "drug_shop", "self", "unknown"]

@@ -79,7 +79,8 @@ def seed_demo(store: Store, mode: Mode = "judge") -> dict:
     by_id = {it.id: it for it in items}
     rule_items = [RuleItem(**it.model_dump(include=set(RuleItem.model_fields))) for it in items]
     kidney = context_from(store.latest_kidney_test(pid), patient.age, patient.sex)
-    stored = store.sync_flags(pid, run_rules(rule_items, patient.age, load_rule_tables(), date.today(), kidney))
+    stored = store.sync_flags(pid, run_rules(rule_items, patient.age, load_rule_tables(), date.today(), kidney,
+                                             conditions=patient.conditions))
     store.mark_checked(pid)
     store.log_activity(pid, "scanned", len(items))
     store.log_activity(pid, "sent_for_review", len(items))

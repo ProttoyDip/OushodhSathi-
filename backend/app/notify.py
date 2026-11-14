@@ -32,6 +32,7 @@ CODE_BN = {
     "KIDNEY_DOSE": "কিডনির কার্যক্ষমতা অনুযায়ী দেখা দরকার",
     "KIDNEY_TEST_DUE": "কিডনির পরীক্ষার সময় হয়েছে",
     "ANTIBIOTIC_NO_PRESCRIPTION": "প্রেসক্রিপশন ছাড়া এন্টিবায়োটিক",
+    "STOPP_CRITERION": "বয়স্কদের জন্য আবার ভেবে দেখার ওষুধ",
 }
 CODE_EN = {
     "DUPLICATE_GENERIC": "Same medicine twice",
@@ -45,6 +46,7 @@ CODE_EN = {
     "KIDNEY_DOSE": "Needs a look at the kidney test result",
     "KIDNEY_TEST_DUE": "Kidney test due",
     "ANTIBIOTIC_NO_PRESCRIPTION": "Antibiotic without a prescription",
+    "STOPP_CRITERION": "Worth reviewing for an older adult (STOPP)",
 }
 FOOTER = (
     "\n\n—\nওষুধসাথী কখনো কোনো ওষুধ বন্ধ বা পরিবর্তন করতে বলে না। ডাক্তারের সাথে কথা না বলে কোনো ওষুধ বন্ধ করবেন না।\n"

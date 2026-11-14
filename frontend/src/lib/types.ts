@@ -11,7 +11,8 @@ export type FlagCode =
   | "TRIPLE_WHAMMY"
   | "KIDNEY_DOSE"
   | "KIDNEY_TEST_DUE"
-  | "ANTIBIOTIC_NO_PRESCRIPTION";
+  | "ANTIBIOTIC_NO_PRESCRIPTION"
+  | "STOPP_CRITERION";
 /** Where a medicine came from: picked by the family, never guessed by a model. */
 export type PrescriberKind = "doctor" | "village_doctor" | "drug_shop" | "self" | "unknown";
 export type AwareGroup = "Access" | "Watch" | "Reserve";

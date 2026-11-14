@@ -13,7 +13,8 @@ from typing import Literal
 
 import httpx
 from dotenv import load_dotenv
-from fastapi import Body, Depends, FastAPI, File, Header, HTTPException, Query, UploadFile
+from fastapi import Body, Depends, FastAPI, File, Form, Header, HTTPException, Query, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ValidationError, model_validator
 
@@ -24,7 +25,7 @@ from .agent import read_shelf, resolve_brand  # noqa: E402
 from .demo import DEMO_ITEMS, DEMO_LABEL  # noqa: E402
 from .explain import explain_flag  # noqa: E402
 from .ratelimit import limit_new_patient, limit_sathi, limit_scan, limit_writes  # noqa: E402
-from . import llm_router, notify  # noqa: E402
+from . import asr, llm_router, notify  # noqa: E402
 from .llm_router import NoProviderAvailable, Router, _env, configured_providers, provider_names  # noqa: E402
 from .models import (  # noqa: E402
     ClinicalPatch, MedicineItem, MedicineItemIn, MedicineItemPatch, Patient, PatientCreate, PatientPatch,
@@ -230,6 +231,7 @@ def health(store: Store = Depends(get_store)) -> dict:
         "prompts": {name: prompts.version(name) for name in prompts.ACTIVE},
         "reviewer_login": "demo token" if demo_mode() else "personal accounts",
         "email": notify.configured(),
+        "voice": asr.configured(),  # server speech to text (Whisper large-v3 via NVIDIA); else the browser's
         "test_count": test_count,
         "patients": len(store.list_patients()),
     }
@@ -1550,3 +1552,38 @@ def get_adherence(pid: int, store: Store = Depends(get_store)) -> dict:
     """Reviewer only: 14-day adherence per medicine with 95% Wilson intervals."""
     _patient_or_404(store, pid)
     return adherence_summary(store, pid)
+
+
+# ---- 12E: Bangla voice input (Whisper large-v3 via NVIDIA) --------------------------------
+
+@app.post("/sathi/transcribe", dependencies=[Depends(limit_sathi)])
+async def transcribe(
+    audio: UploadFile = File(...),
+    lang: Literal["bn", "en"] = Form("bn"),
+    patient_id: int | None = Form(None),
+    x_family_key: str | None = Header(default=None),
+    x_reviewer_token: str | None = Header(default=None),
+    store: Store = Depends(get_store),
+) -> dict:
+    """Speech to text for Sathi's text box. The audio is processed in memory and never stored
+    or logged. The family reads (and can edit) the text before sending it; it then goes through
+    the normal Sathi path, so guard.py runs before any model sees it. 503 means "use the
+    browser's own speech recognition"."""
+    if patient_id is not None:
+        family_access(patient_id, x_family_key, x_reviewer_token, store)
+    if not asr.configured():
+        raise HTTPException(503, "Speech recognition is not configured on this server")
+    data = await audio.read(asr.MAX_BYTES + 1)
+    try:
+        parsed = asr.parse_audio(data, audio.content_type or "")
+    except asr.AudioRejected as e:
+        raise HTTPException(413 if str(e) in ("too_large", "too_long") else 415, str(e)) from None
+    finally:
+        del data
+    try:
+        text = await run_in_threadpool(asr.transcribe, parsed, lang)
+    except asr.AsrUnavailable:
+        raise HTTPException(503, "Speech recognition is not available right now") from None
+    finally:
+        del parsed
+    return {"text": text}

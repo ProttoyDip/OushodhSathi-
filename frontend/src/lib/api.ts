@@ -88,6 +88,14 @@ export const api = {
   report: (id: number) => request<Report>(`/patients/${id}/report`, { pid: id }),
   nextStep: (id: number, lang: string, phrase = false) =>
     request<NextStep>(`/patients/${id}/next-step?lang=${lang}&phrase=${phrase}`, { pid: id }),
+  // speech to text for Sathi's text box; 503 = use the browser's own recognition
+  transcribe: (id: number, audio: Blob, lang: string) => {
+    const fd = new FormData();
+    fd.append("audio", audio, "speech.wav");
+    fd.append("lang", lang === "bn" ? "bn" : "en");
+    fd.append("patient_id", String(id));
+    return request<{ text: string }>("/sathi/transcribe", { method: "POST", body: fd, pid: id });
+  },
   askSathi: (id: number, question: string, lang: string) =>
     request<SathiReply>("/assistant/ask", { method: "POST", body: json({ patient_id: id, question, lang }), pid: id }),
   questions: (id: number) => request<Question[]>(`/patients/${id}/questions`, { pid: id }),

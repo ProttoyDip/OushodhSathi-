@@ -1011,7 +1011,13 @@
         "How do I show the list to my brother?",
         "How do I add a blood pressure reading?"
       ]
-    }
+    },
+    "micHold": "Hold to speak",
+    "micRelease": "Release to stop",
+    "voiceFallback": "Voice could not be turned into text here. Press the mic again to use your phone's own speech recognition, or type.",
+    "voiceNoticeTitle": "About voice",
+    "voiceNotice": "To turn your words into text, your voice goes to NVIDIA's server. We do not keep the recording. Read and correct the text before you send it.",
+    "voiceNoticeOk": "OK, I understand"
   },
   "questions": {
     "title": "Questions to the pharmacist",
@@ -1267,6 +1273,13 @@
           "p": [
             "To read the photos and look up unknown brands, we send medicine photos and medicine names to an AI provider. We never send the patient's name or any phone number to an AI model.",
             "On the pilot, photos only go to providers that do not keep them."
+          ]
+        },
+        {
+          "h": "Voice",
+          "p": [
+            "If you hold the microphone button in Sathi, your recording goes to NVIDIA's speech service (Whisper large-v3) to be turned into text. We do not store or log the recording. The text appears in the box for you to read and correct before anything is sent.",
+            "Speech can contain names. Patient names are removed from the text before any AI model sees a question."
           ]
         },
         {

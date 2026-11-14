@@ -12,3 +12,4 @@ psycopg[binary]==3.3.9  # Postgres when DATABASE_URL is set
 pillow==13.0.0
 pytest==9.2.0
 mcp==2.3.0
+nvidia-riva-client==2.28.0  # Whisper large-v3 speech to text via NVIDIA (app/asr.py)

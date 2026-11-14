@@ -193,6 +193,8 @@ export interface Health {
   web_lookup: { tavily: boolean; perplexity: boolean };
   prompts: Record<string, string>;
   reviewer_login: string;
+  /** server speech to text (Whisper large-v3 via NVIDIA) is configured */
+  voice?: boolean;
   test_count: number;
   patients: number;
 }

@@ -12,6 +12,8 @@ import { ProductFrames } from "@/components/landing/ProductFrames";
 import { stickyBar } from "@/lib/layout";
 import { reveal } from "@/lib/reveal";
 import { demoHref, GITHUB_URL } from "@/lib/site";
+import { TEAM } from "@/lib/team";
+import Image from "next/image";
 import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
@@ -191,6 +193,33 @@ export default async function Landing() {
               </details>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* the people who built it */}
+      <section id="team" aria-labelledby="team-h" className="border-t border-rule bg-paper-raised">
+        <div className="mx-auto max-w-[1200px] scroll-mt-20 px-5 py-20 sm:px-8 lg:py-24">
+          <div {...reveal(0)} className="max-w-[60ch]">
+            <h2 id="team-h" className={sectionTitle}>{t("team.title")}</h2>
+            <p className="mt-3 text-lg text-ink-soft">{t("team.body")}</p>
+            <span aria-hidden className="stitch-x mt-6 block w-24" />
+          </div>
+          <ul className="mt-12 grid gap-8 sm:grid-cols-3">
+            {TEAM.map((m, i) => (
+              <li key={m.github} {...reveal(i * 80)} className="overflow-hidden rounded-card border border-rule bg-paper">
+                <Image src={m.photo} alt={m.name} width={480} height={600} sizes="(min-width: 640px) 33vw, 100vw"
+                  className="aspect-[4/5] w-full object-cover" />
+                <div className="p-5">
+                  <p className="text-xl font-semibold text-ink">{m.name}</p>
+                  <p className="mt-1 text-ink-soft">{t(`team.roles.${m.role}`)}</p>
+                  <a href={`https://github.com/${m.github}`} target="_blank" rel="noreferrer"
+                    className="mt-3 inline-flex min-h-11 items-center gap-1.5 text-[15px] font-medium text-neel underline-offset-4 hover:underline">
+                    github.com/{m.github}
+                  </a>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 

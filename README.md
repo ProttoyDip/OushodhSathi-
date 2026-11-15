@@ -277,13 +277,11 @@ The 2:58 video is planned second by second in [`docs/video/SHOTLIST.md`](docs/vi
 
 ## Team
 
-| Name | Role | GitHub |
-| --- | --- | --- |
-| _[Team member 1]_ | _[Role]_ | _[@handle]_ |
-| _[Team member 2]_ | _[Role]_ | _[@handle]_ |
-| _[Team member 3]_ | _[Role]_ | _[@handle]_ |
-
-Mentor: _[NRB mentor, if any]_
+| | Name | Role | GitHub |
+| --- | --- | --- | --- |
+| <img src="frontend/public/team/prottoy.webp" alt="Prottoy Saha Dip" width="96"> | Prottoy Saha Dip | Team lead · Backend and AI | [@ProttoyDip](https://github.com/ProttoyDip) |
+| <img src="frontend/public/team/suchismita.webp" alt="Suchismita Sarkar" width="96"> | Suchismita Sarkar | Design and presentation | [@Suchi1806](https://github.com/Suchi1806) |
+| <img src="frontend/public/team/sakin.webp" alt="Sakin" width="96"> | Sakin | Frontend | [@Sakin542](https://github.com/Sakin542) |
 
 ## Data and licences
 

@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
 import { Wordmark } from "@/components/BrandMark";
 import { LangToggle, ThemeToggle } from "@/components/Chrome";
 import { stickyBar } from "@/lib/layout";
+import { TEAM } from "@/lib/team";
 import { EvalPanel, LiveStatus, ModelGatesPanel, PilotPanel, RetrievalPanel, ReviewTimePanel, SathiEvalPanel } from "@/components/docs/LivePanels";
 import { reveal } from "@/lib/reveal";
 
@@ -136,7 +137,14 @@ export default async function Docs() {
           </ol>
 
           <h2 id="team">{t("toc.team")}</h2>
-          <p className="text-ink-soft">{t("team.placeholder")}</p>
+          <ul className="mt-4 grid gap-2">
+            {TEAM.map((m) => (
+              <li key={m.github}>
+                <strong className="text-ink">{m.name}</strong> · {t(`team.roles.${m.role}`)} ·{" "}
+                <a href={`https://github.com/${m.github}`} target="_blank" rel="noreferrer" className="underline">@{m.github}</a>
+              </li>
+            ))}
+          </ul>
           <p className="!mt-10 border-t border-rule pt-6 text-[15px] text-ink-soft">
             {t("footer.disclaimer")}{" "}
             <Link href="/" className="inline-flex items-center gap-1 underline">{t("footer.back")} <ExternalLink aria-hidden size={13} /></Link>

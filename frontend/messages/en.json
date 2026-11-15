@@ -400,8 +400,11 @@
     "team": {
       "title": "Team",
       "body": "Built for the International AI Builders Congress 2026 · HealthSphere AI → ChronicCare AI.",
-      "member": "[Team member {n} — name to be added]",
-      "role": "[Role] · [GitHub]"
+      "roles": {
+        "lead": "Team lead · Backend and AI",
+        "design": "Design and presentation",
+        "frontend": "Frontend"
+      }
     },
     "footer": {
       "disclaimer": "OushodhSathi is a pilot service, not a medical device. It does not give medical advice. Every finding is confirmed by a registered pharmacist or doctor. The demo household is invented.",
@@ -547,7 +550,11 @@
       "r5": "A pilot with families, with results published here only once they are real."
     },
     "team": {
-      "placeholder": "[Team names, roles and mentor to be added.]"
+      "roles": {
+        "lead": "Team lead · Backend and AI",
+        "design": "Design and presentation",
+        "frontend": "Frontend"
+      }
     },
     "footer": {
       "disclaimer": "OushodhSathi is a research prototype, not a medical device. It does not give medical advice. All findings must be confirmed by a registered pharmacist or doctor. Demo data is invented.",

@@ -14,18 +14,11 @@ const STEPS: { key: string; actor: Actor }[] = [
 ];
 
 const ACTOR_ICON = { family: Users, ai: ScanText, rules: ListChecks, human: Stethoscope } as const;
-// who does each step, told by icon + word; the clinician step is the one in indigo
-const ACTOR_STYLE: Record<Actor, string> = {
-  family: "border-rule-strong text-ink-soft",
-  ai: "border-rule-strong text-ink-soft",
-  rules: "border-rule-strong text-ink-soft",
-  human: "border-neel bg-neel-tint text-neel",
-};
 
 /**
- * Six steps from photos to a checked list. A numbered vertical timeline on the kantha-stitch
- * rail on phones; a 3 × 2 grid of the same cards on wide screens.
- * Layout after 21st.dev "Vertical How It Works Timeline".
+ * Six steps from photos to a checked list, as one stitched path (not six identical cards).
+ * Each step says who does it, by icon + word; the clinician step is the only one in indigo,
+ * because it is the step everything else waits for.
  */
 export async function HowTimeline() {
   const t = await getTranslations("landing");
@@ -33,34 +26,29 @@ export async function HowTimeline() {
   const num = (n: number) => n.toLocaleString(locale === "bn" ? "bn-BD" : "en");
 
   return (
-    <ol className="relative mt-12 grid gap-5 pl-12 lg:grid-cols-3 lg:gap-6 lg:pl-0">
-      <span aria-hidden className="stitch-y absolute bottom-6 left-[19px] top-6 lg:hidden" />
+    <ol className="relative mt-10">
+      <span aria-hidden className="stitch-y absolute bottom-8 left-[19px] top-8" />
       {STEPS.map(({ key, actor }, i) => {
         const Icon = ACTOR_ICON[actor];
+        const human = actor === "human";
         return (
-          <li key={key} {...reveal(i * 70)} className="relative">
+          <li key={key} {...reveal(i * 60)} className="relative grid grid-cols-[40px_minmax(0,1fr)] gap-x-5 py-4">
             <span aria-hidden
-              className="absolute -left-12 top-5 grid h-10 w-10 place-items-center rounded-full border-2 border-stitch bg-paper font-display text-lg tabular text-ink lg:hidden">
+              className={`relative grid h-10 w-10 place-items-center rounded-full border-2 font-display text-lg tabular ${
+                human ? "border-neel bg-neel text-on-neel" : "border-stitch bg-paper-raised text-ink"}`}>
               {num(i + 1)}
             </span>
-            <article className="flex h-full flex-col rounded-card border border-rule bg-paper p-5 lg:p-6">
-              <div className="flex items-center justify-between gap-3">
-                <span className="hidden font-display text-[40px] leading-none tabular text-stitch lg:block" aria-hidden>
-                  {num(i + 1).padStart(2, locale === "bn" ? "০" : "0")}
-                </span>
-                <span className={`inline-flex items-center gap-1.5 rounded-chip border px-3 py-1 text-[14px] font-semibold ${ACTOR_STYLE[actor]}`}>
-                  <Icon aria-hidden size={15} /> {t(`flow.actor.${actor}`)}
-                </span>
-              </div>
-              <h3 className="mt-4 text-[22px] font-semibold leading-tight text-ink">
+            <div className="min-w-0 pt-1">
+              <h3 className="flex flex-wrap items-baseline gap-x-2 text-[21px] font-semibold leading-snug text-ink">
                 <span className="sr-only">{t("how.step", { n: i + 1 })}: </span>
                 {t(`flow.${key}.title`)}
-                <span lang={locale === "bn" ? "en" : "bn"} className="ml-2 text-[17px] font-medium text-ink-faint">
-                  {t(`flow.${key}.alt`)}
-                </span>
+                <span lang={locale === "bn" ? "en" : "bn"} className="text-[16px] font-medium text-ink-faint">{t(`flow.${key}.alt`)}</span>
               </h3>
-              <p className="mt-2 text-[17px] leading-relaxed text-ink-soft">{t(`flow.${key}.body`)}</p>
-            </article>
+              <p className="mt-1 max-w-[56ch] text-[17px] leading-relaxed text-ink-soft">{t(`flow.${key}.body`)}</p>
+              <p className={`mt-2 inline-flex items-center gap-1.5 text-[14px] font-semibold ${human ? "text-neel" : "text-ink-faint"}`}>
+                <Icon aria-hidden size={15} /> {t(`flow.actor.${actor}`)}
+              </p>
+            </div>
           </li>
         );
       })}

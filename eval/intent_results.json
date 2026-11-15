@@ -1,8 +1,8 @@
 {
-  "run_at": "2026-11-14T17:25:55+00:00",
+  "run_at": "2026-11-15T03:15:42+00:00",
   "heldout_human": 78,
   "required": 200,
-  "embed_model": "baai/bge-m3",
+  "embed_model": "nvidia/nemotron-3.5-embed-1b",
   "model_trained": false,
   "enabled_in_production": false,
   "status": "in_progress",

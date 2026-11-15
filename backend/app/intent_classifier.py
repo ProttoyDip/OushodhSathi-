@@ -5,9 +5,10 @@ Catches medical questions that slip past guard.py's word lists (Banglish, typos)
 - It can only move a question TOWARDS "medical" or "emergency"; it can never move one to "app".
 - If it is off, missing, slow or failing, behaviour is exactly as without it.
 
-Model: multilingual sentence embeddings from NVIDIA's API (baai/bge-m3 on build.nvidia.com,
-https://build.nvidia.com/baai/bge-m3, 1024 dimensions, 100+ languages; Bengali coverage is to be
-confirmed by our own held-out evaluation) + a scikit-learn logistic regression trained offline by
+Model: multilingual sentence embeddings from NVIDIA's API (app/embeddings.py:
+nvidia/nemotron-3.5-embed-1b, Bengali among its listed languages, kept at 1024 dimensions; the
+earlier baai/bge-m3 reached end of life on NVIDIA on 2026-08-25) + a scikit-learn logistic regression
+trained offline by
 eval/train_intent_model.py and saved as small JSON (coefficients only), so the server needs no
 scikit-learn. Enable with SATHI_INTENT_MODEL=on, only after eval/run_intent_eval.py passes on at
 least 200 human-written held-out examples.
@@ -23,11 +24,12 @@ from pathlib import Path
 
 import httpx
 
+from . import embeddings
+
 log = logging.getLogger("oushodh.intent")
 
 MODEL_PATH = Path(__file__).resolve().parent.parent / "data" / "intent_model.json"
-EMBED_URL = "https://integrate.api.nvidia.com/v1/embeddings"
-EMBED_MODEL = "baai/bge-m3"
+EMBED_MODEL = embeddings.MODEL
 TIMEOUT_S = 3.0
 ESCALATE_AT = 0.5        # probability needed to move a question towards a human
 RANK = {"APP": 0, "OTHER": 0, "MEDICAL": 1, "EMERGENCY": 2}
@@ -38,7 +40,7 @@ def _env(name: str) -> str:
 
 
 def enabled() -> bool:
-    return _env("SATHI_INTENT_MODEL").lower() == "on" and MODEL_PATH.exists() and bool(_env("NVIDIA_API_KEY"))
+    return _env("SATHI_INTENT_MODEL").lower() == "on" and MODEL_PATH.exists() and embeddings.configured()
 
 
 @lru_cache(maxsize=1)
@@ -47,12 +49,8 @@ def _model() -> dict:
 
 
 def embed(texts: list[str], client: httpx.Client | None = None) -> list[list[float]]:
-    """NVIDIA embeddings (OpenAI-compatible). Raises on any error; callers fall back."""
-    c = client or httpx.Client(timeout=TIMEOUT_S)
-    r = c.post(EMBED_URL, headers={"Authorization": f"Bearer {_env('NVIDIA_API_KEY')}"},
-               json={"model": EMBED_MODEL, "input": texts, "encoding_format": "float", "truncate": "END"})
-    r.raise_for_status()
-    return [d["embedding"] for d in sorted(r.json()["data"], key=lambda d: d["index"])]
+    """Question embeddings (input_type "query"). Raises on any error; callers fall back."""
+    return embeddings.embed(texts, "query", client or httpx.Client(timeout=TIMEOUT_S))
 
 
 def predict(vector: list[float], model: dict) -> dict[str, float]:

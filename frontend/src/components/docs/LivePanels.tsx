@@ -65,6 +65,7 @@ export function LiveStatus() {
 }
 
 const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
+const pctOr = (x: number | null | undefined) => (x == null ? "—" : pct(x));
 
 function Ci({ ci, label }: { ci?: [number, number]; label: string }) {
   if (!ci) return null;
@@ -114,10 +115,16 @@ export function EvalPanel() {
   const results = useApi(() => api.evalResults(), []);
   if (results.error || !results.data)
     return <div className="h-24 rounded-card bg-paper-sunk" style={{ animation: "breathe 1.6s ease-in-out infinite" }} />;
-  if (results.data.length === 0)
+  const measured = results.data.filter((r) => r.brand_accuracy != null);
+  if (measured.length === 0)
     return (
       <div className="rounded-card border border-dashed border-rule-strong p-5">
         <p className="!mt-0 text-lg font-semibold text-ink">{t("evalTitle")}</p>
+        {results.data.length > 0 && (
+          <p className="mt-1 font-semibold text-ink">
+            {t("evalProgress", { n: Math.max(...results.data.map((r) => r.images)) })}
+          </p>
+        )}
         <p className="mt-1 text-ink-soft">{t.rich("evalBody", { code })}</p>
       </div>
     );
@@ -126,17 +133,20 @@ export function EvalPanel() {
       <thead className="text-ink-faint">
         <tr className="border-b border-rule-strong">
           <th className="py-2 font-medium">{t("prompt")}</th><th className="font-medium">{t("model")}</th><th className="font-medium">{t("photos")}</th>
-          <th className="font-medium">{t("brand")}</th><th className="font-medium">{t("strength")}</th><th className="font-medium">{t("conf")}</th>
+          <th className="font-medium">{t("brand")}</th><th className="font-medium">{t("strength")}</th>
+          <th className="font-medium">{t("expiry")}</th><th className="font-medium">{t("needsCheck")}</th><th className="font-medium">{t("conf")}</th>
         </tr>
       </thead>
       <tbody className="tabular">
-        {results.data.map((r) => (
+        {measured.map((r) => (
           <tr key={r.prompt_version + r.run_at} className="border-b border-rule">
             <td className="py-2.5 font-medium">{r.prompt_version}</td>
             <td className="break-all text-ink-soft">{r.model_id ?? "—"}</td>
             <td>{r.images} / {r.labelled_items}</td>
-            <td>{pct(r.brand_accuracy)}<Ci ci={r.brand_accuracy_ci} label={t("ci")} /></td>
-            <td>{pct(r.strength_accuracy)}<Ci ci={r.strength_accuracy_ci} label={t("ci")} /></td>
+            <td>{pctOr(r.brand_accuracy)}<Ci ci={r.brand_accuracy_ci} label={t("ci")} /></td>
+            <td>{pctOr(r.strength_accuracy)}<Ci ci={r.strength_accuracy_ci} label={t("ci")} /></td>
+            <td>{pctOr(r.expiry_accuracy)}<Ci ci={r.expiry_accuracy_ci} label={t("ci")} /></td>
+            <td>{pctOr(r.needs_check_rate)}<Ci ci={r.needs_check_rate_ci} label={t("ci")} /></td>
             <td>{r.avg_confidence ?? "—"}</td>
           </tr>
         ))}
@@ -209,5 +219,35 @@ export function ModelGatesPanel() {
         <p className="tabular mt-1 text-[14px] text-ink-faint">{t("riskGate", { h: risk.households, needH: risk.required_households, w: risk.household_weeks, needW: risk.required_household_weeks })}</p>
       </li>
     </ul>
+  );
+}
+
+/** Sathi app-guide retrieval: keyword vs vector vs hybrid, measured (eval/run_retrieval_eval.py). */
+export function RetrievalPanel() {
+  const t = useTranslations("docs.live");
+  const r = useApi(() => api.evalRetrieval(), []);
+  if (!r.data) return <div className="h-16 rounded-card bg-paper-sunk" style={{ animation: "breathe 1.6s ease-in-out infinite" }} />;
+  const m = r.data.methods;
+  if (!m) return <p className="text-ink-soft">{t("retrievalNone")}</p>;
+  const cell = (p: { p: number; ci_low: number; ci_high: number }) => `${pct(p.p)} (${pct(p.ci_low)}–${pct(p.ci_high)})`;
+  return (
+    <div>
+      <table className="w-full border-collapse text-left text-[15px]">
+        <thead className="text-ink-faint">
+          <tr className="border-b border-rule-strong">
+            <th className="py-2 font-medium">{t("retrievalMethod")}</th><th className="font-medium">recall@1</th><th className="font-medium">recall@3</th>
+          </tr>
+        </thead>
+        <tbody className="tabular">
+          {Object.entries(m).map(([name, v]) => (
+            <tr key={name} className="border-b border-rule">
+              <td className="py-2.5 font-medium">{t(`retrieval.${name}`)}</td>
+              <td>{cell(v["recall@1"])}</td><td>{cell(v["recall@3"])}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="mt-2 text-[13px] text-ink-faint">{t("retrievalMeta", { n: r.data.cases ?? 0, model: r.data.embed_model ?? "", draft: r.data.sources?.draft ?? 0 })}</p>
+    </div>
   );
 }

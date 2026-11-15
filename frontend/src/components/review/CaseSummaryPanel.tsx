@@ -42,6 +42,14 @@ export function CaseSummaryPanel({ token, reviewer, patientId }: { token: string
                 <ul className="grid list-disc gap-1 pl-5 text-ink-soft">{d.summary.questions_to_check.map((q, i) => <li key={i}>{q}</li>)}</ul>
               </>
             )}
+            {d.facts && d.facts.length > 0 && (
+              <>
+                <p className="mt-3 font-semibold text-ink">{t("facts")}</p>
+                <ul className="grid gap-1 text-[13px] text-ink-soft" lang="en">
+                  {d.facts.map((f) => <li key={f.id}><span className="font-semibold">[{f.id}]</span> {f.text} <span className="text-ink-faint">— {f.source}</span></li>)}
+                </ul>
+              </>
+            )}
             <p className="mt-3 text-[13px] text-ink-faint">{t("caveat")}</p>
           </>
         ) : (

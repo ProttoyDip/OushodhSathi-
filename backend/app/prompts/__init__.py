@@ -15,6 +15,7 @@ ACTIVE: dict[str, str] = {
     "sathi_nextstep": "sathi_nextstep.v1.md",
     "sathi_intent": "sathi_intent.v1.md",
     "case_summary": "case_summary.v1.md",
+    "case_summary_graph": "case_summary.v2.md",  # Graph RAG; v1 stays the fallback
     "read_bp": "read_bp.v1.md",
 }
 

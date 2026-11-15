@@ -84,7 +84,7 @@ export function HeroDemo({ replayLabel }: { replayLabel: string }) {
             </div>
           </LayoutGroup>
         </div>
-        <DemoTag className="mt-4" />
+        <DemoTag className="mt-4 border-solid border-paper bg-paper text-ink" />
       </div>
     </NextIntlClientProvider>
   );

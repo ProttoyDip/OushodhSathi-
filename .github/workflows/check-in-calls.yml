@@ -1,0 +1,25 @@
+# Daily Bangla check-in calls: every 15 minutes from 08:00 to 20:45 in Dhaka (02:00-14:45 UTC),
+# ask the API to place due calls and the one retry. The API itself refuses 21:00-08:00, caps calls per
+# household per day and never places the same call twice, so an extra run is harmless.
+# Off until a real phone provider is live: set the repository variable CALLS_ENABLED=true, and the
+# secret ADMIN_TOKEN (the pilot API's ADMIN_TOKEN from Render).
+name: check-in-calls
+
+on:
+  schedule:
+    - cron: "*/15 2-14 * * *"
+  workflow_dispatch:
+
+jobs:
+  run-due:
+    if: vars.CALLS_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Place due check-in calls
+        env:
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        run: |
+          if [ -z "$ADMIN_TOKEN" ]; then echo "ADMIN_TOKEN secret not set; skipping"; exit 0; fi
+          api=https://oushodhsathi-api.onrender.com
+          curl -fsS -m 90 "$api/health" > /dev/null || sleep 30   # wake the free instance
+          curl -fsS -m 120 -X POST -H "X-Admin-Token: $ADMIN_TOKEN" "$api/calls/run-due"

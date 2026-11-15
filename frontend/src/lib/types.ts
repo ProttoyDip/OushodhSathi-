@@ -206,11 +206,17 @@ export interface EvalResult {
   run_at: string;
   images: number;
   labelled_items: number;
-  brand_accuracy: number;
-  strength_accuracy: number;
+  /** null until eval/run_eval.py has enough labelled photos (see status) */
+  brand_accuracy: number | null;
+  strength_accuracy: number | null;
+  expiry_accuracy?: number | null;
+  needs_check_rate?: number | null;
   avg_confidence: number | null;
+  status?: string;
   brand_accuracy_ci?: [number, number];
   strength_accuracy_ci?: [number, number];
+  expiry_accuracy_ci?: [number, number];
+  needs_check_rate_ci?: [number, number];
 }
 
 export interface Proportion {
@@ -382,6 +388,52 @@ export interface CaseSummary {
   source: string | null;
   dropped: string | null;
   collapsed: boolean;
+  /** Graph RAG (v2) only: the knowledge-graph facts the summary cites, with their sources */
+  facts?: { id: string; text: string; source: string }[];
+}
+
+export type CallSlot = "morning" | "noon" | "night";
+
+export interface CallSettings {
+  provider: string;
+  needs_phone: boolean;
+  approved_slots: CallSlot[];
+  active: boolean;
+  local_time: string | null;
+  consent_at: string | null;
+  phone: string | null;
+}
+
+export interface CallAttempt {
+  id: number;
+  status: "ringing" | "in_progress" | "completed" | "emergency" | "no_answer" | "failed";
+  seq: number;
+  steps: string[];
+  answers: Partial<Record<CallSlot, "taken" | "missed">>;
+}
+
+export interface CallTurn {
+  attempt_id: number;
+  seq: number;
+  status: CallAttempt["status"];
+  play: string[];
+  prompts: Record<string, { bn: string; en: string }>;
+  expects_input: boolean;
+  done: boolean;
+  answers: CallAttempt["answers"];
+}
+
+export interface CallHistory {
+  active: boolean;
+  local_time: string | null;
+  attempts: { day: string; attempt_no: number; status: CallAttempt["status"]; provider: string; answers: CallAttempt["answers"]; created_at: string }[];
+  answer_rate: Proportion | null;
+}
+
+export interface FlagWhy {
+  code: string;
+  data_source: string;
+  paths: { node: string; type: string; via?: string; source?: string }[][];
 }
 
 export interface SavingsRow {

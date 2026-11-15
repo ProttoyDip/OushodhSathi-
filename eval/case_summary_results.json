@@ -1,0 +1,193 @@
+{
+  "run_at": "2026-11-15T03:56:33+00:00",
+  "household": "demo seed",
+  "medicines": 9,
+  "findings": 12,
+  "v1": {
+    "prompt_version": "case_summary.v1",
+    "runs": 10,
+    "passed_all_checks": {
+      "label": "passed",
+      "k": 8,
+      "n": 10,
+      "p": 0.8,
+      "ci_low": 0.4902,
+      "ci_high": 0.9433
+    },
+    "drop_reasons": {
+      "no model answered (all providers failed: nvidia: ReadTimeout; openrouter: over the 30s budget)": 1,
+      "dose": 1
+    },
+    "mean_sentences_kept": 3,
+    "uncited_sentences_removed": null,
+    "median_seconds": 18.47,
+    "example": {
+      "summary": {
+        "summary": [
+          "9 confirmed medicines prescribed by Local drug shop, Village doctor, and Dr. A (Cumilla Medical College OPD).",
+          "Duplicate generics identified: paracetamol (Napa, Ace) and amlodipine (Camlodin, Amdocal) from different prescribers.",
+          "Findings include expired Tryptin and Clofenac, major interaction Tryptin‑Rivotril, anticholinergic burden 3, three Beers‑listed drugs (Clofenac, Rivotril, Tryptin), moderate interactions Clofenac‑Angilock and Clofenac‑Comet, and kidney dose flag for Comet (eGFR 41)."
+        ],
+        "prescribers": [
+          {
+            "name": "Local drug shop",
+            "medicines": [
+              "Napa",
+              "Clofenac"
+            ]
+          },
+          {
+            "name": "Village doctor",
+            "medicines": [
+              "Ace",
+              "Amdocal",
+              "Rivotril",
+              "Tryptin"
+            ]
+          },
+          {
+            "name": "Dr. A (Cumilla Medical College OPD)",
+            "medicines": [
+              "Camlodin",
+              "Angilock",
+              "Comet"
+            ]
+          }
+        ],
+        "questions_to_check": [
+          "Are all three prescribers aware of the other prescribers' medicines?",
+          "Is the patient still using the expired Tryptin and Clofenac?",
+          "Has the kidney function (eGFR 41) been reviewed for continued metformin (Comet) use?"
+        ]
+      },
+      "facts": null,
+      "source": "nvidia/nvidia/nemotron-3-ultra-550b-a55b"
+    }
+  },
+  "v2_graph_rag": {
+    "prompt_version": "case_summary.v2",
+    "runs": 10,
+    "passed_all_checks": {
+      "label": "passed",
+      "k": 8,
+      "n": 10,
+      "p": 0.8,
+      "ci_low": 0.4902,
+      "ci_high": 0.9433
+    },
+    "drop_reasons": {
+      "no model answered (all providers failed: nvidia: ReadTimeout; openrouter: over the 60s budget)": 2
+    },
+    "mean_sentences_kept": 3,
+    "uncited_sentences_removed": 0,
+    "median_seconds": 41.96,
+    "example": {
+      "summary": {
+        "summary": [
+          "Duplicate generic products are present for paracetamol (Napa and Ace) and amlodipine (Camlodin and Amdocal), each prescribed by different providers. [R1] [R2] [F18] [F11]",
+          "Tryptin (amitriptyline) is expired, has a major interaction with Rivotril (clonazepam) that increases drowsiness and fall risk, and contributes an anticholinergic burden score of 3 associated with confusion and falls in older adults. [R3] [R4] [R5] [F4] [F8] [F10] [F12]",
+          "Clofenac (diclofenac) is near expiry, listed in the AGS Beers Criteria for adults 65+, and has moderate interactions with Angilock (losartan) and Comet (metformin) that may reduce blood pressure control and increase kidney strain, while Comet (metformin) requires benefit-risk assessment due to eGFR below 45. [R6] [R9] [R10] [R11] [R12] [F2] [F5] [F6] [F13] [F14] [F15] [F17]"
+        ],
+        "prescribers": [
+          {
+            "name": "Local drug shop",
+            "medicines": [
+              "Napa",
+              "Clofenac"
+            ]
+          },
+          {
+            "name": "Village doctor",
+            "medicines": [
+              "Ace",
+              "Amdocal",
+              "Rivotril",
+              "Tryptin"
+            ]
+          },
+          {
+            "name": "Dr. A (Cumilla Medical College OPD)",
+            "medicines": [
+              "Camlodin",
+              "Angilock",
+              "Comet"
+            ]
+          }
+        ],
+        "questions_to_check": [
+          "Is the patient currently taking both Napa and Ace, and what is the intended total daily paracetamol exposure? [R1]",
+          "Has the expiry of Tryptin and the near expiry of Clofenac been reviewed for continued use? [R3] [R9]",
+          "Are the Beers Criteria listings for Clofenac, Rivotril, and Tryptin, and the moderate interactions of Clofenac with Angilock and Comet, being considered in the context of the patient's kidney function? [R6] [R7] [R8] [R10] [R11] [R12]"
+        ]
+      },
+      "facts": [
+        {
+          "id": "F2",
+          "text": "There is a moderate interaction between nsaid + arb: Weaker blood-pressure control and higher risk of kidney injury, especially in older adults.",
+          "source": "curated seed - replace with DDInter 2.0 export"
+        },
+        {
+          "id": "F4",
+          "text": "There is a major interaction between benzodiazepine + tca: Added drowsiness, confusion and higher risk of falls.",
+          "source": "curated seed - replace with DDInter 2.0 export"
+        },
+        {
+          "id": "F5",
+          "text": "There is a moderate interaction between nsaid + biguanide: NSAIDs in older adults with diabetes increase kidney strain alongside metformin.",
+          "source": "curated seed - replace with DDInter 2.0 export"
+        },
+        {
+          "id": "F6",
+          "text": "NSAID is listed in the AGS Beers Criteria for adults 65+: Raises risk of stomach bleeding and kidney injury, and can raise blood pressure in adults 65+.",
+          "source": "AGS Beers Criteria (beers_seed.csv)"
+        },
+        {
+          "id": "F8",
+          "text": "amitriptyline has an anticholinergic burden score of 3.",
+          "source": "ACB scale 2012 update (Aging Brain Care) - seed; verify"
+        },
+        {
+          "id": "F10",
+          "text": "amitriptyline is in the class TCA.",
+          "source": "brands_seed.csv (demo seed - verify against MedEx)"
+        },
+        {
+          "id": "F11",
+          "text": "amlodipine is in the class CCB-dihydropyridine.",
+          "source": "brands_seed.csv (demo seed - verify against MedEx)"
+        },
+        {
+          "id": "F12",
+          "text": "clonazepam is in the class benzodiazepine.",
+          "source": "brands_seed.csv (demo seed - verify against MedEx)"
+        },
+        {
+          "id": "F13",
+          "text": "diclofenac is in the class NSAID.",
+          "source": "brands_seed.csv (demo seed - verify against MedEx)"
+        },
+        {
+          "id": "F14",
+          "text": "losartan is in the class ARB.",
+          "source": "brands_seed.csv (demo seed - verify against MedEx)"
+        },
+        {
+          "id": "F15",
+          "text": "metformin is in the class biguanide.",
+          "source": "brands_seed.csv (demo seed - verify against MedEx)"
+        },
+        {
+          "id": "F17",
+          "text": "metformin has a kidney-function rule (metformin eGFR < 45): Below 45: weigh benefits and risks of continuing.",
+          "source": "FDA Drug Safety Communication, 8 Apr 2016: https://www.fda.gov/drugs/drug-safety-and-availability/fda-drug-safety-communication-fda-revises-warnings-regarding-use-diabetes-medicine-metformin-certain"
+        },
+        {
+          "id": "F18",
+          "text": "paracetamol is in the class analgesic-paracetamol.",
+          "source": "brands_seed.csv (demo seed - verify against MedEx)"
+        }
+      ],
+      "source": "nvidia/nvidia/nemotron-3-ultra-550b-a55b"
+    }
+  }
+}

@@ -9,8 +9,9 @@ official `mcp` Python SDK (v2, `MCPServer`).
 | `match_brand(brand)` | Maps a Bangladeshi brand (e.g. "Napa 500 mg") to its generic and class: exact, then strict fuzzy. "Napa Extra" is never forced onto "Napa". | No |
 | `lookup_unknown_brand(brand, strength)` | Searches medex.com.bd, arogga.com and medeasy.health (Tavily, then Perplexity). Must cite a source; always marked `web_unverified`. Needs a key in `backend/.env`. | No (caches successful lookups only) |
 | `check_medicines(items, age, egfr?, kidney_test_date?)` | Runs the deterministic safety rules on a list and returns findings marked "pending clinician review". With `egfr` (and the test date, YYYY-MM-DD) it also checks kidney dosing and an overdue kidney test. | No — it never creates flags |
+| `explain_flag_path(generics)` | Returns numbered facts from the medicine knowledge graph (`backend/app/medgraph.py`) around the given generics: class, triple-whammy group, interactions, Beers, kidney, anticholinergic and AWaRe links, each with the table row it came from. | No — it explains links and never creates findings |
 
-All three tools are annotated read-only. Findings returned here are not for patients: in the
+All four tools are annotated read-only. Findings returned here are not for patients: in the
 product, every finding is confirmed by a pharmacist or doctor first.
 
 ## Run

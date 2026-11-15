@@ -4,6 +4,7 @@ import { Check, Download, KeyRound, Mail, Trash2, UserRound } from "lucide-react
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
+import { CallSettingsCard } from "@/components/calls/CallSettingsCard";
 import { buttonStyles, FamilyHeader, familyWidth } from "@/components/Chrome";
 import { ErrorState, Skeleton } from "@/components/States";
 import { api } from "@/lib/api";
@@ -31,11 +32,15 @@ export default function SettingsPage() {
         ) : !patient.data ? (
           <Skeleton />
         ) : patient.data.is_demo ? (
-          <p className="mt-4 text-ink-soft">{t("demo")}</p>
+          <div className="mt-4 grid max-w-[640px] gap-6">
+            <p className="text-ink-soft">{t("demo")}</p>
+            <CallSettingsCard pid={pid} />
+          </div>
         ) : (
           <div className="mt-6 grid max-w-[640px] gap-6">
             <EmailCard pid={pid} email={patient.data.family_email ?? ""} optIn={!!patient.data.email_opt_in} />
             <SexCard pid={pid} sex={patient.data.sex ?? null} />
+            <CallSettingsCard pid={pid} />
             <LinkCard pid={pid} />
             <ExportCard pid={pid} />
             <DeleteCard pid={pid} />

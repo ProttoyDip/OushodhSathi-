@@ -1,4 +1,4 @@
-"""OushodhSathi MCP server (stdio). Three read-only tools over the backend modules.
+"""OushodhSathi MCP server (stdio). Four read-only tools over the backend modules.
 
 It can never write flags: check_medicines runs the deterministic rules engine and
 returns findings as data; nothing is stored and nothing reaches a family.
@@ -23,6 +23,7 @@ load_dotenv(Path(__file__).resolve().parent.parent / "backend" / ".env")
 
 from app.brands import match_brand as _match_brand  # noqa: E402
 from app.kidney import KidneyContext  # noqa: E402
+from app import medgraph  # noqa: E402
 from app.models import RuleItem  # noqa: E402
 from app.research import lookup_unknown_brand as _lookup  # noqa: E402
 from app.rules import run_rules  # noqa: E402
@@ -34,7 +35,8 @@ server = MCPServer(
     instructions=(
         "Read-only tools for Bangladeshi medicine lists. match_brand maps a brand to its generic; "
         "lookup_unknown_brand searches Bangladeshi medicine sites (results are unverified); "
-        "check_medicines runs the deterministic safety rules. Findings must be confirmed by a "
+        "check_medicines runs the deterministic safety rules; explain_flag_path shows the knowledge-graph "
+        "path (with sources) that links medicines to a rule. Findings must be confirmed by a "
         "pharmacist or doctor. Never tell a patient to stop, start or change a medicine."
     ),
     version="0.1.0",
@@ -112,6 +114,21 @@ def check_medicines(items: list[MedicineIn], age: int | None = None, egfr: float
         "status": "pending clinician review — not for patients",
     }
 
+
+
+@server.tool(annotations=READ_ONLY)
+def explain_flag_path(generics: list[str]) -> dict:
+    """Show how the given generics connect in the medicine knowledge graph: generic -> drug class ->
+    class group / interaction / Beers / kidney / anticholinergic / AWaRe rule, every step with the
+    table it came from. Read-only. It explains links; it does not create or change findings."""
+    gens = sorted({g.strip().lower() for g in generics if g.strip()})
+    g = medgraph.graph()
+    known = [x for x in gens if f"Generic:{x}" in g]
+    return {
+        "facts": medgraph.facts_for(known),
+        "unknown_generics": [x for x in gens if x not in known],
+        "status": "explanation only - findings come from the rules engine and need a clinician",
+    }
 
 if __name__ == "__main__":
     server.run("stdio")

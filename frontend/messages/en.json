@@ -297,7 +297,8 @@
       "trust2": "Bangla first",
       "trust3": "Photos are not stored",
       "frameReview": "The pharmacist's review queue",
-      "framePhone": "The family's phone"
+      "framePhone": "The family's phone",
+      "video": "Watch the demo video"
     },
     "how": {
       "title": "How it works",
@@ -424,7 +425,8 @@
       "terms": "Terms",
       "contact": "Contact",
       "github": "Source code",
-      "family": "In the app, nothing on this phone is a medical decision: every finding is confirmed by a registered pharmacist or doctor."
+      "family": "In the app, nothing on this phone is a medical decision: every finding is confirmed by a registered pharmacist or doctor.",
+      "video": "Video"
     },
     "faq": {
       "title": "Questions families ask",

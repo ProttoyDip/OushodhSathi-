@@ -4,7 +4,7 @@
  * pre-emit critique: P5 H4 E4 S5 R5 V4
  */
 import {
-  ArrowRight, BookOpen, CircleCheck, Clock, ExternalLink, ImageOff, Languages, Plus, ShieldCheck, Stethoscope,
+  ArrowRight, BookOpen, CirclePlay, CircleCheck, Clock, ExternalLink, ImageOff, Languages, Plus, ShieldCheck, Stethoscope,
 } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
@@ -18,7 +18,7 @@ import { HowTimeline } from "@/components/landing/HowTimeline";
 import { ProductFrames, ReviewScreenshot } from "@/components/landing/ProductFrames";
 import { stickyBar } from "@/lib/layout";
 import { reveal } from "@/lib/reveal";
-import { demoHref, GITHUB_URL } from "@/lib/site";
+import { demoHref, GITHUB_URL, VIDEO_URL } from "@/lib/site";
 import { TEAM } from "@/lib/team";
 
 export const metadata: Metadata = {
@@ -86,6 +86,10 @@ export default async function Landing() {
               <Link href="/start" className={secondaryBtn}>{t("hero.ctaStart")}</Link>
             </div>
             <p className="mt-3 text-[15px] text-ink-faint">{t("hero.demoNote")}</p>
+            <a href={VIDEO_URL} target="_blank" rel="noreferrer"
+              className="mt-4 inline-flex min-h-11 items-center gap-2 whitespace-nowrap text-[16px] font-semibold text-neel underline-offset-4 hover:underline">
+              <CirclePlay aria-hidden size={20} /> {t("hero.video")}
+            </a>
             <ul className="mt-10 grid gap-3 border-t border-rule pt-6 text-[16px] font-medium text-ink-soft">
               {([["trust1", ShieldCheck], ["trust2", Languages], ["trust3", ImageOff]] as const).map(([k, Icon]) => (
                 <li key={k} className="flex items-center gap-3"><Icon aria-hidden size={19} className="shrink-0 text-neel" /> {t(`hero.${k}`)}</li>
@@ -256,7 +260,7 @@ export default async function Landing() {
             ["/privacy", t("footer.privacy")], ["/terms", t("footer.terms")], ["/contact", t("footer.contact")],
           ]} />
           <FooterCol title={t("footer.project")} links={[
-            ["/docs", t("footer.docs")], [GITHUB_URL, t("footer.github")], ["/styleguide", t("footer.design")],
+            ["/docs", t("footer.docs")], [VIDEO_URL, t("footer.video")], [GITHUB_URL, t("footer.github")], ["/styleguide", t("footer.design")],
           ]} />
         </div>
       </footer>

@@ -11,7 +11,7 @@
 [![Next.js 15](https://img.shields.io/badge/Next.js-15-0E1530)](frontend/package.json)
 [![Congress 2026 · HealthSphere AI](https://img.shields.io/badge/Congress%202026-HealthSphere%20AI-8F9BD6)](#acknowledgements)
 
-**Live demo:** <https://oushodhsathi.vercel.app> · **Docs:** [/docs](https://oushodhsathi.vercel.app/docs) · **Walkthrough:** [/demo](https://oushodhsathi.vercel.app/demo) · **Demo video:** _YouTube link added after upload_ · **Reviewer login:** [/review](https://oushodhsathi.vercel.app/review) asks for a name and a reviewer token; judges get the live token in the submission's Judge Access Note (locally, the quick start uses `demo-reviewer`). The hosted API runs on Render's free plan: it sleeps when idle, so the first request can take up to a minute. Data lives in a free Supabase Postgres, so households and reviews survive restarts. **Try it with your own family:** [/start](https://oushodhsathi.vercel.app/start) creates a private household that opens only with its family link.
+**Live demo:** <https://oushodhsathi.vercel.app> · **Docs:** [/docs](https://oushodhsathi.vercel.app/docs) · **Walkthrough:** [/demo](https://oushodhsathi.vercel.app/demo) · **Demo video:** [YouTube](https://youtu.be/a3wnCDDxxm0) · **Reviewer login:** [/review](https://oushodhsathi.vercel.app/review) asks for a name and a reviewer token; judges get the live token in the submission's Judge Access Note (locally, the quick start uses `demo-reviewer`). The hosted API runs on Render's free plan: it sleeps when idle, so the first request can take up to a minute. Data lives in a free Supabase Postgres, so households and reviews survive restarts. **Try it with your own family:** [/start](https://oushodhsathi.vercel.app/start) creates a private household that opens only with its family link.
 
 <p align="center">
   <img src="docs/video/hero.gif" width="1200" alt="The /demo walkthrough: a messy shelf of medicine strips is scanned, the list assembles itself, and Napa and Ace snap together under a red bracket labelled 'both are paracetamol'.">
@@ -263,7 +263,24 @@ More in [`mcp/README.md`](mcp/README.md).
 
 ## Demo video
 
+[![OushodhSathi demo video on YouTube](https://img.youtube.com/vi/a3wnCDDxxm0/maxresdefault.jpg)](https://youtu.be/a3wnCDDxxm0)
+
+Watch it on YouTube: <https://youtu.be/a3wnCDDxxm0>
+
 The 2:58 video is planned second by second in [`docs/video/SHOTLIST.md`](docs/video/SHOTLIST.md), with the voiceover and captions in Bangla and English ([`captions.bn.srt`](docs/video/captions.bn.srt), [`captions.en.srt`](docs/video/captions.en.srt)). Seven 1920×1080 scenes live in [`video/scenes`](video/scenes) (stills in [`docs/video/stills`](docs/video/stills)), and the product footage comes from the keyboard-paced [`/demo`](https://oushodhsathi.vercel.app/demo) walkthrough. `cd video && npm install && node record.mjs` re-records every clip and stitches a silent draft cut for the voiceover.
+
+## Limits
+
+What is not built or not measured yet, so nothing on this page is read as more than it is:
+
+- **Daily check-in calls run only as a browser simulator** ([`/call-demo`](https://oushodhsathi.vercel.app/call-demo)). No phone provider is connected, and the Bangla audio prompts are not recorded yet (the simulator shows the words).
+- **Strip-reading accuracy is not measured.** The labelling tool and the eval are ready; no labelled photos exist yet, so no accuracy figure is claimed.
+- **No pilot results.** [`eval/pilot.csv`](eval/pilot.csv) has no real households yet; every household on the demo site is invented.
+- **Small reference tables.** About 30 brands, 6 interactions, 5 Beers entries and 2 kidney-dose rules, seeded for the demo and to be extended with a pharmacist. DDInter data is non-commercial only and is not imported.
+- **Evaluation sets need human review.** 78 of the 79 retrieval questions and the Sathi cases were drafted by the build agent; a native speaker still needs to check them.
+- **The case-summary eval measures safety, not usefulness.** It counts how often a summary passes every check; whether it saves a pharmacist time needs pharmacists. On free models the Graph RAG summary takes about 40 seconds.
+- **Two models are switched off by design** until real data exists: the escalate-only intent classifier (needs 200+ human-written examples) and the missed-dose model (needs 30 real households).
+- **Free hosting.** The API sleeps when idle, so the first request can take up to a minute.
 
 ## Roadmap
 

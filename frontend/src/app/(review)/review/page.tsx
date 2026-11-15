@@ -23,6 +23,7 @@ import { KidneyNote } from "@/components/review/KidneyNote";
 import { AdherenceNote } from "@/components/review/AdherenceNote";
 import { StartNotes } from "@/components/review/StartNotes";
 import { CaseSummaryPanel } from "@/components/review/CaseSummaryPanel";
+import { WhyPath } from "@/components/review/WhyPath";
 import { ClinicalEditor } from "@/components/review/ClinicalEditor";
 import { QuestionsBoard } from "@/components/review/QuestionsBoard";
 
@@ -531,6 +532,7 @@ function Evidence({ flag, now, session, children }: { flag: Flag; now: number; s
         <p lang="en" className="text-ink">{flag.evidence}{locale === "bn" && <span className="mt-1 block text-[13px] text-ink-faint">{t("ev.clinicalNote")}</span>}</p>
         <h3 className="font-semibold text-ink-soft">{t("ev.dataSource")}</h3>
         <p className="text-ink">{flag.data_source}</p>
+        <WhyPath token={session.token} flagId={flag.id} />
         {web.length > 0 && (
           <>
             <h3 className="font-semibold text-amber">{t("ev.webMatch")}</h3>

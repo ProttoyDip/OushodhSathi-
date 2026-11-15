@@ -13,3 +13,4 @@ pillow==13.0.0
 pytest==9.2.0
 mcp==2.3.0
 nvidia-riva-client==2.28.0  # Whisper large-v3 speech to text via NVIDIA (app/asr.py)
+networkx==3.7  # in-memory medicine knowledge graph (app/medgraph.py)

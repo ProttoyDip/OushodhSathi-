@@ -88,6 +88,78 @@ def case_summary(patient: Patient, items: list[MedicineItem], flags: list[Stored
             "prompt_version": prompts.version("case_summary"), "dropped": None}
 
 
+# ---- Graph RAG case summary (v2): facts from the knowledge graph, every sentence cited --------
+
+_CITE = re.compile(r"\[([FR]\d+)\]")
+# the cited prompt is longer than v1's; free text models need about 20-40 s for it (eval/case_summary_results.json)
+GRAPH_SUMMARY_BUDGET_S = 60
+
+
+def graph_input(patient: Patient, items: list[MedicineItem], flags: list[StoredFlag],
+                facts: list[dict]) -> str:
+    meds = "\n".join(f"- {it.brand} | generic: {it.generic or 'unknown'} | class: {it.drug_class or 'unknown'} | "
+                     f"prescriber: {it.prescriber or 'unknown'} | source: {it.source or 'unknown'}" for it in items)
+    # strengths are left out: the summary may not state doses, and a model copies what it is shown
+    found = "\n".join(f"- [R{i}] {f.code} ({f.severity}, for the {f.routed_to}): {_DOSE_NUMBER.sub('', f.evidence)}"
+                      for i, f in enumerate(flags, 1)) or "- none"
+    known = "\n".join(f"- [{f['id']}] {f['text']} (source: {f['source']})" for f in facts) or "- none"
+    return (f"Patient age: {patient.age}\nConfirmed medicines:\n{meds or '- none'}\n"
+            f"FINDINGS:\n{found}\nFACTS:\n{known}")
+
+
+def keep_cited(lines: list[str], valid: set[str]) -> tuple[list[str], int]:
+    """Keeps sentences that cite at least one valid id and no invalid one. Returns (kept, dropped)."""
+    kept = []
+    for line in lines:
+        ids = set(_CITE.findall(line))
+        if ids and ids <= valid:
+            kept.append(line.strip())
+    return kept, len(lines) - len(kept)
+
+
+def case_summary_graph(patient: Patient, items: list[MedicineItem], flags: list[StoredFlag],
+                       router: Router | None) -> dict:
+    """Graph RAG: the model sees ONLY the numbered graph facts and findings; uncited sentences are
+    dropped; then the same checks as v1. On any failure "summary" is None with the reason in
+    "dropped", and the caller falls back to v1."""
+    from .medgraph import facts_for
+
+    def fail(reason: str, source: str | None = None) -> dict:
+        return {"summary": None, "source": source, "dropped": reason,
+                "prompt_version": prompts.version("case_summary_graph")}
+
+    if router is None or not items:
+        return fail("no model" if items else "no medicines")
+    generics = sorted({g.strip().lower() for it in items for g in (it.generic or "").split("+") if g.strip()})
+    facts = facts_for(generics)
+    if not facts:
+        return fail("no graph facts for these medicines")
+    valid = {f["id"] for f in facts} | {f"R{i}" for i in range(1, len(flags) + 1)}
+    try:
+        result = router.chat("text", [
+            {"role": "system", "content": prompts.load("case_summary_graph")},
+            {"role": "user", "content": graph_input(patient, items, flags, facts)},
+        ], json_mode=True, budget_s=GRAPH_SUMMARY_BUDGET_S)
+        raw = CaseSummary.model_validate(parse_json(result.text))
+    except NoProviderAvailable as e:
+        return fail(f"no model answered ({e})")
+    except (ValueError, ValidationError):
+        return fail("the model's answer was not valid")
+    source = f"{result.provider}/{result.model}"
+    summary, dropped_s = keep_cited(raw.summary, valid)
+    questions, dropped_q = keep_cited(raw.questions_to_check, valid)
+    if not summary:
+        return fail("no summary sentence cited a fact", source)
+    parsed = CaseSummary(summary=summary[:3], prescribers=raw.prescribers, questions_to_check=questions[:3])
+    if problems := summary_problems(parsed, items):
+        log.warning("graph case summary dropped: %s", "; ".join(problems))
+        return fail("; ".join(problems), source)
+    cited = sorted({c for line in [*summary, *questions] for c in _CITE.findall(line)})
+    return {"summary": parsed.model_dump(), "source": source,
+            "prompt_version": prompts.version("case_summary_graph"), "dropped": None,
+            "facts": [f for f in facts if f["id"] in cited], "uncited_dropped": dropped_s + dropped_q}
+
+
 # ---- blood-pressure monitor photo -----------------------------------------------------
 
 LOW_BP_CONFIDENCE = 0.8

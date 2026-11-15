@@ -382,6 +382,14 @@ export interface CaseSummary {
   source: string | null;
   dropped: string | null;
   collapsed: boolean;
+  /** Graph RAG (v2) only: the knowledge-graph facts the summary cites, with their sources */
+  facts?: { id: string; text: string; source: string }[];
+}
+
+export interface FlagWhy {
+  code: string;
+  data_source: string;
+  paths: { node: string; type: string; via?: string; source?: string }[][];
 }
 
 export interface SavingsRow {

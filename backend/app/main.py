@@ -83,6 +83,11 @@ def get_store() -> Store:
     _load_model_preferences(store)  # the user's chosen AI models survive restarts
     from . import help_vectors
     help_vectors.attach(store)  # Sathi's vector index (optional; keyword search works without it)
+    try:
+        from . import medgraph
+        medgraph.persist(store)  # snapshot of the medicine knowledge graph (kg_nodes / kg_edges)
+    except Exception:  # noqa: BLE001 - the graph explains; the app works without the snapshot
+        logging.getLogger("oushodh").exception("knowledge graph snapshot failed")
     return store
 
 
@@ -1035,6 +1040,22 @@ def approve_schedule(pid: int, body: ReviewerIn | None = Body(default=None),
     return {"approved": n}
 
 
+@app.get("/flags/{flag_id}/why", dependencies=[Depends(require_reviewer)])
+def flag_why(flag_id: int, store: Store = Depends(get_store)) -> dict:
+    """Reviewer only: the knowledge-graph path that explains a finding (brand -> generic -> class ->
+    group / rule, each step with its source). It explains; rules.py alone created the finding."""
+    from . import medgraph
+
+    f = store.get_flag(flag_id)
+    if f is None:
+        raise HTTPException(404, "Flag not found")
+    items = {it.id: it for it in store.list_items(f.patient_id)}
+    chosen = [items[i] for i in f.item_ids if i in items]
+    generics = sorted({g.strip().lower() for it in chosen for g in (it.generic or "").split("+") if g.strip()})
+    return {"code": f.code, "data_source": f.data_source,
+            "paths": medgraph.path_for([it.brand for it in chosen], generics, f.code, f.meta)}
+
+
 @app.post("/flags/{flag_id}/opened", status_code=204, dependencies=[Depends(require_reviewer)])
 def flag_opened(flag_id: int, store: Store = Depends(get_store)) -> None:
     if store.get_flag(flag_id) is None:
@@ -1058,7 +1079,11 @@ def get_case_summary(pid: int, reviewer: str | None = None, rev: ReviewerAccount
     p = _patient_or_404(store, pid)
     items = [it for it in store.list_items(pid, confirmed_only=True) if counts(it)]
     flags = store.list_flags(pid, statuses=("pending_review", "confirmed"))
-    out = clinical.case_summary(p, items, flags, Router(store=store))
+    router = Router(store=store)
+    # Graph RAG (v2) first: knowledge-graph facts, every sentence cited; v1 is the fallback
+    out = clinical.case_summary_graph(p, items, flags, router)
+    if out["summary"] is None and not out["dropped"].startswith("no model answered"):
+        out = clinical.case_summary(p, items, flags, router)  # a second slow call after a timeout would not help
     # automation bias: after a reviewer's first 10 reviews the panel starts collapsed
     name = who(rev, reviewer) if (reviewer or not rev.is_demo) else None
     return {**out, "collapsed": bool(name) and store.reviews_by(name) >= 10}
@@ -1650,3 +1675,4 @@ def eval_models() -> dict:
 def intent_classifier_enabled() -> bool:
     from . import intent_classifier
     return intent_classifier.enabled()
+

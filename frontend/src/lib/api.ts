@@ -1,7 +1,7 @@
 import type {
   AuditEntry, BPPhotoReading, BPTrend, CaseSummary, CleanupItem, EmergencyPage, EvalResult, FamilyStatus, Flag, Health, MedicineItem,
   ActivityEntry, ModelsInfo, NextStep, Passport, Patient, PilotStats, Question, RamadanRequest, Report, ReviewQueue,
-  AdherenceSummary, DoseTick, KidneyView, ReviewerAccount, Slot, ReviewerInvite, SathiReply, Savings, Today, VisitPrep,
+  AdherenceSummary, DoseTick, Proportion, KidneyView, ReviewerAccount, Slot, ReviewerInvite, SathiReply, Savings, Today, VisitPrep,
 } from "./types";
 import { familyKey } from "./familyKey";
 
@@ -51,6 +51,8 @@ const json = (body: unknown) => JSON.stringify(body);
 
 export const api = {
   health: () => request<Health>("/health"),
+  evalRetrieval: () => request<{ run_at: string | null; cases: number | null; sources: Record<string, number> | null;
+    embed_model: string | null; methods: Record<string, Record<"recall@1" | "recall@3", Proportion>> | null }>("/eval/retrieval"),
   evalModels: () => request<{
     intent: { status: string; heldout_human: number; required: number; enabled: boolean };
     adherence_risk: { status: string; households: number; required_households: number; household_weeks: number; required_household_weeks: number };

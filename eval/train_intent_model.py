@@ -3,7 +3,7 @@
   pip install -r eval/requirements-ml.txt
   NVIDIA_API_KEY=... python eval/train_intent_model.py
 
-Embeds every TRAIN row of eval/intent_dataset.csv with NVIDIA's baai/bge-m3 (cached in
+Embeds every TRAIN row of eval/intent_dataset.csv with NVIDIA's nvidia/nemotron-3.5-embed-1b via app/embeddings.py (cached in
 eval/.intent_embed_cache.json so re-runs cost nothing), fits a scikit-learn logistic regression,
 and writes backend/data/intent_model.json: coefficients and intercepts only, so the API runs it
 without scikit-learn. Held-out rows are never used for training. Evaluate with run_intent_eval.py.

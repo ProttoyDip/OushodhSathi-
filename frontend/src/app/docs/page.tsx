@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
 import { Wordmark } from "@/components/BrandMark";
 import { LangToggle, ThemeToggle } from "@/components/Chrome";
 import { stickyBar } from "@/lib/layout";
-import { EvalPanel, LiveStatus, ModelGatesPanel, PilotPanel, ReviewTimePanel, SathiEvalPanel } from "@/components/docs/LivePanels";
+import { EvalPanel, LiveStatus, ModelGatesPanel, PilotPanel, RetrievalPanel, ReviewTimePanel, SathiEvalPanel } from "@/components/docs/LivePanels";
 import { reveal } from "@/lib/reveal";
 
 export const metadata: Metadata = { title: "Docs — pitch, whitepaper, system status" };
@@ -117,6 +117,7 @@ export default async function Docs() {
           <h3>{t("evaluation.sathiTitle")}</h3>
           <p>{t("evaluation.sathiIntro")}</p>
           <div {...reveal(0)} className="mt-5"><SathiEvalPanel /></div>
+          <div {...reveal(0)} className="mt-5"><RetrievalPanel /></div>
           <div {...reveal(0)} className="mt-5"><ModelGatesPanel /></div>
           <h3>{t("evaluation.reviewTitle")}</h3>
           <p>{t("evaluation.reviewIntro")}</p>

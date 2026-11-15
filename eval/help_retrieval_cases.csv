@@ -1,0 +1,80 @@
+question,lang,expected_entry_id,source
+pata kata hole ki korbo,banglish,scan.cut-strip,sathi_cases
+kata pata r chobi kivabe tulbo,banglish,scan.cut-strip,draft
+অর্ধেক কাটা পাতা থাকলে কী হবে,bn,scan.cut-strip,draft
+the strip is cut in half can I still scan it,en,scan.cut-strip,draft
+ছবি ঝাপসা আসছে কী করব,bn,scan.blurry,draft
+chobi jhapsa hoye geche,banglish,scan.blurry,draft
+my photo came out blurry,en,scan.blurry,draft
+ওষুধের ছবি কীভাবে তুলব,bn,scan.how,draft
+oshudh scan korbo kivabe,banglish,scan.how,draft
+how do I scan the medicines,en,scan.how,draft
+ভালো ছবি তোলার নিয়ম কী,bn,scan.good-photo,draft
+tips for a good photo of the strip,en,scan.good-photo,draft
+ডাক্তারের প্রেসক্রিপশনের ছবি দেওয়া যাবে,bn,scan.prescription,draft
+prescription er chobi dewa jabe,banglish,scan.prescription,draft
+can I add a handwritten prescription,en,scan.prescription,draft
+ছবি ছাড়া হাতে লিখে ওষুধ যোগ করব কীভাবে,bn,scan.manual,draft
+can I type the medicine name myself,en,scan.manual,draft
+ভুল নাম পড়েছে ঠিক করব কীভাবে,bn,check.edit,draft
+nam vul porse thik korbo kivabe,banglish,check.edit,draft
+the app read the wrong strength how do I fix it,en,check.edit,draft
+দাগ দেওয়া কার্ড কেন,bn,check.please-check,draft
+why is the card dashed and says please check,en,check.please-check,draft
+ওয়েব থেকে পাওয়া লেখা কেন,bn,check.web,draft
+what does found on the web mean,en,check.web,draft
+সকাল দুপুর রাত কীভাবে বাছব,bn,check.times,draft
+set morning or night for a medicine,en,check.times,draft
+ওষুধ খেয়েছি টিক দেব কীভাবে,bn,today.tick,draft
+how do I mark a dose as taken,en,today.tick,draft
+প্যাকটা আসল কিনা কীভাবে দেখব,bn,pack.check,draft
+how can I check the pack is genuine,en,pack.check,draft
+তালিকা কে দেখবেন,bn,review.who,draft
+who checks my list,en,review.who,draft
+ফলাফল আসতে কত সময় লাগে,bn,review.how-long,draft
+koto din lagbe result asতে,banglish,review.how-long,draft
+how long does the review take,en,review.how-long,draft
+নিশ্চিত মানে কী,bn,review.confirmed,draft
+what does confirmed by the pharmacist mean,en,review.confirmed,draft
+কেন অপেক্ষা করতে হচ্ছে,bn,review.why-wait,draft
+why do I have to wait for the result,en,review.why-wait,draft
+লাল আর কমলা রং মানে কী,bn,results.colors,draft
+lal r komola rong mane ki,banglish,results.colors,draft
+what do the red and orange colours mean,en,results.colors,draft
+ব্যাখ্যা কে লিখেছে,bn,results.explanation,draft
+who wrote the explanation of the result,en,results.explanation,draft
+পাসপোর্ট প্রিন্ট করব কীভাবে,bn,passport.print,draft
+passport print korbo kivabe,banglish,passport.print,draft
+how do I print the medicine passport,en,passport.print,draft
+পাসপোর্ট হোয়াটসঅ্যাপে পাঠাব,bn,passport.whatsapp,draft
+send the passport on whatsapp,en,passport.whatsapp,draft
+ডাক্তারকে পাসপোর্ট দেখাব কেন,bn,passport.doctor,draft
+why should I show the passport to the doctor,en,passport.doctor,draft
+পাসপোর্টের কিউআর কোড কিসের জন্য,bn,passport.emergency,draft
+what is the qr code on the passport for,en,passport.emergency,draft
+ওষুধ ফুরিয়ে গেলে জানাবে,bn,refill.how,draft
+will the app tell me when medicine is running out,en,refill.how,draft
+রক্তচাপ কীভাবে লিখব,bn,bp.add,draft
+pressure likhbo kivabe,banglish,bp.add,draft
+how do I add a blood pressure reading,en,bp.add,draft
+সাথী কী করতে পারে,bn,sathi.can,draft
+what can sathi help with,en,sathi.can,draft
+সাথী কী করতে পারে না,bn,sathi.cant,draft
+what will sathi not answer,en,sathi.cant,draft
+আমার তথ্য কোথায় রাখা হয়,bn,privacy.store,draft
+where is my data stored,en,privacy.store,draft
+সব তথ্য মুছে ফেলব কীভাবে,bn,privacy.delete,draft
+how do I delete everything,en,privacy.delete,draft
+আমার তথ্য কে দেখতে পায়,bn,privacy.who-sees,draft
+who can see my family's information,en,privacy.who-sees,draft
+ভাই বোনের সাথে শেয়ার করব কীভাবে,bn,share.family,draft
+bhai bon ke link pathabo kivabe,banglish,share.family,draft
+share the list with my brother,en,share.family,draft
+ইংরেজিতে দেখব কীভাবে,bn,access.language,draft
+change the language to english,en,access.language,draft
+লেখা বড় করব কীভাবে,bn,access.text-size,draft
+make the text bigger,en,access.text-size,draft
+আরেকজনের জন্য নতুন তালিকা বানাব,bn,start.add-member,draft
+add my father as another person,en,start.add-member,draft
+এই অ্যাপ কী করে,bn,start.what,draft
+what does this app do,en,start.what,draft

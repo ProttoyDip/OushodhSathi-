@@ -661,7 +661,15 @@
       "modelOn": "on",
       "modelOff": "off",
       "intentGate": "{n} of {need} human-written held-out questions",
-      "riskGate": "{h} of {needH} real households · {w} of {needW} household-weeks"
+      "riskGate": "{h} of {needH} real households · {w} of {needW} household-weeks",
+      "retrievalNone": "Retrieval evaluation in progress.",
+      "retrievalMethod": "Sathi's app-guide search",
+      "retrieval": {
+        "keyword": "Keyword (RapidFuzz)",
+        "vector": "Vector (embeddings)",
+        "hybrid": "Hybrid (reciprocal rank fusion)"
+      },
+      "retrievalMeta": "{n} questions in Bangla, Banglish and English ({draft} drafted by the build agent, to be checked by the team). Embeddings: {model}. 95% Wilson intervals."
     }
   },
   "models": {

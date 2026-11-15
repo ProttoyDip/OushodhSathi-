@@ -211,3 +211,33 @@ export function ModelGatesPanel() {
     </ul>
   );
 }
+
+/** Sathi app-guide retrieval: keyword vs vector vs hybrid, measured (eval/run_retrieval_eval.py). */
+export function RetrievalPanel() {
+  const t = useTranslations("docs.live");
+  const r = useApi(() => api.evalRetrieval(), []);
+  if (!r.data) return <div className="h-16 rounded-card bg-paper-sunk" style={{ animation: "breathe 1.6s ease-in-out infinite" }} />;
+  const m = r.data.methods;
+  if (!m) return <p className="text-ink-soft">{t("retrievalNone")}</p>;
+  const cell = (p: { p: number; ci_low: number; ci_high: number }) => `${pct(p.p)} (${pct(p.ci_low)}–${pct(p.ci_high)})`;
+  return (
+    <div>
+      <table className="w-full border-collapse text-left text-[15px]">
+        <thead className="text-ink-faint">
+          <tr className="border-b border-rule-strong">
+            <th className="py-2 font-medium">{t("retrievalMethod")}</th><th className="font-medium">recall@1</th><th className="font-medium">recall@3</th>
+          </tr>
+        </thead>
+        <tbody className="tabular">
+          {Object.entries(m).map(([name, v]) => (
+            <tr key={name} className="border-b border-rule">
+              <td className="py-2.5 font-medium">{t(`retrieval.${name}`)}</td>
+              <td>{cell(v["recall@1"])}</td><td>{cell(v["recall@3"])}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="mt-2 text-[13px] text-ink-faint">{t("retrievalMeta", { n: r.data.cases ?? 0, model: r.data.embed_model ?? "", draft: r.data.sources?.draft ?? 0 })}</p>
+    </div>
+  );
+}

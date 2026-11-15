@@ -14,8 +14,8 @@ a pharmacist instead of the app guide.
   removed before the question is embedded.
 
 ## Deployed model
-- Embeddings: `baai/bge-m3` through NVIDIA's API (`https://integrate.api.nvidia.com/v1/embeddings`,
-  [model page](https://build.nvidia.com/baai/bge-m3)), 1024 dimensions, 100+ languages. Bengali coverage must be
+- Embeddings: `nvidia/nemotron-3.5-embed-1b` through NVIDIA's API (`https://integrate.api.nvidia.com/v1/embeddings`,
+  [model page](https://build.nvidia.com/nvidia/nemotron-3_5-embed-1b)), Bengali among its 34 listed text languages, truncated to 1024 dimensions (baai/bge-m3 was retired by NVIDIA on 2026-08-25). Real Bangla accuracy must be
   confirmed by the held-out evaluation below, not assumed.
 - Classifier: scikit-learn logistic regression (`class_weight="balanced"`), trained offline by
   `eval/train_intent_model.py`, saved as coefficients only in `backend/data/intent_model.json`.
@@ -39,5 +39,5 @@ model for comparison only.
 ## Results
 | Model | App recall | Medical recall | Emergency recall | Held-out n |
 | --- | --- | --- | --- | --- |
-| Deployed (bge-m3 + logistic regression) | evaluation in progress | evaluation in progress | evaluation in progress | 78 of 200 |
+| Deployed (nemotron-3.5-embed-1b + logistic regression) | evaluation in progress | evaluation in progress | evaluation in progress | 78 of 200 |
 | Research (BanglaBERT) | not run yet | not run yet | not run yet | — |

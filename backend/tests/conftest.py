@@ -26,6 +26,9 @@ def _isolated_env(monkeypatch):
     monkeypatch.delenv("DATABASE_URL", raising=False)
     from app import ratelimit
     ratelimit.windows.reset()
+    from app import embeddings
+    embeddings._cache.clear()
+    monkeypatch.setenv("EMBEDDINGS_DISABLED", "")
 
 
 @pytest.fixture

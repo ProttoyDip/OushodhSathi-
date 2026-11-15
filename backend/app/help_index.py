@@ -1,12 +1,20 @@
-"""Sathi's app guide: docs/help/help_bn.md + help_en.md, and retrieval over it.
+"""Sathi's app guide: docs/help/help_bn.md + help_en.md, and HYBRID retrieval over it.
 
-Each entry has the same id in both files. Retrieval normalises Bangla, Banglish and
-English, scores every entry with RapidFuzz over its questions and phrasings (both
-languages), adds small keyword boosts, and returns the best three. Below the threshold
-the answer is NOT_IN_GUIDE and no model is called.
+Each entry has the same id in both files. The keyword scorer normalises Bangla, Banglish and
+English, scores every entry with RapidFuzz over its questions and phrasings (both languages) and
+adds small keyword boosts. The vector scorer (app/help_vectors.py: contextual chunks embedded with
+nvidia/nemotron-3.5-embed-1b) ranks entries by cosine similarity. The two rankings are fused with
+Reciprocal Rank Fusion (Cormack, Clarke and Buettcher, SIGIR 2009; k = 60).
+
+Thresholds keep their meaning: a hit counts as "in the guide" when its keyword score reaches
+MATCH_THRESHOLD, or when its vector similarity reaches VECTOR_ACCEPT (then it is given exactly
+MATCH_THRESHOLD, never STRONG_MATCH, so the intent check still runs). Below that the answer is
+NOT_IN_GUIDE and no model is called. Without embeddings the result is exactly the keyword search.
+guard.py runs BEFORE any of this: medical and emergency questions never reach retrieval.
 """
 from __future__ import annotations
 
+import os
 import re
 from dataclasses import dataclass
 from functools import lru_cache
@@ -18,6 +26,10 @@ HELP_DIR = Path(__file__).resolve().parent.parent.parent / "docs" / "help"
 
 MATCH_THRESHOLD = 60   # below: not in the guide
 STRONG_MATCH = 78      # at or above: clearly an app question, no intent model needed
+RRF_K = 60             # Reciprocal Rank Fusion constant (Cormack et al., 2009)
+# cosine similarity at which the vector side alone may say "this is in the guide"; set from
+# eval/run_retrieval_eval.py (see eval/help_retrieval_results.json), overridable for tuning
+VECTOR_ACCEPT = float(os.getenv("HELP_VECTOR_ACCEPT", "0.50"))
 
 
 @dataclass(frozen=True)
@@ -36,7 +48,10 @@ class Entry:
 @dataclass(frozen=True)
 class Hit:
     entry: Entry
-    score: float
+    score: float                  # keyword score 0-100 (raised to MATCH_THRESHOLD by a strong vector match)
+    cosine: float | None = None   # vector similarity, when embeddings were used
+    fused: float = 0.0            # RRF score that ordered the hits
+    agreed: bool = False          # keyword rank 1 and vector rank 1 are this same entry
 
 
 def _parse(path: Path) -> dict[str, dict[str, str]]:
@@ -125,7 +140,8 @@ def _corpus() -> list[tuple[Entry, tuple[str, ...]]]:
             for e in entries().values()]
 
 
-def search(question: str, k: int = 3) -> list[Hit]:
+def keyword_search(question: str) -> list[Hit]:
+    """Every entry scored by RapidFuzz + keyword boosts, best first."""
     q = normalise(question)
     raw = question.lower()
     if not q:
@@ -137,4 +153,39 @@ def search(question: str, k: int = 3) -> list[Hit]:
             best += 12
         hits.append(Hit(entry, round(min(best, 100.0), 1)))
     hits.sort(key=lambda h: h.score, reverse=True)
-    return hits[:k]
+    return hits
+
+
+def fuse(keyword: list[Hit], vector: list[tuple[str, float]], k: int = 3) -> list[Hit]:
+    """Reciprocal Rank Fusion of the keyword ranking and the vector ranking."""
+    cos = dict(vector)
+    rrf: dict[str, float] = {}
+    for rank, h in enumerate(keyword, 1):
+        rrf[h.entry.id] = rrf.get(h.entry.id, 0.0) + 1 / (RRF_K + rank)
+    for rank, (id_, _) in enumerate(vector, 1):
+        rrf[id_] = rrf.get(id_, 0.0) + 1 / (RRF_K + rank)
+    agreed_id = keyword[0].entry.id if vector and keyword and vector[0][0] == keyword[0].entry.id else None
+    out = []
+    for h in keyword:
+        c = cos.get(h.entry.id)
+        score = h.score
+        if c is not None and c >= VECTOR_ACCEPT and score < MATCH_THRESHOLD:
+            score = float(MATCH_THRESHOLD)
+        out.append(Hit(h.entry, score, c, round(rrf.get(h.entry.id, 0.0), 6), h.entry.id == agreed_id))
+    out.sort(key=lambda h: h.fused, reverse=True)
+    return out[:k]
+
+
+def search(question: str, k: int = 3, vector_text: str | None = None, use_vectors: bool = True) -> list[Hit]:
+    """Hybrid search. vector_text: the text to embed (the caller passes it with patient names
+    removed). With no embeddings available this is exactly the keyword search."""
+    keyword = keyword_search(question)
+    if not keyword:
+        return []
+    vector: list[tuple[str, float]] = []
+    if use_vectors:
+        from . import help_vectors  # local import: help_vectors imports this module
+        vector = help_vectors.search(vector_text or question, k=10)
+    if not vector:
+        return keyword[:k]
+    return fuse(keyword, vector, k)

@@ -81,6 +81,8 @@ MAX_PHOTO_BYTES = 12 * 1024 * 1024
 def get_store() -> Store:
     store = Store()
     _load_model_preferences(store)  # the user's chosen AI models survive restarts
+    from . import help_vectors
+    help_vectors.attach(store)  # Sathi's vector index (optional; keyword search works without it)
     return store
 
 
@@ -1605,6 +1607,20 @@ def get_start_notes(pid: int, store: Store = Depends(get_store)) -> list[dict]:
 
 
 # ---- 12H/12I: model pipelines (evaluation status only; nothing here decides anything) -------
+
+@app.get("/eval/retrieval")
+def eval_retrieval() -> dict:
+    """Sathi app-guide retrieval: recall@1 and recall@3 with 95% Wilson CIs for keyword, vector and
+    hybrid search, from eval/help_retrieval_results.json (empty until the eval has run)."""
+    import json
+
+    f = EVAL_DIR / "help_retrieval_results.json"
+    try:
+        d = json.loads(f.read_text(encoding="utf-8")) if f.exists() else {}
+    except ValueError:
+        d = {}
+    return {k: d.get(k) for k in ("run_at", "cases", "sources", "embed_model", "methods")}
+
 
 @app.get("/eval/models")
 def eval_models() -> dict:

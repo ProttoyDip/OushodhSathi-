@@ -100,10 +100,15 @@ def classify_question(question: str, router: Router | None,
         return "INJECTION", []
     if guard.looks_medical(question):
         return "MEDICAL", []
-    hits = help_index.search(question)
-    top = hits[0].score if hits else 0
     clean = _redact(question, redact or [])
+    hits = help_index.search(question, vector_text=clean)  # names removed before anything is embedded
+    top = hits[0].score if hits else 0
     if top >= help_index.STRONG_MATCH:
+        intent = "APP"
+    elif hits and hits[0].agreed and top >= help_index.MATCH_THRESHOLD:
+        # two independent retrievers (keyword and vector) put the same guide entry first, and guard.py
+        # found no medical or emergency words: an app question. Checked on eval/sathi_cases.csv with
+        # embeddings: it rescues the Banglish "pata kata" miss and moves no medical or emergency case.
         intent = "APP"
     else:
         intent = guard.classify(clean, router)

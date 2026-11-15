@@ -1,5 +1,5 @@
 import type {
-  AuditEntry, BPPhotoReading, BPTrend, CaseSummary, CleanupItem, FlagWhy, EmergencyPage, EvalResult, FamilyStatus, Flag, Health, MedicineItem,
+  AuditEntry, BPPhotoReading, BPTrend, CallAttempt, CallHistory, CallSettings, CallTurn, CaseSummary, CleanupItem, FlagWhy, EmergencyPage, EvalResult, FamilyStatus, Flag, Health, MedicineItem,
   ActivityEntry, ModelsInfo, NextStep, Passport, Patient, PilotStats, Question, RamadanRequest, Report, ReviewQueue,
   AdherenceSummary, DoseTick, Proportion, KidneyView, ReviewerAccount, Slot, ReviewerInvite, SathiReply, Savings, Today, VisitPrep,
 } from "./types";
@@ -165,6 +165,17 @@ export const api = {
   bpTrend: (token: string, id: number) => request<BPTrend>(`/patients/${id}/bp-trend`, { token }),
   caseSummary: (token: string, id: number, reviewer: string) =>
     request<CaseSummary>(`/patients/${id}/case-summary?reviewer=${encodeURIComponent(reviewer)}`, { token }),
+  callSettings: (id: number) => request<CallSettings>(`/patients/${id}/calls/settings`, { pid: id }),
+  saveCallSettings: (id: number, body: { local_time: string; consent: true; consent_by: string; phone?: string | null }) =>
+    request<CallSettings>(`/patients/${id}/calls/settings`, { method: "PUT", body: json(body), pid: id }),
+  stopCalls: (id: number) => request<CallSettings>(`/patients/${id}/calls/settings`, { method: "DELETE", pid: id }),
+  testCall: (id: number) => request<CallAttempt>(`/patients/${id}/calls/test`, { method: "POST", pid: id }),
+  currentCall: (id: number) => request<CallAttempt | null>(`/patients/${id}/calls/current`, { pid: id }),
+  answerCall: (id: number, aid: number) => request<CallTurn>(`/calls/sim/${aid}/answer`, { method: "POST", pid: id }),
+  declineCall: (id: number, aid: number) => request<{ status: string }>(`/calls/sim/${aid}/decline`, { method: "POST", pid: id }),
+  pressCall: (id: number, aid: number, digit: "1" | "2" | "9" | null, seq: number) =>
+    request<CallTurn>(`/calls/sim/${aid}/press`, { method: "POST", body: json({ digit, seq }), pid: id }),
+  callHistory: (token: string, id: number) => request<CallHistory>(`/patients/${id}/calls`, { token }),
   flagWhy: (token: string, flagId: number) => request<FlagWhy>(`/flags/${flagId}/why`, { token }),
   opened: (token: string, flagId: number) => request<void>(`/flags/${flagId}/opened`, { method: "POST", token }),
   clinical: (token: string, itemId: number, body: { purpose?: string | null; purpose_bn?: string | null; stopped?: boolean; reviewer: string }) =>

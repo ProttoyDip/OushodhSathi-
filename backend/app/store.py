@@ -22,7 +22,7 @@ from .models import (
 
 DEFAULT_DB = Path(__file__).resolve().parent.parent / "oushodh.db"
 
-TABLES = ("dose_events", "kidney_tests", "notifications", "reviewers", "activity", "sathi_events", "questions", "bp_readings", "reviews", "flags", "items", "cache", "patients")
+TABLES = ("call_attempts", "call_schedules", "dose_events", "kidney_tests", "notifications", "reviewers", "activity", "sathi_events", "questions", "bp_readings", "reviews", "flags", "items", "cache", "patients")
 
 # {id}: auto-increment key, {ref}: foreign key column, {real}: floating point
 SCHEMA = """
@@ -90,6 +90,17 @@ CREATE TABLE IF NOT EXISTS notifications (
   id {id}, patient_id {ref} NOT NULL, kind TEXT NOT NULL, period TEXT NOT NULL, sent_at TEXT NOT NULL,
   UNIQUE (patient_id, kind, period)
 );
+CREATE TABLE IF NOT EXISTS call_schedules (
+  patient_id {ref} PRIMARY KEY REFERENCES patients(id), phone_enc TEXT, local_time TEXT NOT NULL,
+  slots TEXT NOT NULL DEFAULT '[]', consent_at TEXT NOT NULL, consent_by TEXT NOT NULL,
+  active INTEGER NOT NULL DEFAULT 1, updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS call_attempts (
+  id {id}, patient_id {ref} NOT NULL REFERENCES patients(id), day TEXT NOT NULL, scheduled_for TEXT NOT NULL,
+  attempt_no INTEGER NOT NULL, status TEXT NOT NULL, provider TEXT NOT NULL, provider_call_id TEXT UNIQUE,
+  steps TEXT NOT NULL DEFAULT '[]', step_index INTEGER NOT NULL DEFAULT 0, repeated INTEGER NOT NULL DEFAULT 0,
+  seq INTEGER NOT NULL DEFAULT 0, answers TEXT NOT NULL DEFAULT '{{}}', created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+);
 """
 
 # Columns added after the first release. Applied to fresh and existing databases alike.
@@ -134,6 +145,7 @@ ADDED_COLUMNS = {
     "flags": {"opened_at": "TEXT", "reviewer_id": "{ref}", "checklist": "TEXT NOT NULL DEFAULT '[]'"},  # opened_at: review-time evidence
     "reviews": {"seconds": "{real}", "reviewer_id": "{ref}", "checklist": "TEXT NOT NULL DEFAULT '[]'"},  # seconds: opened -> decided
     "bp_readings": {"pulse": "INTEGER", "source": "TEXT"},
+    "dose_events": {"source": "TEXT NOT NULL DEFAULT 'app'"},  # app | call (the daily check-in call)
 }
 
 SQLITE_TYPES = {"id": "INTEGER PRIMARY KEY", "ref": "INTEGER", "real": "REAL"}
@@ -475,17 +487,77 @@ class Store:
         return list(reversed(rows))
 
     # ---- taken / missed ticks: one row per (medicine, day, slot); a second tap updates it --
-    def record_dose(self, pid: int, item_id: int, day: str, slot: str, status: str) -> dict:
+    def record_dose(self, pid: int, item_id: int, day: str, slot: str, status: str, source: str = "app") -> dict:
         self._exec(
-            "INSERT INTO dose_events (patient_id, item_id, day, slot, status, recorded_at) VALUES (?,?,?,?,?,?) "
+            "INSERT INTO dose_events (patient_id, item_id, day, slot, status, recorded_at, source) VALUES (?,?,?,?,?,?,?) "
             "ON CONFLICT (patient_id, item_id, day, slot) DO UPDATE SET status = excluded.status, "
-            "recorded_at = excluded.recorded_at", (pid, item_id, day, slot, status, now()))
-        return self._all("SELECT item_id, day, slot, status, recorded_at FROM dose_events WHERE patient_id = ? "
+            "recorded_at = excluded.recorded_at, source = excluded.source", (pid, item_id, day, slot, status, now(), source))
+        return self._all("SELECT item_id, day, slot, status, recorded_at, source FROM dose_events WHERE patient_id = ? "
                          "AND item_id = ? AND day = ? AND slot = ?", (pid, item_id, day, slot))[0]
 
     def list_doses(self, pid: int, since: str) -> list[dict]:
-        return self._all("SELECT item_id, day, slot, status, recorded_at FROM dose_events WHERE patient_id = ? "
+        return self._all("SELECT item_id, day, slot, status, recorded_at, source FROM dose_events WHERE patient_id = ? "
                          "AND day >= ? ORDER BY day, item_id, slot", (pid, since))
+
+    # ---- daily check-in calls (app/voice_calls): consent + schedule, and one row per call ---------
+    def get_call_schedule(self, pid: int) -> dict | None:
+        rows = self._all("SELECT * FROM call_schedules WHERE patient_id = ?", (pid,))
+        return rows[0] if rows else None
+
+    def set_call_schedule(self, pid: int, local_time: str, consent_by: str, phone_enc: str | None,
+                          keep_phone: bool) -> dict:
+        ts = now()
+        old = self.get_call_schedule(pid)
+        enc = old["phone_enc"] if (keep_phone and old) else phone_enc
+        if old:
+            self._exec("UPDATE call_schedules SET local_time = ?, consent_by = ?, consent_at = ?, phone_enc = ?, "
+                       "active = 1, updated_at = ? WHERE patient_id = ?", (local_time, consent_by, ts, enc, ts, pid))
+        else:
+            self._exec("INSERT INTO call_schedules (patient_id, phone_enc, local_time, consent_at, consent_by, active, "
+                       "updated_at) VALUES (?,?,?,?,?,1,?)", (pid, enc, local_time, ts, consent_by, ts))
+        return self.get_call_schedule(pid)  # type: ignore[return-value]
+
+    def stop_calls(self, pid: int) -> None:
+        """The family stops calls: no more calls, and the number is erased at once."""
+        self._exec("UPDATE call_schedules SET active = 0, phone_enc = NULL, updated_at = ? WHERE patient_id = ?",
+                   (now(), pid))
+
+    def active_call_schedules(self) -> list[dict]:
+        return self._all("SELECT * FROM call_schedules WHERE active = 1 ORDER BY patient_id")
+
+    def add_call_attempt(self, pid: int, day: str, scheduled_for: str, attempt_no: int, provider: str,
+                         steps: list[str]) -> int:
+        ts = now()
+        return self._insert(
+            "INSERT INTO call_attempts (patient_id, day, scheduled_for, attempt_no, status, provider, steps, "
+            "created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?)",
+            (pid, day, scheduled_for, attempt_no, "ringing", provider, json.dumps(steps), ts, ts))
+
+    def get_call_attempt(self, aid: int) -> dict | None:
+        rows = self._all("SELECT * FROM call_attempts WHERE id = ?", (aid,))
+        return self._attempt(rows[0]) if rows else None
+
+    def call_attempt_by_provider_id(self, provider_call_id: str) -> dict | None:
+        rows = self._all("SELECT * FROM call_attempts WHERE provider_call_id = ?", (provider_call_id,))
+        return self._attempt(rows[0]) if rows else None
+
+    def update_call_attempt(self, aid: int, **fields) -> None:
+        allowed = {"status", "provider_call_id", "step_index", "repeated", "seq", "answers"}
+        sets = {k: (json.dumps(v) if k == "answers" else v) for k, v in fields.items() if k in allowed}
+        if sets:
+            cols = ", ".join(f"{k} = ?" for k in sets)
+            self._exec(f"UPDATE call_attempts SET {cols}, updated_at = ? WHERE id = ?", (*sets.values(), now(), aid))
+
+    def list_call_attempts(self, pid: int, since_day: str = "0000-00-00", day: str | None = None) -> list[dict]:
+        sql, args = "SELECT * FROM call_attempts WHERE patient_id = ? AND day >= ?", [pid, since_day]
+        if day:
+            sql += " AND day = ?"
+            args.append(day)
+        return [self._attempt(r) for r in self._all(sql + " ORDER BY id", tuple(args))]
+
+    @staticmethod
+    def _attempt(row: dict) -> dict:
+        return {**row, "steps": json.loads(row["steps"] or "[]"), "answers": json.loads(row["answers"] or "{}")}
 
     # ---- kidney tests: creatinine only; eGFR is computed on read (app/kidney.py) --
     def add_kidney_test(self, pid: int, taken_on: str, creatinine_mg_dl: float, entered_by: str | None,
@@ -542,6 +614,8 @@ class Store:
             ("DELETE FROM reviews WHERE flag_id IN (SELECT id FROM flags WHERE patient_id = ?)", (pid,)),
             ("DELETE FROM flags WHERE patient_id = ?", (pid,)),
             ("DELETE FROM dose_events WHERE patient_id = ?", (pid,)),
+            ("DELETE FROM call_attempts WHERE patient_id = ?", (pid,)),
+            ("DELETE FROM call_schedules WHERE patient_id = ?", (pid,)),
             ("DELETE FROM items WHERE patient_id = ?", (pid,)),
             ("DELETE FROM bp_readings WHERE patient_id = ?", (pid,)),
             ("DELETE FROM questions WHERE patient_id = ?", (pid,)),

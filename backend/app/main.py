@@ -13,7 +13,7 @@ from typing import Literal
 
 import httpx
 from dotenv import load_dotenv
-from fastapi import Body, Depends, FastAPI, File, Form, Header, HTTPException, Query, UploadFile
+from fastapi import Body, Depends, FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ValidationError, model_validator
@@ -25,6 +25,9 @@ from .agent import read_shelf, resolve_brand  # noqa: E402
 from .demo import DEMO_ITEMS, DEMO_LABEL  # noqa: E402
 from .explain import explain_flag  # noqa: E402
 from .ratelimit import limit_new_patient, limit_sathi, limit_scan, limit_writes  # noqa: E402
+from .voice_calls import phone as phones  # noqa: E402
+from .voice_calls import provider as call_provider  # noqa: E402
+from .voice_calls import service as calls  # noqa: E402
 from . import adherence_risk, asr, llm_router, notify  # noqa: E402
 from .llm_router import NoProviderAvailable, Router, _env, configured_providers, provider_names  # noqa: E402
 from .models import (  # noqa: E402
@@ -295,6 +298,18 @@ def export_household(pid: int, store: Store = Depends(get_store)) -> dict:
         "kidney_tests": [{k: t[k] for k in ("taken_on", "creatinine_mg_dl", "source", "entered_by")}
                          for t in store.list_kidney_tests(pid)],
         "dose_ticks": store.list_doses(pid, since="0000-00-00"),
+        "check_in_calls": _calls_export(store, pid),
+    }
+
+
+def _calls_export(store: Store, pid: int) -> dict:
+    sch = store.get_call_schedule(pid)
+    return {
+        "schedule": None if sch is None else {
+            "active": bool(sch["active"]), "local_time": sch["local_time"], "consent_at": sch["consent_at"],
+            "consent_by": sch["consent_by"], "phone": phones.masked(phones.decrypt(sch["phone_enc"]))},
+        "calls": [{k: a[k] for k in ("day", "attempt_no", "status", "provider", "answers", "created_at")}
+                  for a in store.list_call_attempts(pid)],
     }
 
 
@@ -480,7 +495,8 @@ def review_queue(
             risk[pid] = household_risk(p, store.list_items(pid, confirmed_only=True),
                                        [f for f in pending if f.patient_id == pid], acb,
                                        adherence=(totals["taken"], totals["missed"]),
-                                       followup=adherence_risk.followup_suggested(store, p))
+                                       followup=adherence_risk.followup_suggested(store, p),
+                                       calls_missed=calls.calls_missed(store, pid))
     rows = []
     for f in _with_items(store, flags):
         p = patients.get(f["patient_id"])
@@ -867,7 +883,7 @@ class AskIn(BaseModel):
     lang: Literal["bn", "en"] = "bn"
 
 
-def _notify_emergency(pid: int) -> None:
+def _notify_emergency(pid: int, event: str = "sathi_emergency") -> None:
     """n8n alert so the family contact and a reviewer hear about it. Ids only."""
     url = _env("N8N_ALERT_WEBHOOK")
     if not url:
@@ -875,7 +891,7 @@ def _notify_emergency(pid: int) -> None:
 
     def send() -> None:
         try:
-            httpx.post(url, timeout=5, json={"patient_id": pid, "event": "sathi_emergency", "flags": []})
+            httpx.post(url, timeout=5, json={"patient_id": pid, "event": event, "flags": []})
         except httpx.HTTPError as e:
             log.warning("n8n emergency alert failed: %s", type(e).__name__)
 
@@ -1676,3 +1692,181 @@ def intent_classifier_enabled() -> bool:
     from . import intent_classifier
     return intent_classifier.enabled()
 
+
+# ---- daily Bangla check-in calls (app/voice_calls) ------------------------------------------------
+
+class CallSettingsIn(BaseModel):
+    local_time: str = Field(pattern=r"^\d{2}:\d{2}$")
+    consent: Literal[True]  # the family read the consent text and agreed
+    consent_by: str = Field(min_length=1, max_length=60)  # who agreed, e.g. "daughter"
+    phone: str | None = Field(default=None, max_length=20)
+
+
+class CallPressIn(BaseModel):
+    digit: Literal["1", "2", "9"] | None = None  # None: no key pressed before the timeout
+    seq: int
+
+
+def _call_settings(store: Store, pid: int) -> dict:
+    sch = store.get_call_schedule(pid)
+    prov = call_provider()
+    return {"provider": prov.name, "needs_phone": prov.needs_phone, "approved_slots": calls.approved_slots(store, pid),
+            "active": bool(sch and sch["active"]), "local_time": sch["local_time"] if sch else None,
+            "consent_at": sch["consent_at"] if sch else None,
+            "phone": phones.masked(phones.decrypt(sch["phone_enc"])) if sch else None}
+
+
+def _callback_url() -> str:
+    return (_env("PUBLIC_API_URL") or "http://localhost:8000").rstrip("/") + f"/calls/webhook/{call_provider().name}"
+
+
+@app.get("/patients/{pid}/calls/settings", dependencies=[Depends(family_access)])
+def get_call_settings(pid: int, store: Store = Depends(get_store)) -> dict:
+    _patient_or_404(store, pid)
+    return _call_settings(store, pid)
+
+
+@app.put("/patients/{pid}/calls/settings", dependencies=[Depends(family_access), Depends(limit_writes)])
+def put_call_settings(pid: int, body: CallSettingsIn, store: Store = Depends(get_store)) -> dict:
+    """The family turns on the daily call (with consent) or changes its time. The number is needed
+    only by a real telephony provider; it is encrypted and goes nowhere else."""
+    _patient_or_404(store, pid)
+    if not calls.valid_call_time(body.local_time):
+        raise HTTPException(422, "Pick a time between 08:00 and 20:45 / সকাল ৮টা থেকে রাত ৮:৪৫-এর মধ্যে সময় দিন")
+    enc, keep = None, True
+    if body.phone:
+        number = phones.normalise(body.phone)
+        if number is None:
+            raise HTTPException(422, "Use a Bangladeshi mobile number (01XXXXXXXXX) / বাংলাদেশি মোবাইল নম্বর দিন")
+        try:
+            enc, keep = phones.encrypt(number), False
+        except phones.PhoneStorageUnavailable:
+            raise HTTPException(503, "Phone numbers cannot be stored on this server yet") from None
+    sch = store.get_call_schedule(pid)
+    if call_provider().needs_phone and not body.phone and not (sch and sch["phone_enc"]):
+        raise HTTPException(422, "A mobile number is needed for the call / কলের জন্য মোবাইল নম্বর দরকার")
+    store.set_call_schedule(pid, body.local_time, body.consent_by.strip(), enc, keep_phone=keep)
+    store.log_activity(pid, "calls_on", 1)
+    return _call_settings(store, pid)
+
+
+@app.delete("/patients/{pid}/calls/settings", dependencies=[Depends(family_access), Depends(limit_writes)])
+def stop_call_settings(pid: int, store: Store = Depends(get_store)) -> dict:
+    """Stop the calls at any time; the number is erased at once."""
+    _patient_or_404(store, pid)
+    store.stop_calls(pid)
+    return _call_settings(store, pid)
+
+
+@app.post("/patients/{pid}/calls/test", status_code=201, dependencies=[Depends(family_access), Depends(limit_writes)])
+def test_call(pid: int, store: Store = Depends(get_store)) -> dict:
+    """"Call now (test)". With the simulator nothing dials, so quiet hours and the daily cap do not
+    apply; with a real provider they do."""
+    _patient_or_404(store, pid)
+    sch = store.get_call_schedule(pid)
+    if not (sch and sch["active"]):
+        raise HTTPException(409, "Turn on the daily call first / আগে দৈনিক কল চালু করুন")
+    if not calls.approved_slots(store, pid):
+        raise HTTPException(409, "The pharmacist has not approved medicine times yet / ফার্মাসিস্ট এখনো সময় ঠিক করেননি")
+    prov = call_provider()
+    now_ = calls.dhaka_now()
+    today = store.list_call_attempts(pid, day=now_.date().isoformat())
+    number = None
+    if prov.needs_phone:
+        if calls.quiet(now_):
+            raise HTTPException(409, "No calls between 21:00 and 08:00 / রাত ৯টা থেকে সকাল ৮টা পর্যন্ত কল হয় না")
+        if len(today) >= calls.MAX_ATTEMPTS_PER_DAY:
+            raise HTTPException(429, "Daily call limit reached / আজকের কলের সীমা শেষ")
+        number = phones.decrypt(sch["phone_enc"])
+    for a in today:  # one call at a time
+        if a["status"] in ("ringing", "in_progress"):
+            store.update_call_attempt(a["id"], status="no_answer" if a["status"] == "ringing" else "completed")
+    return calls.place(store, prov, pid, now_, _callback_url(), number, len(today) + 1)
+
+
+@app.get("/patients/{pid}/calls/current", dependencies=[Depends(family_access)])
+def current_call(pid: int, store: Store = Depends(get_store)) -> dict | None:
+    """The simulator page: the call that is ringing or in progress now, if any."""
+    _patient_or_404(store, pid)
+    live = [a for a in store.list_call_attempts(pid, day=calls.dhaka_now().date().isoformat())
+            if a["status"] in ("ringing", "in_progress")]
+    return {k: live[-1][k] for k in ("id", "status", "seq", "steps", "answers")} if live else None
+
+
+def _sim_attempt(aid: int, store: Store, x_family_key: str | None, x_reviewer_token: str | None) -> dict:
+    a = store.get_call_attempt(aid)
+    if a is None or a["provider"] != "simulator":
+        raise HTTPException(404, "Call not found")
+    try:
+        family_access(a["patient_id"], x_family_key, x_reviewer_token, store)
+    except HTTPException:
+        raise HTTPException(404, "Call not found") from None
+    return a
+
+
+@app.post("/calls/sim/{aid}/answer", dependencies=[Depends(limit_writes)])
+def sim_answer(aid: int, x_family_key: str | None = Header(default=None),
+               x_reviewer_token: str | None = Header(default=None), store: Store = Depends(get_store)) -> dict:
+    a = _sim_attempt(aid, store, x_family_key, x_reviewer_token)
+    try:
+        return calls.answer(store, a)
+    except ValueError as e:
+        raise HTTPException(409, str(e)) from None
+
+
+@app.post("/calls/sim/{aid}/decline", dependencies=[Depends(limit_writes)])
+def sim_decline(aid: int, x_family_key: str | None = Header(default=None),
+                x_reviewer_token: str | None = Header(default=None), store: Store = Depends(get_store)) -> dict:
+    a = _sim_attempt(aid, store, x_family_key, x_reviewer_token)
+    if a["status"] == "ringing":
+        store.update_call_attempt(aid, status="no_answer")
+    return {"attempt_id": aid, "status": store.get_call_attempt(aid)["status"]}  # type: ignore[index]
+
+
+@app.post("/calls/sim/{aid}/press", dependencies=[Depends(limit_writes)])
+def sim_press(aid: int, body: CallPressIn, x_family_key: str | None = Header(default=None),
+              x_reviewer_token: str | None = Header(default=None), store: Store = Depends(get_store)) -> dict:
+    a = _sim_attempt(aid, store, x_family_key, x_reviewer_token)
+    try:
+        return calls.press(store, a, body.digit, body.seq, lambda p: _notify_emergency(p, "call_emergency"))
+    except ValueError as e:
+        raise HTTPException(409, str(e)) from None
+
+
+@app.post("/calls/run-due", dependencies=[Depends(require_admin)])
+def calls_run_due(store: Store = Depends(get_store)) -> dict:
+    """The cron (GitHub Actions, every 15 minutes) places due calls and the one retry."""
+    return calls.run_due(store, call_provider(), _callback_url())
+
+
+@app.post("/calls/webhook/{name}", dependencies=[Depends(limit_writes)])
+async def calls_webhook(name: str, request: Request, seq: int = 0, store: Store = Depends(get_store)) -> dict:
+    """Provider callbacks. Signature checked first; unknown calls are refused; `seq` (sent back in the
+    callback URL) makes repeated deliveries harmless."""
+    prov = call_provider()
+    if name != prov.name or prov.name == "simulator":
+        raise HTTPException(404, "Unknown call provider")
+    params = {k: str(v) for k, v in (await request.form()).items()}
+    if not prov.verify_signature(str(request.url), params, dict(request.headers)):
+        raise HTTPException(403, "Bad signature")
+    ev = prov.parse_webhook(params)
+    a = store.call_attempt_by_provider_id(ev.provider_call_id)
+    if a is None:
+        raise HTTPException(404, "Call not found")
+    if ev.status in ("no-answer", "busy", "failed", "canceled") and a["status"] == "ringing":
+        store.update_call_attempt(a["id"], status="no_answer" if ev.status != "failed" else "failed")
+        return {"attempt_id": a["id"], "status": store.get_call_attempt(a["id"])["status"], "done": True}  # type: ignore[index]
+    try:
+        if a["status"] == "ringing":
+            return calls.answer(store, a)
+        return calls.press(store, a, ev.digits if ev.digits in ("1", "2", "9") else None, seq,
+                           lambda p: _notify_emergency(p, "call_emergency"))
+    except ValueError as e:
+        raise HTTPException(409, str(e)) from None
+
+
+@app.get("/patients/{pid}/calls", dependencies=[Depends(require_reviewer)])
+def call_history(pid: int, store: Store = Depends(get_store)) -> dict:
+    """Reviewer only: recent check-in calls and the answer rate (95% Wilson interval)."""
+    _patient_or_404(store, pid)
+    return calls.history(store, pid)

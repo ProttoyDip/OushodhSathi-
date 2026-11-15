@@ -24,6 +24,7 @@ import { AdherenceNote } from "@/components/review/AdherenceNote";
 import { StartNotes } from "@/components/review/StartNotes";
 import { CaseSummaryPanel } from "@/components/review/CaseSummaryPanel";
 import { WhyPath } from "@/components/review/WhyPath";
+import { CallHistoryNote } from "@/components/review/CallHistoryNote";
 import { ClinicalEditor } from "@/components/review/ClinicalEditor";
 import { QuestionsBoard } from "@/components/review/QuestionsBoard";
 
@@ -502,6 +503,7 @@ function Evidence({ flag, now, session, children }: { flag: Flag; now: number; s
       {flag.patient && <CaseSummaryPanel token={session.token} reviewer={session.name} patientId={flag.patient.id} />}
       {flag.patient && <BPTrendNote token={session.token} patientId={flag.patient.id} />}
       {flag.patient && <KidneyNote token={session.token} patientId={flag.patient.id} />}
+      {flag.patient && <CallHistoryNote token={session.token} patientId={flag.patient.id} />}
       {flag.patient && <AdherenceNote token={session.token} patientId={flag.patient.id} />}
       {flag.patient && <StartNotes token={session.token} patientId={flag.patient.id} />}
 

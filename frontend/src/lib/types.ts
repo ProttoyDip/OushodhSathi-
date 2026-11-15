@@ -386,6 +386,44 @@ export interface CaseSummary {
   facts?: { id: string; text: string; source: string }[];
 }
 
+export type CallSlot = "morning" | "noon" | "night";
+
+export interface CallSettings {
+  provider: string;
+  needs_phone: boolean;
+  approved_slots: CallSlot[];
+  active: boolean;
+  local_time: string | null;
+  consent_at: string | null;
+  phone: string | null;
+}
+
+export interface CallAttempt {
+  id: number;
+  status: "ringing" | "in_progress" | "completed" | "emergency" | "no_answer" | "failed";
+  seq: number;
+  steps: string[];
+  answers: Partial<Record<CallSlot, "taken" | "missed">>;
+}
+
+export interface CallTurn {
+  attempt_id: number;
+  seq: number;
+  status: CallAttempt["status"];
+  play: string[];
+  prompts: Record<string, { bn: string; en: string }>;
+  expects_input: boolean;
+  done: boolean;
+  answers: CallAttempt["answers"];
+}
+
+export interface CallHistory {
+  active: boolean;
+  local_time: string | null;
+  attempts: { day: string; attempt_no: number; status: CallAttempt["status"]; provider: string; answers: CallAttempt["answers"]; created_at: string }[];
+  answer_rate: Proportion | null;
+}
+
 export interface FlagWhy {
   code: string;
   data_source: string;

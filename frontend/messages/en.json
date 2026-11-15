@@ -669,7 +669,10 @@
         "vector": "Vector (embeddings)",
         "hybrid": "Hybrid (reciprocal rank fusion)"
       },
-      "retrievalMeta": "{n} questions in Bangla, Banglish and English ({draft} drafted by the build agent, to be checked by the team). Embeddings: {model}. 95% Wilson intervals."
+      "retrievalMeta": "{n} questions in Bangla, Banglish and English ({draft} drafted by the build agent, to be checked by the team). Embeddings: {model}. 95% Wilson intervals.",
+      "evalProgress": "Evaluation in progress (n = {n} labelled photos; numbers are published from 25).",
+      "expiry": "Expiry",
+      "needsCheck": "Needs check"
     }
   },
   "models": {

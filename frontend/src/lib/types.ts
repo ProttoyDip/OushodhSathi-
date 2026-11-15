@@ -206,11 +206,17 @@ export interface EvalResult {
   run_at: string;
   images: number;
   labelled_items: number;
-  brand_accuracy: number;
-  strength_accuracy: number;
+  /** null until eval/run_eval.py has enough labelled photos (see status) */
+  brand_accuracy: number | null;
+  strength_accuracy: number | null;
+  expiry_accuracy?: number | null;
+  needs_check_rate?: number | null;
   avg_confidence: number | null;
+  status?: string;
   brand_accuracy_ci?: [number, number];
   strength_accuracy_ci?: [number, number];
+  expiry_accuracy_ci?: [number, number];
+  needs_check_rate_ci?: [number, number];
 }
 
 export interface Proportion {

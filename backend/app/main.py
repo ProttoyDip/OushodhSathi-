@@ -751,11 +751,23 @@ def eval_results() -> list[dict]:
             continue
         row = {k: data.get(k) for k in ("prompt_version", "model_id", "run_at", "images", "labelled_items",
                                          "brand_accuracy", "strength_accuracy", "avg_confidence")}
-        n = data.get("labelled_items") or 0
-        for key in ("brand_accuracy", "strength_accuracy"):
-            if n and data.get(key) is not None:
-                ci = proportion(key, round(data[key] * n), n)
-                row[f"{key}_ci"] = [ci["ci_low"], ci["ci_high"]]
+        # eval/run_eval.py sets brand/strength to None below its photo minimum; the status says why
+        row["status"] = data.get("status", "measured")
+        chain = (data.get("runs") or {}).get("chain")
+        if chain:  # Wilson intervals computed by run_eval.py, shown only once there are enough photos
+            measured = row["status"] == "measured"
+            for key, name in (("brand", "brand_accuracy"), ("strength", "strength_accuracy"),
+                              ("expiry", "expiry_accuracy"), ("needs_check", "needs_check_rate")):
+                p = chain.get(key)
+                row[name] = p["p"] if (p and measured) else None
+                if p and measured:
+                    row[f"{name}_ci"] = [p["ci_low"], p["ci_high"]]
+        else:  # results written before the per-run format
+            n = data.get("labelled_items") or 0
+            for key in ("brand_accuracy", "strength_accuracy"):
+                if n and data.get(key) is not None:
+                    ci = proportion(key, round(data[key] * n), n)
+                    row[f"{key}_ci"] = [ci["ci_low"], ci["ci_high"]]
         out.append(row)
     return out
 

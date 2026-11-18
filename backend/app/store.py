@@ -141,6 +141,7 @@ ADDED_COLUMNS = {
         "schedule_approved_at": "TEXT",
         "ramadan_slots": "TEXT NOT NULL DEFAULT '[]'",  # sehri / iftar, set only by a reviewer
         "prescriber_kind": "TEXT NOT NULL DEFAULT 'unknown'",  # doctor | village_doctor | drug_shop | self | unknown
+        "second_read": "TEXT",  # JSON: the OCR second reader's verdict on strength and expiry (app/ocr_check.py)
     },
     "flags": {"opened_at": "TEXT", "reviewer_id": "{ref}", "checklist": "TEXT NOT NULL DEFAULT '[]'"},  # opened_at: review-time evidence
     "reviews": {"seconds": "{real}", "reviewer_id": "{ref}", "checklist": "TEXT NOT NULL DEFAULT '[]'"},  # seconds: opened -> decided
@@ -331,6 +332,7 @@ class Store:
         d = dict(r)
         d["schedule"] = json.loads(d["schedule"])
         d["ramadan_slots"] = json.loads(d.get("ramadan_slots") or "[]")
+        d["second_read"] = json.loads(d["second_read"]) if d.get("second_read") else None
         for b in ("confirmed", "stopped", "set_aside"):
             d[b] = bool(d[b])
         return MedicineItem(**d)
@@ -340,6 +342,8 @@ class Store:
         prompt_version, model_id, confirmed."""
         cols = dict(item.model_dump(), **match)
         cols["schedule"] = json.dumps(cols.get("schedule") or [])
+        if isinstance(cols.get("second_read"), dict):
+            cols["second_read"] = json.dumps(cols["second_read"])
         cols["confirmed"] = int(bool(cols.get("confirmed", False)))
         cols["patient_id"] = pid
         cols["created_at"] = now()

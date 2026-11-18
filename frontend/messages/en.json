@@ -56,7 +56,10 @@
       "Access": "Access",
       "Watch": "Watch",
       "Reserve": "Reserve"
-    }
+    },
+    "secondStrength": "Check the strength: a second reading saw {seen}",
+    "secondExpiry": "Check the expiry: a second reading saw {seen}",
+    "secondBoth": "Check strength and expiry: a second reading saw something different"
   },
   "connector": {
     "both": "Both are {generic}",
@@ -123,7 +126,14 @@
     "tooMany": "You can add up to 12 photos at a time.",
     "failed": "The photos could not be read. Try again, or type the medicine names yourself.",
     "useDemo": "Try it with the demo shelf",
-    "photosLabel": "Chosen photos"
+    "photosLabel": "Chosen photos",
+    "quality": {
+      "blurry": "Blurry",
+      "glare": "Glare",
+      "dark": "Too dark",
+      "small": "Too small",
+      "note": "{count, plural, one {# photo may be hard to read.} other {# photos may be hard to read.}} You can take it again, or keep it: anything unclear will be marked for checking."
+    }
   },
   "confirm": {
     "title": "Check the list",
@@ -158,6 +168,10 @@
       "drug_shop": "Drug shop",
       "self": "Bought ourselves",
       "unknown": "Don't know"
+    },
+    "suggest": {
+      "title": "Is it one of these?",
+      "note": "Tap one only if it matches what is printed. The pharmacist still checks the list."
     }
   },
   "status": {
@@ -297,7 +311,8 @@
       "trust2": "Bangla first",
       "trust3": "Photos are not stored",
       "frameReview": "The pharmacist's review queue",
-      "framePhone": "The family's phone"
+      "framePhone": "The family's phone",
+      "video": "Watch the demo video"
     },
     "how": {
       "title": "How it works",
@@ -424,7 +439,8 @@
       "terms": "Terms",
       "contact": "Contact",
       "github": "Source code",
-      "family": "In the app, nothing on this phone is a medical decision: every finding is confirmed by a registered pharmacist or doctor."
+      "family": "In the app, nothing on this phone is a medical decision: every finding is confirmed by a registered pharmacist or doctor.",
+      "video": "Video"
     },
     "faq": {
       "title": "Questions families ask",

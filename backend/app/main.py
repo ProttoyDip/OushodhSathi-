@@ -372,7 +372,17 @@ def patch_item(item_id: int, body: MedicineItemPatch, store: Store = Depends(get
         # a human typed or corrected it: it is no longer a low-confidence machine reading
         fields["confidence"] = 1.0
         fields["source"] = item.source if "brand" not in fields else "manual"
+    if any(k in fields for k in ("brand", "strength", "expiry")):
+        fields["second_read"] = None  # the OCR check was about the old reading, not this one
     return store.update_item(item_id, **fields)
+
+
+@app.get("/brands/suggest", dependencies=[Depends(limit_writes)])
+def brands_suggest(q: str = Query(min_length=1, max_length=80)) -> list[dict]:
+    """"Did you mean?" for a brand the app did not recognise: up to three table brands, for the family
+    to tap if one is what is printed. Public brand-table data only; nothing about a household."""
+    from . import brand_suggest
+    return brand_suggest.suggest(q)
 
 
 @app.delete("/items/{item_id}", status_code=204, dependencies=[Depends(item_access), Depends(limit_writes)])

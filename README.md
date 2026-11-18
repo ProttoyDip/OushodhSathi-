@@ -11,7 +11,7 @@
 [![Next.js 15](https://img.shields.io/badge/Next.js-15-0E1530)](frontend/package.json)
 [![Congress 2026 · HealthSphere AI](https://img.shields.io/badge/Congress%202026-HealthSphere%20AI-8F9BD6)](#acknowledgements)
 
-**Live demo:** <https://oushodhsathi.vercel.app> · **Docs:** [/docs](https://oushodhsathi.vercel.app/docs) · **Walkthrough:** [/demo](https://oushodhsathi.vercel.app/demo) · **Demo video:** _YouTube link added after upload_ · **Reviewer login:** [/review](https://oushodhsathi.vercel.app/review) asks for a name and a reviewer token; judges get the live token in the submission's Judge Access Note (locally, the quick start uses `demo-reviewer`). The hosted API runs on Render's free plan: it sleeps when idle, so the first request can take up to a minute. Data lives in a free Supabase Postgres, so households and reviews survive restarts. **Try it with your own family:** [/start](https://oushodhsathi.vercel.app/start) creates a private household that opens only with its family link.
+**Live demo:** <https://oushodhsathi.vercel.app> · **Docs:** [/docs](https://oushodhsathi.vercel.app/docs) · **Walkthrough:** [/demo](https://oushodhsathi.vercel.app/demo) · **Demo video:** [YouTube](https://youtu.be/a3wnCDDxxm0) · **Reviewer login:** [/review](https://oushodhsathi.vercel.app/review) asks for a name and a reviewer token; judges get the live token in the submission's Judge Access Note (locally, the quick start uses `demo-reviewer`). The hosted API runs on Render's free plan: it sleeps when idle, so the first request can take up to a minute. Data lives in a free Supabase Postgres, so households and reviews survive restarts. **Try it with your own family:** [/start](https://oushodhsathi.vercel.app/start) creates a private household that opens only with its family link.
 
 <p align="center">
   <img src="docs/video/hero.gif" width="1200" alt="The /demo walkthrough: a messy shelf of medicine strips is scanned, the list assembles itself, and Napa and Ace snap together under a red bracket labelled 'both are paracetamol'.">
@@ -147,7 +147,7 @@ Locally the API uses a SQLite file. Hosted, it uses a free Supabase Postgres in 
 | Sathi intent classifier (escalate-only) | NVIDIA `nemotron-3.5-embed-1b` embeddings + logistic regression (coefficients only); BanglaBERT as an offline research comparison | Catches medical questions that slip past the word lists (Banglish, typos) | Runs after guard.py and can only move a question towards medical or emergency, never to app; off until 200+ human-written held-out examples pass [`run_intent_eval.py`](eval/run_intent_eval.py); [model card](eval/intent_model_card.md) |
 | Missed-dose risk model | Gradient boosting on household-week features from the family's ticks | Helps a pharmacist decide whom to follow up first | Refuses to train without 30 real households and 300 household-weeks, never on demo data; AUROC with bootstrap CI and calibration; only a reviewer-only ordering hint, never a finding; [model card](eval/adherence_model_card.md) |
 | Kidney function (eGFR) | **No model.** 2021 CKD-EPI creatinine equation | Several medicines need care when kidney function is low | Only creatinine is stored; every threshold row carries its source; findings are confirmed by a clinician |
-| Daily Bangla check-in call (IVR) | **No model.** Fixed pre-recorded Bangla prompts and a small state machine ([`voice_calls/`](backend/app/voice_calls)) behind a provider interface (`place_call`, `parse_webhook`, `verify_signature`). Today only the **simulator** runs: [`/call-demo`](https://oushodhsathi.vercel.app/call-demo) plays the call in the browser with keys 1 / 2 / 9; no phone provider is connected yet | Many older patients have a basic phone, not a smartphone | Needs the family's recorded consent; the number is encrypted at rest and goes only to the call provider, never to a model; no calls 21:00-08:00, one retry after 15 minutes, a daily cap; answers become dose ticks marked `source=call`; 9 plays the fixed 999 message and alerts the family contact; the script never tells anyone to stop, start or change a medicine; the recorded audio is not made yet, so the simulator shows the words |
+| Daily Bangla check-in call (IVR) | **No model.** Fixed pre-recorded Bangla prompts and a small state machine ([`voice_calls/`](backend/app/voice_calls)) behind a provider interface (`place_call`, `parse_webhook`, `verify_signature`). Today only the **simulator** runs: [`/call-demo`](https://oushodhsathi.vercel.app/call-demo) plays the call in the browser with keys 1 / 2 / 9; no phone provider is connected yet | Many older patients have a basic phone, not a smartphone | Needs the family's recorded consent; the number is encrypted at rest and goes only to the call provider, never to a model; no calls 21:00-08:00, one retry after 15 minutes, a daily cap; answers become dose ticks marked `source=call`; 9 plays the fixed 999 message and alerts the family contact; the script never tells anyone to stop, start or change a medicine; draft Bangla audio is generated once by [`make_call_audio.py`](backend/scripts/make_call_audio.py) (digits spoken as words; Meta MMS-TTS, non-commercial licence, until an Azure bn-BD voice or a recording replaces it) and still needs a native speaker's check |
 
 **When a provider runs out, the next one answers.** Every request walks a chain: the user's chosen model first (if any), then NVIDIA's API (`nemotron-3.5-super-vl` for photos, `nemotron-3-ultra` for lookups and Bangla), then the tested free OpenRouter models, then the other configured routers, then Ollama on the machine. Rate limits (429), exhausted credit (402), withdrawn models, server errors and timeouts all fall through to the next link; nothing has to be switched by hand. Web lookup does the same with Tavily, then Perplexity.
 
@@ -263,7 +263,24 @@ More in [`mcp/README.md`](mcp/README.md).
 
 ## Demo video
 
+[![OushodhSathi demo video on YouTube](https://img.youtube.com/vi/a3wnCDDxxm0/maxresdefault.jpg)](https://youtu.be/a3wnCDDxxm0)
+
+Watch it on YouTube: <https://youtu.be/a3wnCDDxxm0>
+
 The 2:58 video is planned second by second in [`docs/video/SHOTLIST.md`](docs/video/SHOTLIST.md), with the voiceover and captions in Bangla and English ([`captions.bn.srt`](docs/video/captions.bn.srt), [`captions.en.srt`](docs/video/captions.en.srt)). Seven 1920×1080 scenes live in [`video/scenes`](video/scenes) (stills in [`docs/video/stills`](docs/video/stills)), and the product footage comes from the keyboard-paced [`/demo`](https://oushodhsathi.vercel.app/demo) walkthrough. `cd video && npm install && node record.mjs` re-records every clip and stitches a silent draft cut for the voiceover.
+
+## Limits
+
+What is not built or not measured yet, so nothing on this page is read as more than it is:
+
+- **Daily check-in calls run only as a browser simulator** ([`/call-demo`](https://oushodhsathi.vercel.app/call-demo)). No phone provider is connected. The Bangla audio prompts are a generated draft (Meta MMS-TTS, licensed for non-commercial use only) that a native speaker has not yet checked.
+- **Strip-reading accuracy is not measured.** The labelling tool and the eval are ready; no labelled photos exist yet, so no accuracy figure is claimed.
+- **No pilot results.** [`eval/pilot.csv`](eval/pilot.csv) has no real households yet; every household on the demo site is invented.
+- **Small reference tables.** About 30 brands, 6 interactions, 5 Beers entries and 2 kidney-dose rules, seeded for the demo and to be extended with a pharmacist. DDInter data is non-commercial only and is not imported.
+- **Evaluation sets need human review.** 78 of the 79 retrieval questions and the Sathi cases were drafted by the build agent; a native speaker still needs to check them.
+- **The case-summary eval measures safety, not usefulness.** It counts how often a summary passes every check; whether it saves a pharmacist time needs pharmacists. On free models the Graph RAG summary takes about 40 seconds.
+- **Two models are switched off by design** until real data exists: the escalate-only intent classifier (needs 200+ human-written examples) and the missed-dose model (needs 30 real households).
+- **Free hosting.** The API sleeps when idle, so the first request can take up to a minute.
 
 ## Roadmap
 

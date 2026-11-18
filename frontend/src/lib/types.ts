@@ -77,6 +77,8 @@ export interface MedicineItem {
   model_id: string | null;
   confirmed: boolean;
   needs_review: boolean;
+  /** The OCR second reader's check of strength and expiry (null when it did not run). */
+  second_read?: SecondRead | null;
   thumbnail?: string | null;
   per_dose?: number;
   /** WHO AWaRe group when the generic is a known antibiotic. */
@@ -381,6 +383,14 @@ export interface BPTrend {
   last?: string;
   mean?: { systolic: number; diastolic: number };
   slope?: Record<"systolic" | "diastolic", { per_week: number; ci_low: number; ci_high: number }>;
+}
+
+export interface SecondRead {
+  strength: "agree" | "disagree" | "unknown";
+  expiry: "agree" | "disagree" | "unknown";
+  model: string;
+  seen_strengths: string[];
+  seen_expiries: string[];
 }
 
 export interface CaseSummary {

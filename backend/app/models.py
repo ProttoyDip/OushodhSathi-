@@ -140,6 +140,8 @@ class MedicineItem(MedicineItemIn):
     schedule_approved_at: datetime | None = None
     created_at: datetime | None = None
     ramadan_slots: list[Literal["sehri", "iftar"]] = []
+    # the OCR second reader: {"strength": agree|disagree|unknown, "expiry": ..., "model", "seen_*"}
+    second_read: dict | None = None
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -154,6 +156,7 @@ class MedicineItem(MedicineItemIn):
         return (
             self.confidence < LOW_CONFIDENCE
             or self.match_method in ("web_unverified", "not_found")
+            or "disagree" in ((self.second_read or {}).get("strength"), (self.second_read or {}).get("expiry"))
         )
 
 

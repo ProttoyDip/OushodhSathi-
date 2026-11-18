@@ -92,3 +92,16 @@ def test_docs_endpoint_hides_numbers_below_the_photo_minimum(client, tmp_path, m
         else:
             assert row["brand_accuracy"] is None and row["needs_check_rate"] is None
             assert "brand_accuracy_ci" not in row and row["status"].startswith("evaluation in progress")
+
+
+def test_score_measures_the_second_reader_gain():
+    outputs = {"photos/a.jpg": [item("Napa", "50 mg", "2027-03", 0.95), item("Seclo", "20 mg", None, 0.9)],
+               "photos/b.jpg": [item("Camlodin", "5 mg", "2026-12", 0.9)]}
+    seconds = {"photos/a.jpg": [{"strength": "disagree", "expiry": "agree"}, {"strength": "agree", "expiry": "unknown"}],
+               "photos/b.jpg": [{"strength": "disagree", "expiry": "agree"}]}   # Camlodin right, flagged anyway
+    sr = run_eval.score(LABELS, outputs, seconds)["second_read"]
+    assert (sr["strength"]["catch"]["k"], sr["strength"]["catch"]["n"]) == (1, 1)            # Napa 50 vs 500 caught
+    assert (sr["strength"]["false_alarm"]["k"], sr["strength"]["false_alarm"]["n"]) == (1, 2)
+    assert sr["expiry"]["catch"] is None and sr["expiry"]["false_alarm"]["n"] == 2
+    assert sr["ran_on_items"] == 3 and sr["needs_check_with_second_read"]["k"] == 2
+    assert run_eval.score(LABELS, outputs)["second_read"]["ran_on_items"] == 0              # OCR off: nothing claimed

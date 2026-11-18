@@ -253,8 +253,20 @@ async def read_shelf(photos: list[bytes], store=None, age: int | None = None,
     outcome = ScanOutcome()
     results = await asyncio.gather(*(_extract_one(p, providers, router, deps) for p in photos),
                                    return_exceptions=True)
+    # the second reader: an OCR model re-reads each photo that produced medicines (in parallel)
+    from . import ocr_check
+
+    async def second(photo: bytes, res) -> tuple[list[str], str] | None:
+        if isinstance(res, BaseException) or not res[0] or not ocr_check.configured():
+            return None
+        try:
+            return await asyncio.to_thread(ocr_check.read_lines, _prepare(photo, 1600)[0])
+        except ocr_check.OcrUnavailable as e:
+            log.info("second reader unavailable (%s)", e)
+            return None
+    reads = await asyncio.gather(*(second(p, r) for p, r in zip(photos, results)))
     seen: dict[tuple, ScannedItem] = {}
-    for photo, res in zip(photos, results):
+    for photo, res, ocr in zip(photos, results, reads):
         if isinstance(res, BaseException):
             outcome.warnings.append(f"one photo could not be read ({type(res).__name__})")
             continue
@@ -273,6 +285,8 @@ async def read_shelf(photos: list[bytes], store=None, age: int | None = None,
                 continue
             match = await asyncio.to_thread(resolve_brand, x.brand, x.strength, store)
             match.update(prompt_version=prompts.version("extract_strip"), model_id=model_id)
+            if ocr is not None:
+                match["second_read"] = ocr_check.compare(x.strength, x.expiry, ocr[0], ocr[1]).to_dict()
             seen[dedupe] = ScannedItem(
                 item=MedicineItemIn(brand=x.brand, strength=x.strength or None, form=x.form or None,
                                     expiry=x.expiry, prescriber=x.prescriber, source=x.source,

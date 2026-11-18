@@ -56,7 +56,10 @@
       "Access": "Access",
       "Watch": "Watch",
       "Reserve": "Reserve"
-    }
+    },
+    "secondStrength": "Check the strength: a second reading saw {seen}",
+    "secondExpiry": "Check the expiry: a second reading saw {seen}",
+    "secondBoth": "Check strength and expiry: a second reading saw something different"
   },
   "connector": {
     "both": "Both are {generic}",

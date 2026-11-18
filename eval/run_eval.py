@@ -16,6 +16,9 @@ Reports, each as a proportion with a 95% Wilson interval:
              (confidence below CONFIDENCE_CUTOFF, the app's own cut-off)
 plus a reliability table (stated confidence vs observed brand accuracy, to check the 0.75 cut-off),
 results by photo condition, and, with --per-provider, each vision provider on its own.
+The OCR second reader (backend/app/ocr_check.py) is measured too: of the vision model's wrong strengths
+and expiries, how many it flagged (catch rate), and of the right ones, how many it flagged anyway
+(false alarms), plus the needs-check rate with it on.
 With fewer than MIN_PHOTOS photos the JSON says "evaluation in progress" and /docs shows only that.
 Writes eval/results_<prompt_version>.json. Needs a vision provider in backend/.env. Never prints keys.
 """
@@ -61,29 +64,52 @@ def load_labels(path: Path = ROOT / "labels.csv") -> dict[str, list[dict]]:
     return labels
 
 
-def score(labels: dict[str, list[dict]], outputs: dict[str, list]) -> dict:
-    """outputs: image_path -> extracted items (brand, strength, expiry, confidence). Pure; tested."""
+def _second_read_gain(flagged_when_wrong: list[bool], flagged_when_right: list[bool], name: str) -> dict:
+    """Of the vision model's wrong readings, how many the OCR second reader flagged (catch rate), and of
+    its right readings, how many it flagged anyway (false alarms)."""
+    w, r = flagged_when_wrong, flagged_when_right
+    return {"catch": proportion(f"{name}_catch", sum(w), len(w)) if w else None,
+            "false_alarm": proportion(f"{name}_false_alarm", sum(r), len(r)) if r else None}
+
+
+def score(labels: dict[str, list[dict]], outputs: dict[str, list], seconds: dict[str, list] | None = None) -> dict:
+    """outputs: image_path -> extracted items (brand, strength, expiry, confidence); seconds: the same
+    shape with each item's OCR second-read verdict (or None). Pure; tested."""
+    seconds = seconds or {}
     n = brand = strength = 0
     exp_n = exp_ok = 0
+    s_wrong, s_right, e_wrong, e_right = [], [], [], []
+    flagged_total = 0
     found_conf: list[float] = []
     by_condition: dict[str, list[int]] = defaultdict(lambda: [0, 0])
     reliability = [[0, 0] for _ in BUCKETS]  # [correct, total] per confidence bucket
     per_image = []
     for image, expected in labels.items():
         got = outputs.get(image, [])
+        srs = seconds.get(image) or [None] * len(got)
         rows = []
         for exp in expected:
             n += 1
-            match = next((g for g in got if normalise(g.brand) == normalise(exp["brand"])), None)
+            idx = next((i for i, g in enumerate(got) if normalise(g.brand) == normalise(exp["brand"])), None)
+            match = got[idx] if idx is not None else None
+            sr = srs[idx] if idx is not None else None
             b_ok = match is not None
             s_ok = b_ok and norm_strength(match.strength) == norm_strength(exp.get("strength"))
             brand += b_ok
             strength += s_ok
+            e_ok = None
             if (exp.get("expiry") or "").strip():
                 exp_n += 1
-                exp_ok += b_ok and (match.expiry or "") == exp["expiry"].strip()
+                e_ok = b_ok and (match.expiry or "") == exp["expiry"].strip()
+                exp_ok += e_ok
             if b_ok:
                 found_conf.append(match.confidence)
+            if b_ok and sr:  # the second reader ran on this photo
+                s_flag, e_flag = sr.get("strength") == "disagree", sr.get("expiry") == "disagree"
+                (s_right if s_ok else s_wrong).append(s_flag)
+                if e_ok is not None:
+                    (e_right if e_ok else e_wrong).append(e_flag)
+                flagged_total += (s_flag or e_flag or match.confidence < CONFIDENCE_CUTOFF)
             cond = (exp.get("condition") or "unlabelled").strip() or "unlabelled"
             by_condition[cond][0] += b_ok
             by_condition[cond][1] += 1
@@ -103,6 +129,14 @@ def score(labels: dict[str, list[dict]], outputs: dict[str, list]) -> dict:
         "strength": proportion("strength", strength, n) if n else None,
         "expiry": proportion("expiry", exp_ok, exp_n) if exp_n else None,
         "needs_check": proportion("needs_check", low, len(found_conf)) if found_conf else None,
+        # the OCR second reader (app/ocr_check.py): how many vision mistakes it caught, at what cost
+        "second_read": {
+            "ran_on_items": len(s_wrong) + len(s_right),
+            "strength": _second_read_gain(s_wrong, s_right, "strength"),
+            "expiry": _second_read_gain(e_wrong, e_right, "expiry"),
+            "needs_check_with_second_read": (proportion("needs_check_2", flagged_total, len(s_wrong) + len(s_right))
+                                             if s_wrong or s_right else None),
+        },
         "reliability": [{"confidence": f"{lo:.2f}-{min(hi, 1):.2f}", "items": t,
                          "observed": proportion("observed", c, t) if t else None}
                         for (lo, hi), (c, t) in zip(BUCKETS, reliability)],
@@ -112,14 +146,15 @@ def score(labels: dict[str, list[dict]], outputs: dict[str, list]) -> dict:
     }
 
 
-async def extract_all(labels: dict[str, list[dict]]) -> tuple[dict[str, list], str | None]:
-    outputs, model_id = {}, None
+async def extract_all(labels: dict[str, list[dict]]) -> tuple[dict[str, list], dict[str, list], str | None]:
+    outputs, seconds, model_id = {}, {}, None
     for image in labels:
         outcome = await agent.read_shelf([(ROOT / image).read_bytes()])
         model_id = model_id or outcome.model_id
         outputs[image] = [s.item for s in outcome.items]
+        seconds[image] = [s.match.get("second_read") for s in outcome.items]
         print(f"  {image}: {len(outputs[image])} read")
-    return outputs, model_id
+    return outputs, seconds, model_id
 
 
 async def main() -> int:
@@ -132,16 +167,16 @@ async def main() -> int:
         return 1
     try:
         print("chain (as the app runs it)")
-        outputs, model_id = await extract_all(labels)
-        runs = {"chain": {"model_id": model_id, **score(labels, outputs)}}
+        outputs, seconds, model_id = await extract_all(labels)
+        runs = {"chain": {"model_id": model_id, **score(labels, outputs, seconds)}}
         if a.per_provider:
             for p in configured_providers("vision"):
                 print(f"{p.name} / {p.model} alone")
                 only = lambda *_a, _p=p, **_k: [_p]  # noqa: E731
                 agent.configured_providers = only
                 llm_router.configured_providers = only
-                outs, mid = await extract_all(labels)
-                runs[f"{p.name}/{p.model}"] = {"model_id": mid, **score(labels, outs)}
+                outs, secs, mid = await extract_all(labels)
+                runs[f"{p.name}/{p.model}"] = {"model_id": mid, **score(labels, outs, secs)}
     except NoProviderAvailable as e:
         print(f"No vision provider available: {e}")
         return 2
@@ -169,6 +204,12 @@ async def main() -> int:
             v = r[key]
             if v:
                 print(f"  {key:12} {v['k']}/{v['n']} = {v['p']:.0%}  (95% CI {v['ci_low']:.0%}-{v['ci_high']:.0%})")
+        sr = r["second_read"]
+        for key in ("strength", "expiry"):
+            for part in ("catch", "false_alarm"):
+                v = sr[key][part]
+                if v:
+                    print(f"  2nd read {key} {part:11} {v['k']}/{v['n']} = {v['p']:.0%}  (95% CI {v['ci_low']:.0%}-{v['ci_high']:.0%})")
         print("  reliability  " + "  ".join(
             f"{b['confidence']}: {b['observed']['p']:.0%} of {b['items']}" for b in r["reliability"] if b["observed"]))
     print(f"\n{summary['status']}\nwrote {out}")

@@ -56,7 +56,10 @@
       "Access": "Access",
       "Watch": "Watch",
       "Reserve": "Reserve"
-    }
+    },
+    "secondStrength": "শক্তি মিলিয়ে দেখুন: দ্বিতীয়বার পড়ায় পাওয়া গেছে {seen}",
+    "secondExpiry": "মেয়াদ মিলিয়ে দেখুন: দ্বিতীয়বার পড়ায় পাওয়া গেছে {seen}",
+    "secondBoth": "শক্তি আর মেয়াদ মিলিয়ে দেখুন: দ্বিতীয়বার পড়ায় অন্য কিছু পাওয়া গেছে"
   },
   "connector": {
     "both": "দুটোই {generic}",

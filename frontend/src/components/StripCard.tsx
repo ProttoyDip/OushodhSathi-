@@ -9,7 +9,7 @@ import type { MedicineItem } from "@/lib/types";
 type StripItem = Pick<
   MedicineItem,
   "brand" | "strength" | "expiry" | "prescriber" | "confidence" | "generic" | "match_method" | "match_source"
-> & { thumbnail?: string | null; needs_review?: boolean; confirmed?: boolean; aware_group?: MedicineItem["aware_group"] };
+> & { second_read?: MedicineItem["second_read"]; thumbnail?: string | null; needs_review?: boolean; confirmed?: boolean; aware_group?: MedicineItem["aware_group"] };
 
 const LOW = 0.75;
 
@@ -37,7 +37,10 @@ export function StripCard({
   const low = item.confidence < LOW;
   const web = item.match_method === "web_unverified";
   const unknown = item.match_method === "not_found" || !item.generic;
-  const needsCheck = !item.confirmed && (low || web || unknown);
+  // the OCR second reader saw a different strength or expiry on the same photo
+  const secondStrength = item.second_read?.strength === "disagree";
+  const secondExpiry = item.second_read?.expiry === "disagree";
+  const needsCheck = !item.confirmed && (low || web || unknown || secondStrength || secondExpiry);
   const compact = density === "compact";
   const pct = Math.round(item.confidence * 100);
 
@@ -161,6 +164,14 @@ export function StripCard({
               <span className="inline-flex min-h-8 max-w-full items-center gap-1.5 rounded-2xl border border-amber-line bg-amber-tint px-3 py-1 text-[15px] font-semibold leading-snug text-amber">
                 <ScanEye aria-hidden size={16} className="shrink-0" />
                 {unknown ? t("notFound") : t("checkPlease")}
+              </span>
+            )}
+            {(secondStrength || secondExpiry) && (
+              <span className="inline-flex min-h-8 max-w-full items-center gap-1.5 rounded-2xl border border-amber-line bg-amber-tint px-3 py-1 text-[15px] font-semibold leading-snug text-amber">
+                <ScanEye aria-hidden size={16} className="shrink-0" />
+                {secondStrength && secondExpiry ? t("secondBoth") : secondStrength
+                  ? t("secondStrength", { seen: item.second_read?.seen_strengths.join(", ") ?? "" })
+                  : t("secondExpiry", { seen: (item.second_read?.seen_expiries ?? []).map((e) => expiry(e, locale)).join(", ") })}
               </span>
             )}
             {web && (

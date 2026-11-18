@@ -75,6 +75,8 @@ export const api = {
     request<MedicineItem>(`/patients/${id}/items?confirmed=${confirmed}`, { method: "POST", body: json(body), pid: id }),
   patchItem: (id: number, itemId: number, body: Partial<MedicineItem>) =>
     request<MedicineItem>(`/items/${itemId}`, { method: "PATCH", body: json(body), pid: id }),
+  suggestBrands: (q: string) =>
+    request<{ brand: string; generic: string; strength: string | null }[]>(`/brands/suggest?q=${encodeURIComponent(q)}`),
   deleteItem: (id: number, itemId: number) => request<void>(`/items/${itemId}`, { method: "DELETE", pid: id }),
 
   scan: (id: number, photos: File[]) => {

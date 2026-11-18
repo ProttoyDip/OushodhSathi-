@@ -168,6 +168,10 @@
       "drug_shop": "Drug shop",
       "self": "Bought ourselves",
       "unknown": "Don't know"
+    },
+    "suggest": {
+      "title": "Is it one of these?",
+      "note": "Tap one only if it matches what is printed. The pharmacist still checks the list."
     }
   },
   "status": {

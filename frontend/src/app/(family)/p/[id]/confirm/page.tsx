@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { buttonStyles, FamilyHeader, familyWidth } from "@/components/Chrome";
 import { ErrorState, Skeleton } from "@/components/States";
+import { BrandSuggestions } from "@/components/BrandSuggestions";
 import { StripCard } from "@/components/StripCard";
 import { api } from "@/lib/api";
 import { cx } from "@/lib/format";
@@ -150,6 +151,9 @@ function Confirm() {
                     />
                   ) : (
                     <div className="grid gap-4">
+                    {item.match_method === "not_found" && (
+                      <BrandSuggestions brand={item.brand} onPick={(b) => save(item, { brand: b })} />
+                    )}
                     <DoseTimes idPrefix={`plan-${item.id}`} plan={plan(item)} onChange={(p) => setPlan(item, p)} />
                     <WhereFrom item={item} onChange={(kind) => save(item, { prescriber_kind: kind })} />
                     <div className="flex gap-2">

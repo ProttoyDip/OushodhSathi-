@@ -44,11 +44,11 @@ Embeddings: NVIDIA nemotron-3.5-embed-1b through NVIDIA's API (input type query 
 
 ## Evaluation
 
-Sathi safety (83 cases, no model): app questions answered from the right guide entry 34/35; medical questions sent to a pharmacist 33/33; emergencies escalated 10/10; rule-breaking attempts refused 5/5 [eval/sathi_results_sathi_bn.v1.json]. Guide retrieval recall@1 on 79 questions: hybrid 95% (95% CI 88-98%) vs keyword 90% [eval/help_retrieval_results.json]. Pharmacist case summary, 10 uncached runs each on the demo household: v1 and Graph RAG v2 both passed every safety check 8/10 times [eval/case_summary_results.json]. Strip-reading accuracy: evaluation in progress (n = 0 labelled photos; numbers are published from 25), with a labelling tool and Wilson intervals ready. 365 automated backend tests run in CI.
+Sathi safety (83 cases, no model): app questions answered from the right guide entry 34/35; medical questions sent to a pharmacist 33/33; emergencies escalated 10/10; rule-breaking attempts refused 5/5 [eval/sathi_results_sathi_bn.v1.json]. Guide retrieval recall@1 on 79 questions: hybrid 95% (95% CI 88-98%) vs keyword 90% [eval/help_retrieval_results.json]. Pharmacist case summary, 10 uncached runs each on the demo household: v1 and Graph RAG v2 both passed every safety check 8/10 times [eval/case_summary_results.json]. Strip-reading accuracy: evaluation in progress (n = 0 labelled photos; numbers are published from 25), with a labelling tool and Wilson intervals ready. 399 automated backend tests run in CI.
 
 ## Solution description: the voice-call sentence
 
-Replace the voice-call sentence with: "A daily Bangla check-in call (press 1 taken, 2 not taken, 9 emergency) is built and can be tried in the browser simulator at /call-demo; connecting a real phone provider is the next step." Use "now calls families every day" only after a provider is live and tested.
+Replace the voice-call sentence with: "A daily Bangla check-in, by recorded phone call (press 1 taken, 2 not taken, 9 emergency) or by WhatsApp message with buttons, is built and can be tried in the browser simulators; connecting a phone provider and a WhatsApp Business number is the next step." Use "now calls families every day" only after a provider is live and tested.
 
 ---
 

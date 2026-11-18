@@ -1,0 +1,51 @@
+{
+  "generated_at": "2026-11-18T17:55:14+00:00",
+  "engine": "mms",
+  "voice": "facebook/mms-tts-ben",
+  "licence": "CC-BY-NC 4.0 (MMS-TTS): non-commercial only; replace before commercial use",
+  "checked_by_native_speaker": false,
+  "prompts": {
+    "greeting": {
+      "screen": "আসসালামু আলাইকুম, ওষুধসাথী থেকে বলছি।",
+      "spoken": "আসসালামু আলাইকুম, ওষুধসাথী থেকে বলছি।",
+      "file": "greeting.mp3",
+      "bytes": 34605
+    },
+    "slot_morning": {
+      "screen": "সকালের ওষুধ খেয়ে থাকলে ১ চাপুন, না খেলে ২ চাপুন।",
+      "spoken": "সকালের ওষুধ খেয়ে থাকলে এক চাপুন, না খেলে দুই চাপুন।",
+      "file": "slot_morning.mp3",
+      "bytes": 43821
+    },
+    "slot_noon": {
+      "screen": "দুপুরের ওষুধ খেয়ে থাকলে ১ চাপুন, না খেলে ২ চাপুন।",
+      "spoken": "দুপুরের ওষুধ খেয়ে থাকলে এক চাপুন, না খেলে দুই চাপুন।",
+      "file": "slot_noon.mp3",
+      "bytes": 44397
+    },
+    "slot_night": {
+      "screen": "রাতের ওষুধ খেয়ে থাকলে ১ চাপুন, না খেলে ২ চাপুন।",
+      "spoken": "রাতের ওষুধ খেয়ে থাকলে এক চাপুন, না খেলে দুই চাপুন।",
+      "file": "slot_night.mp3",
+      "bytes": 44685
+    },
+    "emergency_ask": {
+      "screen": "বুকে ব্যথা, শ্বাসকষ্ট বা অজ্ঞান হওয়ার মতো সমস্যা হলে ৯ চাপুন।",
+      "spoken": "বুকে ব্যথা, শ্বাসকষ্ট বা অজ্ঞান হওয়ার মতো সমস্যা হলে নয় চাপুন।",
+      "file": "emergency_ask.mp3",
+      "bytes": 54765
+    },
+    "emergency": {
+      "screen": "এখনই ৯৯৯-এ ফোন করুন বা কাছের হাসপাতালে যান।",
+      "spoken": "এখনই নয় নয় নয় নম্বরে ফোন করুন বা কাছের হাসপাতালে যান।",
+      "file": "emergency.mp3",
+      "bytes": 51309
+    },
+    "closing": {
+      "screen": "ধন্যবাদ। কোনো প্রশ্ন থাকলে ফার্মাসিস্টকে জিজ্ঞেস করুন।",
+      "spoken": "ধন্যবাদ। কোনো প্রশ্ন থাকলে ফার্মাসিস্টকে জিজ্ঞেস করুন।",
+      "file": "closing.mp3",
+      "bytes": 35757
+    }
+  }
+}

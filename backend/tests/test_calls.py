@@ -195,3 +195,16 @@ def test_call_time_window():
     assert not service.valid_call_time("20:46") and not service.valid_call_time("07:59")
     assert service.quiet(at(21, 0)) and service.quiet(at(7, 59)) and not service.quiet(at(8, 0))
     assert service.DHAKA.utcoffset(None) == timedelta(hours=6)
+
+
+def test_call_audio_speaks_digits_as_words_and_stays_safe():
+    import importlib.util
+    from pathlib import Path
+    spec = importlib.util.spec_from_file_location("make_call_audio", Path(__file__).resolve().parents[1] / "scripts" / "make_call_audio.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    assert mod.spoken("সকালের ওষুধ খেয়ে থাকলে ১ চাপুন, না খেলে ২ চাপুন।") == "সকালের ওষুধ খেয়ে থাকলে এক চাপুন, না খেলে দুই চাপুন।"
+    assert mod.spoken("এখনই ৯৯৯-এ ফোন করুন") == "এখনই নয় নয় নয় নম্বরে ফোন করুন"
+    for texts in script.PROMPTS.values():
+        said = mod.spoken(texts["bn"])
+        assert not any(c in said for c in "০১২৩৪৫৬৭৮৯") and explain.is_safe(said)

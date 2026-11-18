@@ -412,6 +412,19 @@ export interface CallSettings {
   local_time: string | null;
   consent_at: string | null;
   phone: string | null;
+  /** the daily phone call, or the daily WhatsApp message */
+  channel: "call" | "whatsapp";
+  /** true when real WhatsApp messages are sent (keys set); false: the browser simulator */
+  whatsapp_live: boolean;
+}
+
+export interface WaCheckin {
+  id: number;
+  status: "sending" | "sent" | "answering" | "completed" | "emergency" | "no_reply" | "failed";
+  state: string;
+  provider: "whatsapp" | "simulator";
+  answers: Partial<Record<CallSlot, "taken" | "missed">>;
+  transcript: { from: "us" | "them"; id?: string; text: string; buttons: [string, string][] }[];
 }
 
 export interface CallAttempt {

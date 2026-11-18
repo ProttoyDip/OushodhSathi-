@@ -28,6 +28,8 @@ from .ratelimit import limit_new_patient, limit_sathi, limit_scan, limit_writes 
 from .voice_calls import phone as phones  # noqa: E402
 from .voice_calls import provider as call_provider  # noqa: E402
 from .voice_calls import service as calls  # noqa: E402
+from .whatsapp_checkin import cloud as wa_cloud  # noqa: E402
+from .whatsapp_checkin import service as wa  # noqa: E402
 from . import adherence_risk, asr, llm_router, notify  # noqa: E402
 from .llm_router import NoProviderAvailable, Router, _env, configured_providers, provider_names  # noqa: E402
 from .models import (  # noqa: E402
@@ -307,9 +309,12 @@ def _calls_export(store: Store, pid: int) -> dict:
     return {
         "schedule": None if sch is None else {
             "active": bool(sch["active"]), "local_time": sch["local_time"], "consent_at": sch["consent_at"],
-            "consent_by": sch["consent_by"], "phone": phones.masked(phones.decrypt(sch["phone_enc"]))},
+            "consent_by": sch["consent_by"], "phone": phones.masked(phones.decrypt(sch["phone_enc"])),
+            "channel": sch.get("channel", "call")},
         "calls": [{k: a[k] for k in ("day", "attempt_no", "status", "provider", "answers", "created_at")}
                   for a in store.list_call_attempts(pid)],
+        "whatsapp_checkins": [{k: c[k] for k in ("day", "status", "provider", "answers", "created_at")}
+                              for c in store.list_checkins(pid)],
     }
 
 
@@ -1722,6 +1727,7 @@ class CallSettingsIn(BaseModel):
     consent: Literal[True]  # the family read the consent text and agreed
     consent_by: str = Field(min_length=1, max_length=60)  # who agreed, e.g. "daughter"
     phone: str | None = Field(default=None, max_length=20)
+    channel: Literal["call", "whatsapp"] = "call"  # the daily phone call, or the daily WhatsApp message
 
 
 class CallPressIn(BaseModel):
@@ -1733,6 +1739,7 @@ def _call_settings(store: Store, pid: int) -> dict:
     sch = store.get_call_schedule(pid)
     prov = call_provider()
     return {"provider": prov.name, "needs_phone": prov.needs_phone, "approved_slots": calls.approved_slots(store, pid),
+            "channel": (sch or {}).get("channel", "call"), "whatsapp_live": wa.real(),
             "active": bool(sch and sch["active"]), "local_time": sch["local_time"] if sch else None,
             "consent_at": sch["consent_at"] if sch else None,
             "phone": phones.masked(phones.decrypt(sch["phone_enc"])) if sch else None}
@@ -1765,9 +1772,11 @@ def put_call_settings(pid: int, body: CallSettingsIn, store: Store = Depends(get
         except phones.PhoneStorageUnavailable:
             raise HTTPException(503, "Phone numbers cannot be stored on this server yet") from None
     sch = store.get_call_schedule(pid)
-    if call_provider().needs_phone and not body.phone and not (sch and sch["phone_enc"]):
-        raise HTTPException(422, "A mobile number is needed for the call / কলের জন্য মোবাইল নম্বর দরকার")
+    needs = call_provider().needs_phone if body.channel == "call" else wa.real()
+    if needs and not body.phone and not (sch and sch["phone_enc"]):
+        raise HTTPException(422, "A mobile number is needed / মোবাইল নম্বর দরকার")
     store.set_call_schedule(pid, body.local_time, body.consent_by.strip(), enc, keep_phone=keep)
+    store.set_checkin_channel(pid, body.channel)
     store.log_activity(pid, "calls_on", 1)
     return _call_settings(store, pid)
 
@@ -1857,8 +1866,9 @@ def sim_press(aid: int, body: CallPressIn, x_family_key: str | None = Header(def
 
 @app.post("/calls/run-due", dependencies=[Depends(require_admin)])
 def calls_run_due(store: Store = Depends(get_store)) -> dict:
-    """The cron (GitHub Actions, every 15 minutes) places due calls and the one retry."""
-    return calls.run_due(store, call_provider(), _callback_url())
+    """The cron (GitHub Actions, every 15 minutes) places due calls and the one retry, and sends the
+    daily WhatsApp message to households that chose it."""
+    return {**calls.run_due(store, call_provider(), _callback_url()), "whatsapp": wa.run_due(store, calls.dhaka_now())}
 
 
 @app.post("/calls/webhook/{name}", dependencies=[Depends(limit_writes)])
@@ -1892,3 +1902,99 @@ def call_history(pid: int, store: Store = Depends(get_store)) -> dict:
     """Reviewer only: recent check-in calls and the answer rate (95% Wilson interval)."""
     _patient_or_404(store, pid)
     return calls.history(store, pid)
+
+
+# ---- daily WhatsApp check-in (app/whatsapp_checkin) ----------------------------------------------
+
+class WaReplyIn(BaseModel):
+    button: str = Field(min_length=1, max_length=80)
+
+
+class WaTextIn(BaseModel):
+    text: str = Field(min_length=1, max_length=500)
+
+
+def _wa_view(c: dict) -> dict:
+    return {k: c[k] for k in ("id", "status", "state", "provider", "answers", "transcript")}
+
+
+@app.post("/patients/{pid}/whatsapp/test", status_code=201, dependencies=[Depends(family_access), Depends(limit_writes)])
+def whatsapp_test(pid: int, store: Store = Depends(get_store)) -> dict:
+    """"Send now (test)". The simulator has no limits; a real message respects quiet hours and two a day."""
+    _patient_or_404(store, pid)
+    sch = store.get_call_schedule(pid)
+    if not (sch and sch["active"] and sch.get("channel") == "whatsapp"):
+        raise HTTPException(409, "Turn on the daily WhatsApp message first / আগে দৈনিক হোয়াটসঅ্যাপ মেসেজ চালু করুন")
+    if not calls.approved_slots(store, pid):
+        raise HTTPException(409, "The pharmacist has not approved medicine times yet / ফার্মাসিস্ট এখনো সময় ঠিক করেননি")
+    now_ = calls.dhaka_now()
+    if wa.real():
+        if calls.quiet(now_):
+            raise HTTPException(409, "No messages between 21:00 and 08:00 / রাত ৯টা থেকে সকাল ৮টা পর্যন্ত মেসেজ নয়")
+        if len(store.list_checkins(pid, day=now_.date().isoformat())) >= 2:
+            raise HTTPException(429, "Daily limit reached / আজকের সীমা শেষ")
+    for c in store.list_checkins(pid, day=now_.date().isoformat()):  # one conversation at a time
+        if c["status"] in wa.OPEN:
+            store.update_checkin(c["id"], status="no_reply")
+    try:
+        return _wa_view(wa.start(store, pid, now_))
+    except ValueError:
+        raise HTTPException(422, "A WhatsApp number is needed / হোয়াটসঅ্যাপ নম্বর দরকার") from None
+
+
+@app.get("/patients/{pid}/whatsapp/current", dependencies=[Depends(family_access)])
+def whatsapp_current(pid: int, store: Store = Depends(get_store)) -> dict | None:
+    _patient_or_404(store, pid)
+    today = store.list_checkins(pid, day=calls.dhaka_now().date().isoformat())
+    return _wa_view(today[-1]) if today else None
+
+
+def _sim_checkin(cid: int, store: Store, x_family_key: str | None, x_reviewer_token: str | None) -> dict:
+    c = store.get_checkin(cid)
+    if c is None or c["provider"] != "simulator":
+        raise HTTPException(404, "Check-in not found")
+    try:
+        family_access(c["patient_id"], x_family_key, x_reviewer_token, store)
+    except HTTPException:
+        raise HTTPException(404, "Check-in not found") from None
+    return c
+
+
+@app.post("/whatsapp/sim/{cid}/reply", dependencies=[Depends(limit_writes)])
+def whatsapp_sim_reply(cid: int, body: WaReplyIn, x_family_key: str | None = Header(default=None),
+                       x_reviewer_token: str | None = Header(default=None), store: Store = Depends(get_store)) -> dict:
+    c = _sim_checkin(cid, store, x_family_key, x_reviewer_token)
+    return _wa_view(wa.reply(store, c, body.button, lambda p: _notify_emergency(p, "whatsapp_emergency")))
+
+
+@app.post("/whatsapp/sim/{cid}/text", dependencies=[Depends(limit_writes)])
+def whatsapp_sim_text(cid: int, body: WaTextIn, x_family_key: str | None = Header(default=None),
+                      x_reviewer_token: str | None = Header(default=None), store: Store = Depends(get_store)) -> dict:
+    c = _sim_checkin(cid, store, x_family_key, x_reviewer_token)
+    return _wa_view(wa.typed(store, c, body.text, lambda p: _notify_emergency(p, "whatsapp_emergency")))
+
+
+@app.get("/whatsapp/webhook")
+def whatsapp_verify(request: Request):
+    """Meta's subscription check: echo hub.challenge when hub.verify_token matches WHATSAPP_VERIFY_TOKEN."""
+    from fastapi.responses import PlainTextResponse
+
+    q = request.query_params
+    if not wa_cloud.verify_subscription(q.get("hub.mode"), q.get("hub.verify_token")):
+        raise HTTPException(403, "Verification failed")
+    return PlainTextResponse(q.get("hub.challenge", ""))
+
+
+@app.post("/whatsapp/webhook", dependencies=[Depends(limit_writes)])
+async def whatsapp_webhook(request: Request, store: Store = Depends(get_store)) -> dict:
+    """Taps and messages from WhatsApp. The X-Hub-Signature-256 HMAC is checked over the raw body first."""
+    import json
+
+    raw = await request.body()
+    if not wa_cloud.verify_signature(raw, request.headers.get("x-hub-signature-256")):
+        raise HTTPException(403, "Bad signature")
+    try:
+        body = json.loads(raw)
+    except ValueError:
+        raise HTTPException(400, "Bad JSON") from None
+    return {"handled": wa.handle_webhook(store, body, lambda p: _notify_emergency(p, "whatsapp_emergency"))}

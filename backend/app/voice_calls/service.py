@@ -78,6 +78,8 @@ def run_due(store: Store, provider: CallProvider, callback_url: str, at: datetim
         out["skipped"][reason] = out["skipped"].get(reason, 0) + 1
 
     for sch in store.active_call_schedules():
+        if sch.get("channel", "call") == "whatsapp":
+            continue  # this household chose the WhatsApp message (app/whatsapp_checkin)
         pid = sch["patient_id"]
         today = store.list_call_attempts(pid, day=at.date().isoformat())
         for a in today:  # a call still ringing after RETRY_AFTER was not answered
@@ -146,14 +148,14 @@ def press(store: Store, attempt: dict, digit: str | None, seq: int,
     return _turn(store.get_call_attempt(attempt["id"]), turn)  # type: ignore[arg-type]
 
 
-def _record(store: Store, pid: int, day: date, record: dict[str, str]) -> None:
+def _record(store: Store, pid: int, day: date, record: dict[str, str], source: str = "call") -> None:
     """Writes the answer for every pharmacist-approved medicine in that slot; nothing else."""
     for it in store.list_items(pid, confirmed_only=True):
         if not _tickable(it):
             continue
         for slot, status in record.items():
             if slot in it.schedule:
-                store.record_dose(pid, it.id, day.isoformat(), slot, status, source="call")
+                store.record_dose(pid, it.id, day.isoformat(), slot, status, source=source)
 
 
 def history(store: Store, pid: int, days: int = 14) -> dict:
@@ -161,17 +163,30 @@ def history(store: Store, pid: int, days: int = 14) -> dict:
     from ..stats import proportion
 
     since = (dhaka_now().date() - timedelta(days=days - 1)).isoformat()
-    attempts = store.list_call_attempts(pid, since_day=since)
-    finished = [a for a in attempts if a["status"] != "ringing"]
+    attempts = _all_checkins(store, pid, since)
+    finished = [a for a in attempts if a["status"] not in ("ringing", "sent", "sending")]
     picked = sum(a["status"] in ANSWERED for a in finished)
     sch = store.get_call_schedule(pid)
     return {"active": bool(sch and sch["active"]), "local_time": sch["local_time"] if sch else None,
-            "attempts": [{k: a[k] for k in ("day", "attempt_no", "status", "provider", "answers", "created_at")}
-                         for a in reversed(attempts)],
+            "channel": (sch or {}).get("channel", "call"),
+            "attempts": list(reversed(attempts)),
             "answer_rate": proportion("answered", picked, len(finished)) if finished else None}
 
 
+def _all_checkins(store: Store, pid: int, since: str = "0000-00-00") -> list[dict]:
+    """Calls and WhatsApp check-ins in one list, oldest first, with the call status names
+    (a WhatsApp check-in that got a tap counts as answered, one with no reply as no_answer)."""
+    rows = [{k: a[k] for k in ("day", "attempt_no", "status", "provider", "answers", "created_at")}
+            for a in store.list_call_attempts(pid, since_day=since)]
+    wa_status = {"answering": "in_progress", "no_reply": "no_answer"}
+    rows += [{"day": c["day"], "attempt_no": 1, "status": wa_status.get(c["status"], c["status"]),
+              "provider": "whatsapp" if c["provider"] == "whatsapp" else "whatsapp-simulator",
+              "answers": c["answers"], "created_at": c["created_at"]}
+             for c in store.list_checkins(pid, since_day=since)]
+    return sorted(rows, key=lambda r: r["created_at"])
+
+
 def calls_missed(store: Store, pid: int) -> bool:
-    """Triage: 3 of the last 5 finished calls were not answered."""
-    last = [a for a in store.list_call_attempts(pid) if a["status"] != "ringing"][-5:]
+    """Triage: 3 of the last 5 finished check-ins (calls or WhatsApp messages) were not answered."""
+    last = [a for a in _all_checkins(store, pid) if a["status"] not in ("ringing", "sent", "sending")][-5:]
     return sum(a["status"] in ("no_answer", "failed") for a in last) >= 3

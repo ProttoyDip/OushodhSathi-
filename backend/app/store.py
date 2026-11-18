@@ -22,7 +22,7 @@ from .models import (
 
 DEFAULT_DB = Path(__file__).resolve().parent.parent / "oushodh.db"
 
-TABLES = ("call_attempts", "call_schedules", "dose_events", "kidney_tests", "notifications", "reviewers", "activity", "sathi_events", "questions", "bp_readings", "reviews", "flags", "items", "cache", "patients")
+TABLES = ("wa_inbound", "wa_messages", "wa_checkins", "call_attempts", "call_schedules", "dose_events", "kidney_tests", "notifications", "reviewers", "activity", "sathi_events", "questions", "bp_readings", "reviews", "flags", "items", "cache", "patients")
 
 # {id}: auto-increment key, {ref}: foreign key column, {real}: floating point
 SCHEMA = """
@@ -101,6 +101,18 @@ CREATE TABLE IF NOT EXISTS call_attempts (
   steps TEXT NOT NULL DEFAULT '[]', step_index INTEGER NOT NULL DEFAULT 0, repeated INTEGER NOT NULL DEFAULT 0,
   seq INTEGER NOT NULL DEFAULT 0, answers TEXT NOT NULL DEFAULT '{{}}', created_at TEXT NOT NULL, updated_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS wa_checkins (
+  id {id}, patient_id {ref} NOT NULL REFERENCES patients(id), day TEXT NOT NULL, provider TEXT NOT NULL,
+  status TEXT NOT NULL, state TEXT NOT NULL DEFAULT 'daily', slots TEXT NOT NULL DEFAULT '[]',
+  answers TEXT NOT NULL DEFAULT '{{}}', transcript TEXT NOT NULL DEFAULT '[]', created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS wa_messages (
+  wamid TEXT PRIMARY KEY, checkin_id {ref} NOT NULL REFERENCES wa_checkins(id), created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS wa_inbound (
+  message_id TEXT PRIMARY KEY, received_at TEXT NOT NULL
+);
 """
 
 # Columns added after the first release. Applied to fresh and existing databases alike.
@@ -146,7 +158,8 @@ ADDED_COLUMNS = {
     "flags": {"opened_at": "TEXT", "reviewer_id": "{ref}", "checklist": "TEXT NOT NULL DEFAULT '[]'"},  # opened_at: review-time evidence
     "reviews": {"seconds": "{real}", "reviewer_id": "{ref}", "checklist": "TEXT NOT NULL DEFAULT '[]'"},  # seconds: opened -> decided
     "bp_readings": {"pulse": "INTEGER", "source": "TEXT"},
-    "dose_events": {"source": "TEXT NOT NULL DEFAULT 'app'"},  # app | call (the daily check-in call)
+    "dose_events": {"source": "TEXT NOT NULL DEFAULT 'app'"},  # app | call | whatsapp (the daily check-in)
+    "call_schedules": {"channel": "TEXT NOT NULL DEFAULT 'call'"},  # call | whatsapp
 }
 
 SQLITE_TYPES = {"id": "INTEGER PRIMARY KEY", "ref": "INTEGER", "real": "REAL"}
@@ -521,6 +534,57 @@ class Store:
                        "updated_at) VALUES (?,?,?,?,?,1,?)", (pid, enc, local_time, ts, consent_by, ts))
         return self.get_call_schedule(pid)  # type: ignore[return-value]
 
+    def set_checkin_channel(self, pid: int, channel: str) -> None:
+        self._exec("UPDATE call_schedules SET channel = ? WHERE patient_id = ?", (channel, pid))
+
+    # ---- WhatsApp check-ins (app/whatsapp_checkin) ------------------------------------------------
+    def add_checkin(self, pid: int, day: str, provider: str, slots: list[str]) -> dict:
+        ts = now()
+        cid = self._insert("INSERT INTO wa_checkins (patient_id, day, provider, status, slots, created_at, updated_at) "
+                           "VALUES (?,?,?,?,?,?,?)", (pid, day, provider, "sending", json.dumps(slots), ts, ts))
+        return self.get_checkin(cid)  # type: ignore[return-value]
+
+    def get_checkin(self, cid: int) -> dict | None:
+        rows = self._all("SELECT * FROM wa_checkins WHERE id = ?", (cid,))
+        return self._checkin(rows[0]) if rows else None
+
+    def update_checkin(self, cid: int, **fields) -> dict:
+        allowed = {"status", "state", "answers", "transcript"}
+        sets = {k: (json.dumps(v, ensure_ascii=False) if k in ("answers", "transcript") else v)
+                for k, v in fields.items() if k in allowed}
+        if sets:
+            cols = ", ".join(f"{k} = ?" for k in sets)
+            self._exec(f"UPDATE wa_checkins SET {cols}, updated_at = ? WHERE id = ?", (*sets.values(), now(), cid))
+        return self.get_checkin(cid)  # type: ignore[return-value]
+
+    def list_checkins(self, pid: int, since_day: str = "0000-00-00", day: str | None = None) -> list[dict]:
+        sql, args = "SELECT * FROM wa_checkins WHERE patient_id = ? AND day >= ?", [pid, since_day]
+        if day:
+            sql += " AND day = ?"
+            args.append(day)
+        return [self._checkin(r) for r in self._all(sql + " ORDER BY id", tuple(args))]
+
+    def link_wa_message(self, wamid: str, cid: int) -> None:
+        self._exec("INSERT INTO wa_messages (wamid, checkin_id, created_at) VALUES (?,?,?) ON CONFLICT (wamid) DO NOTHING",
+                   (wamid, cid, now()))
+
+    def checkin_for_message(self, wamid: str) -> dict | None:
+        rows = self._all("SELECT checkin_id FROM wa_messages WHERE wamid = ?", (wamid,))
+        return self.get_checkin(rows[0]["checkin_id"]) if rows else None
+
+    def first_time_inbound(self, message_id: str) -> bool:
+        """True the first time a WhatsApp message id is seen (Meta may deliver a webhook more than once)."""
+        if self._all("SELECT 1 FROM wa_inbound WHERE message_id = ?", (message_id,)):
+            return False
+        self._exec("INSERT INTO wa_inbound (message_id, received_at) VALUES (?,?) ON CONFLICT (message_id) DO NOTHING",
+                   (message_id, now()))
+        return True
+
+    @staticmethod
+    def _checkin(row: dict) -> dict:
+        return {**row, "slots": json.loads(row["slots"] or "[]"), "answers": json.loads(row["answers"] or "{}"),
+                "transcript": json.loads(row["transcript"] or "[]")}
+
     def stop_calls(self, pid: int) -> None:
         """The family stops calls: no more calls, and the number is erased at once."""
         self._exec("UPDATE call_schedules SET active = 0, phone_enc = NULL, updated_at = ? WHERE patient_id = ?",
@@ -619,6 +683,8 @@ class Store:
             ("DELETE FROM flags WHERE patient_id = ?", (pid,)),
             ("DELETE FROM dose_events WHERE patient_id = ?", (pid,)),
             ("DELETE FROM call_attempts WHERE patient_id = ?", (pid,)),
+            ("DELETE FROM wa_messages WHERE checkin_id IN (SELECT id FROM wa_checkins WHERE patient_id = ?)", (pid,)),
+            ("DELETE FROM wa_checkins WHERE patient_id = ?", (pid,)),
             ("DELETE FROM call_schedules WHERE patient_id = ?", (pid,)),
             ("DELETE FROM items WHERE patient_id = ?", (pid,)),
             ("DELETE FROM bp_readings WHERE patient_id = ?", (pid,)),

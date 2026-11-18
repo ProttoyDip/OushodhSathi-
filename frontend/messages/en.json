@@ -1349,7 +1349,8 @@
           "p": [
             "If you turn on the daily call in Settings, we record who agreed and when, the time you chose, and each call's answers (taken, not taken, or 9 for an emergency). Answers are saved as medicine ticks for the pharmacist.",
             "When a real phone service is switched on, the mobile number is stored encrypted and is shared only with that phone-call provider, never with an AI model. Until then the call runs only as a simulator in your browser and no number is collected.",
-            "No calls between 21:00 and 08:00. You can stop the calls any time in Settings; the number is deleted at once. Calls are included in your data export and removed when you delete the household."
+            "No calls between 21:00 and 08:00. You can stop the calls any time in Settings; the number is deleted at once. Calls are included in your data export and removed when you delete the household.",
+            "If you choose the WhatsApp message instead, the number is shared only with WhatsApp (Meta) to deliver one message a day with buttons. Typed replies are not stored or read by anyone or any AI; only emergency words trigger the fixed 999 reply."
           ]
         },
         {
@@ -1488,7 +1489,13 @@
       "consentPhone": "We will call this number once a day at the time above (never between 21:00 and 08:00; one more try 15 minutes later if there is no answer). The number is stored encrypted and shared only with the phone-call provider, never with an AI model. Answers are saved as medicine ticks for the pharmacist. You can stop the calls any time, and the number is deleted at once.",
       "agree": "I have read this and agree to the daily call.",
       "turnOn": "Turn on the daily call",
-      "saved": "Saved"
+      "saved": "Saved",
+      "channel": "How should we check in?",
+      "channelCall": "Phone call",
+      "channelWhatsapp": "WhatsApp message",
+      "onWhatsapp": "On, a WhatsApp message every day at {time}",
+      "consentWhatsappSim": "For now the WhatsApp message runs as a simulator in the browser: nothing is sent to WhatsApp and no number is collected. Your answers are saved as medicine ticks for the pharmacist. You can stop it any time.",
+      "consentWhatsapp": "We will send one WhatsApp message to this number each day at the time above (never between 21:00 and 08:00), with buttons to tap. The number is stored encrypted and shared only with WhatsApp (Meta) to deliver the messages, never with an AI model. Typed messages are not read by anyone or any AI, except that emergency words get the 999 reply. You can stop it any time, and the number is deleted at once."
     },
     "review": {
       "title": "Check-in calls",
@@ -1509,8 +1516,24 @@
         "completed": "answered",
         "emergency": "answered, pressed 9",
         "no_answer": "not answered",
-        "failed": "failed"
+        "failed": "failed",
+        "no_reply": "no reply"
       }
-    }
+    },
+    "wa": {
+      "chatTitle": "OushodhSathi",
+      "simNote": "Simulator: this shows the WhatsApp check-in in your browser. Nothing is sent to WhatsApp.",
+      "buttons": "Reply buttons",
+      "typeHint": "Type a message",
+      "send": "Send",
+      "typed": "(typed message, not stored)",
+      "sendNow": "Send today's message (test)",
+      "none": "No check-in message today yet.",
+      "ended": "Done. Your answers were recorded for the pharmacist.",
+      "endedEmergency": "Call 999 or go to the nearest hospital now. Your family contact and the pharmacist were alerted.",
+      "sentToPhone": "Sent to your WhatsApp: answer it there with the buttons."
+    },
+    "titleWhatsapp": "Daily check-in message",
+    "introWhatsapp": "Once a day, at the time you choose, one WhatsApp message asks whether today's medicines were taken. Tap a button to answer; if something was missed, it asks about each time of day. Answers go to your pharmacist. No AI reads or writes these messages."
   }
 }

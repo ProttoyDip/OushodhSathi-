@@ -1,12 +1,13 @@
 "use client";
 
-import { Camera, Check, Images, Lock, ShieldCheck, X } from "lucide-react";
+import { Camera, Check, Images, Lock, ScanEye, ShieldCheck, X } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { buttonStyles, FamilyHeader, familyWidth } from "@/components/Chrome";
 import { api, ApiError } from "@/lib/api";
 import { cx } from "@/lib/format";
+import { assessPhoto, type PhotoIssue } from "@/lib/photoQuality";
 import { saveThumbs } from "@/lib/thumbs";
 import { useApi } from "@/lib/useApi";
 import { reveal } from "@/lib/reveal";
@@ -29,6 +30,18 @@ export default function ScanPage() {
   const galleryRef = useRef<HTMLInputElement>(null);
 
   const previews = useMemo(() => files.map((f) => URL.createObjectURL(f)), [files]);
+  // a quick look at each photo in the browser: blurry, glare, dark or too small? (warning only)
+  const [quality, setQuality] = useState<Map<File, PhotoIssue[]>>(new Map());
+  useEffect(() => {
+    let live = true;
+    const todo = files.filter((f) => !quality.has(f));
+    if (todo.length === 0) return;
+    Promise.all(todo.map(async (f) => [f, await assessPhoto(f)] as const)).then((pairs) => {
+      if (live) setQuality((q) => new Map([...q, ...pairs]));
+    });
+    return () => { live = false; };
+  }, [files, quality]);
+  const flagged = files.filter((f) => (quality.get(f) ?? []).length > 0).length;
   useEffect(() => () => previews.forEach(URL.revokeObjectURL), [previews]);
 
   useEffect(() => {
@@ -129,6 +142,11 @@ export default function ScanPage() {
                   <li key={src} className="relative aspect-square overflow-hidden rounded-card border border-rule bg-paper-sunk" style={{ animation: `assemble 220ms var(--ease-out-quint) ${i * 40}ms both` }}>
                     {/* eslint-disable-next-line @next/next/no-img-element -- local object URL preview */}
                     <img src={src} alt="" className="h-full w-full object-cover" />
+                    {(quality.get(files[i]) ?? []).length > 0 && (
+                      <span className="absolute inset-x-1 bottom-1 rounded-chip bg-amber-tint px-2 py-0.5 text-center text-[13px] font-semibold leading-tight text-amber">
+                        {(quality.get(files[i]) ?? []).map((q) => t(`quality.${q}`)).join(" · ")}
+                      </span>
+                    )}
                     <button
                       type="button"
                       aria-label={t("removePhoto")}
@@ -142,6 +160,12 @@ export default function ScanPage() {
               </ul>
             )}
 
+            {flagged > 0 && (
+              <p aria-live="polite" className="mt-4 flex items-start gap-2 rounded-card border border-amber-line bg-amber-tint p-4 text-amber">
+                <ScanEye aria-hidden size={20} className="mt-0.5 shrink-0" />
+                <span>{t("quality.note", { count: flagged })}</span>
+              </p>
+            )}
             {error && <p role="alert" className="mt-4 rounded-card border border-red-line bg-red-tint p-4 text-red">{error}</p>}
 
             <p className="mt-6 flex items-start gap-2 text-base text-ink-soft">

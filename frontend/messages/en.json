@@ -126,7 +126,14 @@
     "tooMany": "You can add up to 12 photos at a time.",
     "failed": "The photos could not be read. Try again, or type the medicine names yourself.",
     "useDemo": "Try it with the demo shelf",
-    "photosLabel": "Chosen photos"
+    "photosLabel": "Chosen photos",
+    "quality": {
+      "blurry": "Blurry",
+      "glare": "Glare",
+      "dark": "Too dark",
+      "small": "Too small",
+      "note": "{count, plural, one {# photo may be hard to read.} other {# photos may be hard to read.}} You can take it again, or keep it: anything unclear will be marked for checking."
+    }
   },
   "confirm": {
     "title": "Check the list",

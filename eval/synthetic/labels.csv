@@ -1,0 +1,46 @@
+image_path,brand,strength,expiry,condition
+photos/cut_01.jpg,Rivotril,0.5 mg,,cut_strip
+photos/cut_02.jpg,Ace,500 mg,,cut_strip
+photos/cut_03.jpg,Naprosyn,250 mg,,cut_strip
+photos/cut_04.jpg,Seclo,20 mg,,cut_strip
+photos/cut_05.jpg,Atova,10 mg,2028-11,cut_strip
+photos/cut_06.jpg,Comet,500 mg,,cut_strip
+photos/cut_07.jpg,Secrin,2 mg,2026-03,cut_strip
+photos/cut_08.jpg,Napa Extra,500 mg + 65 mg,,cut_strip
+photos/glare_01.jpg,Osartil,50 mg,2026-02,glare
+photos/glare_02.jpg,Maxpro,20 mg,2028-10,glare
+photos/glare_03.jpg,Ecosprin,75 mg,2026-09,glare
+photos/glare_03.jpg,Sergel,20 mg,2027-01,glare
+photos/glare_04.jpg,Amdocal,5 mg,2028-04,glare
+photos/glare_05.jpg,Osartil Plus,50 mg + 12.5 mg,2027-08,glare
+photos/glare_06.jpg,Angilock,50 mg,2028-05,glare
+photos/glare_06.jpg,Amdocal Plus,5 mg + 25 mg,2027-09,glare
+photos/bangla_01.jpg,Napa,500 mg,2028-07,bangla
+photos/bangla_02.jpg,Camlodin,5 mg,2026-04,bangla
+photos/bangla_03.jpg,Clofenac,50 mg,2028-01,bangla
+photos/bangla_04.jpg,Tryptin,10 mg,2028-06,bangla
+photos/bangla_05.jpg,Rivotril,0.5 mg,2026-10,bangla
+photos/handwritten_01.jpg,Ace,500 mg,,handwritten
+photos/handwritten_01.jpg,Naprosyn,250 mg,,handwritten
+photos/handwritten_01.jpg,Seclo,20 mg,,handwritten
+photos/handwritten_02.jpg,Atova,10 mg,,handwritten
+photos/handwritten_02.jpg,Comet,500 mg,,handwritten
+photos/handwritten_02.jpg,Secrin,2 mg,,handwritten
+photos/handwritten_03.jpg,Napa Extra,500 mg + 65 mg,,handwritten
+photos/handwritten_03.jpg,Osartil,50 mg,,handwritten
+photos/handwritten_04.jpg,Maxpro,20 mg,,handwritten
+photos/handwritten_04.jpg,Ecosprin,75 mg,,handwritten
+photos/handwritten_04.jpg,Sergel,20 mg,,handwritten
+photos/handwritten_05.jpg,Amdocal,5 mg,,handwritten
+photos/handwritten_05.jpg,Osartil Plus,50 mg + 12.5 mg,,handwritten
+photos/handwritten_05.jpg,Angilock,50 mg,,handwritten
+photos/clear_01.jpg,Osartil Plus,50 mg + 12.5 mg,2028-11,clear
+photos/clear_02.jpg,Amdocal Plus,5 mg + 25 mg,2026-10,clear
+photos/clear_02.jpg,Amdocal Plus,5 mg + 25 mg,2026-06,clear
+photos/clear_02.jpg,Napa,500 mg,2026-04,clear
+photos/clear_03.jpg,Camlodin,5 mg,2027-10,clear
+photos/clear_04.jpg,Clofenac,50 mg,2025-06,clear
+photos/clear_05.jpg,Amdocal Plus,5 mg + 25 mg,2027-02,clear
+photos/clear_05.jpg,Tryptin,10 mg,2028-10,clear
+photos/clear_05.jpg,Rivotril,0.5 mg,2025-07,clear
+photos/clear_06.jpg,Ace,500 mg,2026-03,clear

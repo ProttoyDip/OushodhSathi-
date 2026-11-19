@@ -1,5 +1,5 @@
 import type {
-  AuditEntry, BPPhotoReading, BPTrend, CallAttempt, CallHistory, CallSettings, CallTurn, WaCheckin, CaseSummary, CleanupItem, FlagWhy, EmergencyPage, EvalResult, FamilyStatus, Flag, Health, MedicineItem,
+  AuditEntry, BPPhotoReading, BPTrend, CallAttempt, CallHistory, CallSettings, CallTurn, WaCheckin, CaseSummary, CleanupItem, FlagWhy, EmergencyPage, EvalResult, SyntheticEval, FamilyStatus, Flag, Health, MedicineItem,
   ActivityEntry, ModelsInfo, NextStep, Passport, Patient, PilotStats, Question, RamadanRequest, Report, ReviewQueue,
   AdherenceSummary, DoseTick, Proportion, KidneyView, ReviewerAccount, Slot, ReviewerInvite, SathiReply, Savings, Today, VisitPrep,
 } from "./types";
@@ -58,6 +58,7 @@ export const api = {
     adherence_risk: { status: string; households: number; required_households: number; household_weeks: number; required_household_weeks: number };
   }>("/eval/models"),
   evalResults: () => request<EvalResult[]>("/eval/results"),
+  syntheticEval: () => request<SyntheticEval>("/eval/synthetic"),
   pilotStats: () => request<PilotStats>("/pilot/stats"),
   models: () => request<ModelsInfo>("/models"),
   // changes the model for everyone: reviewers only

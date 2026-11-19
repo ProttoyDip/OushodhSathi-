@@ -8,6 +8,7 @@ import { Wordmark } from "@/components/BrandMark";
 import { LangToggle, ThemeToggle } from "@/components/Chrome";
 import { stickyBar } from "@/lib/layout";
 import { TEAM } from "@/lib/team";
+import { SyntheticPanel } from "@/components/docs/SyntheticPanel";
 import { EvalPanel, LiveStatus, ModelGatesPanel, PilotPanel, RetrievalPanel, ReviewTimePanel, SathiEvalPanel } from "@/components/docs/LivePanels";
 import { reveal } from "@/lib/reveal";
 
@@ -115,6 +116,7 @@ export default async function Docs() {
           <h2 id="evaluation">{t("toc.evaluation")}</h2>
           <p>{t("evaluation.intro")}</p>
           <div {...reveal(0)} className="mt-5"><EvalPanel /></div>
+          <div {...reveal(0)} className="mt-5"><SyntheticPanel /></div>
           <h3>{t("evaluation.sathiTitle")}</h3>
           <p>{t("evaluation.sathiIntro")}</p>
           <div {...reveal(0)} className="mt-5"><SathiEvalPanel /></div>

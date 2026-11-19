@@ -764,6 +764,8 @@ def eval_results() -> list[dict]:
             data = json.loads(f.read_text(encoding="utf-8"))
         except ValueError:
             continue
+        if data.get("kind") == "synthetic":
+            continue  # never shown as real-photo accuracy (Prompt 14, rule 1)
         row = {k: data.get(k) for k in ("prompt_version", "model_id", "run_at", "images", "labelled_items",
                                          "brand_accuracy", "strength_accuracy", "avg_confidence")}
         # eval/run_eval.py sets brand/strength to None below its photo minimum; the status says why
@@ -784,6 +786,56 @@ def eval_results() -> list[dict]:
                     ci = proportion(key, round(data[key] * n), n)
                     row[f"{key}_ci"] = [ci["ci_low"], ci["ci_high"]]
         out.append(row)
+    return out
+
+
+SYNTHETIC_LABEL = {"en": "Synthetic benchmark (computer-drawn images) — not real-photo accuracy",
+                   "bn": "কৃত্রিম বেঞ্চমার্ক (কম্পিউটারে আঁকা ছবি) — আসল ছবিতে নির্ভুলতা নয়"}
+
+
+def _latest(paths: list[Path]) -> dict | None:
+    """The newest synthetic results file among `paths` (by run_at), or None."""
+    import json
+
+    best = None
+    for f in paths:
+        try:
+            data = json.loads(f.read_text(encoding="utf-8"))
+        except ValueError:
+            continue
+        if data.get("kind") != "synthetic":
+            continue  # a real file never appears in the synthetic card either
+        if best is None or (data.get("run_at") or "") > (best.get("run_at") or ""):
+            best = data
+    return best
+
+
+@app.get("/eval/synthetic")
+def eval_synthetic() -> dict:
+    """The synthetic benchmark (eval/synthetic/), kept apart from real-photo accuracy and always labelled.
+    Empty ({"strip": null, "bp": null}) when it has not been run: the card then shows nothing."""
+    folder = EVAL_DIR / "synthetic"
+    strip = _latest(sorted(folder.glob("results_*.json")))
+    bp = _latest(sorted(folder.glob("bp_results_*.json")))
+    out: dict = {"label": SYNTHETIC_LABEL, "readme": "eval/synthetic/README.md", "strip": None, "bp": None}
+    if strip:
+        chain = (strip.get("runs") or {}).get("chain") or {}
+        sr = chain.get("second_read") or {}
+        out["strip"] = {
+            "run_at": strip.get("run_at"), "prompt_version": strip.get("prompt_version"),
+            "model_id": strip.get("model_id"), "n_photos": strip.get("n_photos"),
+            "labelled_items": strip.get("labelled_items"),
+            **{k: chain.get(k) for k in ("brand", "strength", "expiry", "needs_check")},
+            "by_condition": chain.get("by_condition") or {},
+            "second_read": {"strength_catch": (sr.get("strength") or {}).get("catch"),
+                            "expiry_catch": (sr.get("expiry") or {}).get("catch"),
+                            "ran_on_items": sr.get("ran_on_items", 0)},
+            "providers": [k for k in (strip.get("runs") or {}) if k != "chain"],
+        }
+    if bp:
+        out["bp"] = {k: bp.get(k) for k in ("run_at", "prompt_version", "n_photos", "systolic_accuracy",
+                                             "diastolic_accuracy", "pulse_accuracy", "asked_to_check",
+                                             "wrong_and_not_flagged")}
     return out
 
 

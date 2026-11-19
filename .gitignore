@@ -20,3 +20,6 @@ docs/video/*.mp4
 # local vector index built by eval/run_retrieval_eval.py
 eval/.retrieval_index.db
 eval/.intent_embed_cache.json
+
+# Raw datasets for local selection only (Prompt 14C): never committed
+eval/raw/

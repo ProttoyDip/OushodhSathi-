@@ -34,6 +34,30 @@ produced here — nothing is typed in by hand.
    photos/box_02.jpg,Seclo,20 mg,,bangla
    ```
 
+**Two labelling rules.** Leave strength empty when the pack prints no dose strength (a syrup's "100 ml"
+or a spray's "120 metered sprays" is not a strength); such rows are left out of the strength score. A brand
+printed in both scripts may be labelled with both spellings, `Nasovap|ন্যাসোভ্যাপ`, so a correct read in either
+script counts. `label_photos.py --drafts FILE` pre-fills suggested labels, but every photo is still checked
+and saved by hand.
+
+## Real handwritten prescriptions from a public dataset
+
+Handwritten prescriptions are hard to collect with consent, so the eval can also use a public dataset:
+Badhon D.R. et al., "Image-to-Text Bilingual Dataset from Medical Prescriptions", Mendeley Data, V2, 2026, [doi:10.17632/tg2hm7n2bs.2](https://doi.org/10.17632/tg2hm7n2bs.2), licence [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
+1. Unzip the dataset into `eval/raw/prescriptions_bd/` (git-ignored: the full dataset is never committed).
+2. Run `backend/.venv/Scripts/python backend/scripts/pick_prescriptions.py`. It opens a local page
+   (http://127.0.0.1:8766) with 20 prescriptions whose transcription names brands from our tables,
+   chosen to cover as many brands as possible. Tick up to 10.
+3. For each one, confirm the brand(s) and strength(s) as written (expiry stays empty, condition
+   "handwritten"), drag rectangles over every patient name, doctor name, phone, address, registration
+   number or QR code, and tick the privacy check. Nothing is saved without the tick.
+4. Only the redacted copy is written, as `eval/photos/rx_mendeley_XX.jpg` (no metadata), with its rows
+   in `eval/labels.csv` marked `source=mendeley:tg2hm7n2bs`.
+
+`run_eval.py` reports these photos separately from our own (`by_source`), so every number says where it
+came from. They count as real photos (they are real prescriptions), not as synthetic.
+
 ## Run
 
 Configure at least one vision provider in `backend/.env`, then from the repo root:

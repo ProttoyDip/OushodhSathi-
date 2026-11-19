@@ -215,10 +215,28 @@ export interface EvalResult {
   needs_check_rate?: number | null;
   avg_confidence: number | null;
   status?: string;
+  /** own | mendeley:tg2hm7n2bs ...: where the labelled photos came from */
+  sources?: string[];
   brand_accuracy_ci?: [number, number];
   strength_accuracy_ci?: [number, number];
   expiry_accuracy_ci?: [number, number];
   needs_check_rate_ci?: [number, number];
+}
+
+export interface SyntheticEval {
+  label: { en: string; bn: string };
+  readme: string;
+  strip: {
+    run_at: string; prompt_version: string; model_id: string | null; n_photos: number | null; labelled_items: number | null;
+    brand: Proportion | null; strength: Proportion | null; expiry: Proportion | null; needs_check: Proportion | null;
+    by_condition: Record<string, Proportion>;
+    second_read: { strength_catch: Proportion | null; expiry_catch: Proportion | null; ran_on_items: number };
+    providers: string[];
+  } | null;
+  bp: {
+    run_at: string; prompt_version: string; n_photos: number | null; systolic_accuracy: number | null;
+    diastolic_accuracy: number | null; pulse_accuracy: number | null; asked_to_check: number | null; wrong_and_not_flagged: number | null;
+  } | null;
 }
 
 export interface Proportion {

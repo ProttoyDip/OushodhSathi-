@@ -1,0 +1,3638 @@
+{
+  "prompt_version": "extract_strip.v1",
+  "model_id": "private/nvidia/nemotron-3.5-super-120b-a12b",
+  "run_at": "2026-11-19T19:24:23+00:00",
+  "kind": "synthetic",
+  "labels_file": "eval/synthetic/labels.csv",
+  "n_photos": 30,
+  "label": {
+    "en": "Synthetic benchmark (computer-drawn images) — not real-photo accuracy",
+    "bn": "কৃত্রিম বেঞ্চমার্ক (কম্পিউটারে আঁকা ছবি) — আসল ছবিতে নির্ভুলতা নয়"
+  },
+  "status": "synthetic benchmark",
+  "images": 30,
+  "labelled_items": 45,
+  "brand_accuracy": 0.8889,
+  "strength_accuracy": 0.8667,
+  "avg_confidence": 0.966,
+  "confidence_cutoff": 0.75,
+  "runs": {
+    "chain": {
+      "model_id": "private/nvidia/nemotron-3.5-super-120b-a12b",
+      "photos": 30,
+      "labelled_items": 45,
+      "brand": {
+        "label": "brand",
+        "k": 40,
+        "n": 45,
+        "p": 0.8889,
+        "ci_low": 0.765,
+        "ci_high": 0.9516
+      },
+      "strength": {
+        "label": "strength",
+        "k": 39,
+        "n": 45,
+        "p": 0.8667,
+        "ci_low": 0.7382,
+        "ci_high": 0.9374
+      },
+      "expiry": {
+        "label": "expiry",
+        "k": 19,
+        "n": 25,
+        "p": 0.76,
+        "ci_low": 0.5657,
+        "ci_high": 0.885
+      },
+      "needs_check": {
+        "label": "needs_check",
+        "k": 0,
+        "n": 40,
+        "p": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0876
+      },
+      "second_read": {
+        "ran_on_items": 40,
+        "strength": {
+          "catch": {
+            "label": "strength_catch",
+            "k": 0,
+            "n": 1,
+            "p": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.7935
+          },
+          "false_alarm": {
+            "label": "strength_false_alarm",
+            "k": 4,
+            "n": 39,
+            "p": 0.1026,
+            "ci_low": 0.0406,
+            "ci_high": 0.2358
+          }
+        },
+        "expiry": {
+          "catch": {
+            "label": "expiry_catch",
+            "k": 0,
+            "n": 1,
+            "p": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.7935
+          },
+          "false_alarm": {
+            "label": "expiry_false_alarm",
+            "k": 3,
+            "n": 19,
+            "p": 0.1579,
+            "ci_low": 0.0552,
+            "ci_high": 0.3757
+          }
+        },
+        "needs_check_with_second_read": {
+          "label": "needs_check_2",
+          "k": 7,
+          "n": 40,
+          "p": 0.175,
+          "ci_low": 0.0875,
+          "ci_high": 0.3195
+        }
+      },
+      "reliability": [
+        {
+          "confidence": "0.00-0.50",
+          "items": 1,
+          "observed": {
+            "label": "observed",
+            "k": 0,
+            "n": 1,
+            "p": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.7935
+          }
+        },
+        {
+          "confidence": "0.50-0.75",
+          "items": 1,
+          "observed": {
+            "label": "observed",
+            "k": 0,
+            "n": 1,
+            "p": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.7935
+          }
+        },
+        {
+          "confidence": "0.75-0.90",
+          "items": 0,
+          "observed": null
+        },
+        {
+          "confidence": "0.90-1.00",
+          "items": 43,
+          "observed": {
+            "label": "observed",
+            "k": 40,
+            "n": 43,
+            "p": 0.9302,
+            "ci_low": 0.8139,
+            "ci_high": 0.976
+          }
+        }
+      ],
+      "by_condition": {
+        "bangla": {
+          "label": "bangla",
+          "k": 2,
+          "n": 5,
+          "p": 0.4,
+          "ci_low": 0.1176,
+          "ci_high": 0.7693
+        },
+        "clear": {
+          "label": "clear",
+          "k": 8,
+          "n": 10,
+          "p": 0.8,
+          "ci_low": 0.4902,
+          "ci_high": 0.9433
+        },
+        "cut_strip": {
+          "label": "cut_strip",
+          "k": 8,
+          "n": 8,
+          "p": 1.0,
+          "ci_low": 0.6756,
+          "ci_high": 1.0
+        },
+        "glare": {
+          "label": "glare",
+          "k": 8,
+          "n": 8,
+          "p": 1.0,
+          "ci_low": 0.6756,
+          "ci_high": 1.0
+        },
+        "handwritten": {
+          "label": "handwritten",
+          "k": 14,
+          "n": 14,
+          "p": 1.0,
+          "ci_low": 0.7847,
+          "ci_high": 1.0
+        }
+      },
+      "by_source": {
+        "synthetic": {
+          "label": "synthetic",
+          "k": 40,
+          "n": 45,
+          "p": 0.8889,
+          "ci_low": 0.765,
+          "ci_high": 0.9516
+        }
+      },
+      "avg_confidence": 0.966,
+      "per_image": [
+        {
+          "image": "photos/cut_01.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/cut_01.jpg",
+                "brand": "Rivotril",
+                "strength": "0.5 mg",
+                "expiry": "",
+                "condition": "cut_strip"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Rivotril",
+                "strength": "0.5 mg",
+                "form": "tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.98,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/cut_02.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/cut_02.jpg",
+                "brand": "Ace",
+                "strength": "500 mg",
+                "expiry": "",
+                "condition": "cut_strip"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Ace",
+                "strength": "500 mg",
+                "form": "tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/cut_03.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/cut_03.jpg",
+                "brand": "Naprosyn",
+                "strength": "250 mg",
+                "expiry": "",
+                "condition": "cut_strip"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Naprosyn",
+                "strength": "250 mg",
+                "form": "tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/cut_04.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/cut_04.jpg",
+                "brand": "Seclo",
+                "strength": "20 mg",
+                "expiry": "",
+                "condition": "cut_strip"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Seclo",
+                "strength": "20 mg",
+                "form": "tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.98,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/cut_05.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/cut_05.jpg",
+                "brand": "Atova",
+                "strength": "10 mg",
+                "expiry": "2028-11",
+                "condition": "cut_strip"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Atova",
+                "strength": "10 mg",
+                "form": "Tablet",
+                "expiry": "2028-11",
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/cut_06.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/cut_06.jpg",
+                "brand": "Comet",
+                "strength": "500 mg",
+                "expiry": "",
+                "condition": "cut_strip"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Comet",
+                "strength": "500 mg",
+                "form": "tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/cut_07.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/cut_07.jpg",
+                "brand": "Secrin",
+                "strength": "2 mg",
+                "expiry": "2026-03",
+                "condition": "cut_strip"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Secrin",
+                "strength": "2 mg",
+                "form": "Tablet",
+                "expiry": "2026-03",
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/cut_08.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/cut_08.jpg",
+                "brand": "Napa Extra",
+                "strength": "500 mg + 65 mg",
+                "expiry": "",
+                "condition": "cut_strip"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Napa Extra",
+                "strength": "500 mg + 65 mg",
+                "form": "tablet",
+                "expiry": "2027-02",
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.98,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/glare_01.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/glare_01.jpg",
+                "brand": "Osartil",
+                "strength": "50 mg",
+                "expiry": "2026-02",
+                "condition": "glare"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Osartil",
+                "strength": "50 mg",
+                "form": "Tablet",
+                "expiry": "2026-02",
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/glare_02.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/glare_02.jpg",
+                "brand": "Maxpro",
+                "strength": "20 mg",
+                "expiry": "2028-10",
+                "condition": "glare"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Maxpro",
+                "strength": "20 mg",
+                "form": "Tablet",
+                "expiry": "2028-10",
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.98,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/glare_03.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/glare_03.jpg",
+                "brand": "Ecosprin",
+                "strength": "75 mg",
+                "expiry": "2026-09",
+                "condition": "glare"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Ecosprin",
+                "strength": "75 mg",
+                "form": "Tablet",
+                "expiry": "2026-09",
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            },
+            {
+              "expected": {
+                "image_path": "photos/glare_03.jpg",
+                "brand": "Sergel",
+                "strength": "20 mg",
+                "expiry": "2027-01",
+                "condition": "glare"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Sergel®",
+                "strength": "20 mg",
+                "form": "Tablet",
+                "expiry": "2027-01",
+                "prescriber": null,
+                "source": "box",
+                "confidence": 1.0,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/glare_04.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/glare_04.jpg",
+                "brand": "Amdocal",
+                "strength": "5 mg",
+                "expiry": "2028-04",
+                "condition": "glare"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Amdocal",
+                "strength": "5 mg",
+                "form": "Tablet",
+                "expiry": "2028-04",
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/glare_05.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/glare_05.jpg",
+                "brand": "Osartil Plus",
+                "strength": "50 mg + 12.5 mg",
+                "expiry": "2027-08",
+                "condition": "glare"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Osartil Plus",
+                "strength": "50 mg + 12.5 mg",
+                "form": "Tablet",
+                "expiry": "2027-08",
+                "prescriber": null,
+                "source": "box",
+                "confidence": 1.0,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/glare_06.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/glare_06.jpg",
+                "brand": "Angilock",
+                "strength": "50 mg",
+                "expiry": "2028-05",
+                "condition": "glare"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Angilock",
+                "strength": "50 mg",
+                "form": "Tablet",
+                "expiry": "2028-05",
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            },
+            {
+              "expected": {
+                "image_path": "photos/glare_06.jpg",
+                "brand": "Amdocal Plus",
+                "strength": "5 mg + 25 mg",
+                "expiry": "2027-09",
+                "condition": "glare"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Amdocal Plus®",
+                "strength": "5 mg + 25 mg",
+                "form": "Tablet",
+                "expiry": "2027-09",
+                "prescriber": null,
+                "source": "box",
+                "confidence": 1.0,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/bangla_01.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/bangla_01.jpg",
+                "brand": "Napa",
+                "strength": "500 mg",
+                "expiry": "2028-07",
+                "condition": "bangla"
+              },
+              "brand_ok": true,
+              "strength_ok": false,
+              "got": {
+                "brand": "নাপা",
+                "strength": "600 mg",
+                "form": "Tablet",
+                "expiry": "2028-07",
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/bangla_02.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/bangla_02.jpg",
+                "brand": "Camlodin",
+                "strength": "5 mg",
+                "expiry": "2026-04",
+                "condition": "bangla"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": [
+            "Amlodipine"
+          ]
+        },
+        {
+          "image": "photos/bangla_03.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/bangla_03.jpg",
+                "brand": "Clofenac",
+                "strength": "50 mg",
+                "expiry": "2028-01",
+                "condition": "bangla"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": [
+            "কোয়েফনাক"
+          ]
+        },
+        {
+          "image": "photos/bangla_04.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/bangla_04.jpg",
+                "brand": "Tryptin",
+                "strength": "10 mg",
+                "expiry": "2028-06",
+                "condition": "bangla"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "ট্রিপটিন",
+                "strength": "10 mg",
+                "form": "Tablet",
+                "expiry": "2028-06",
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/bangla_05.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/bangla_05.jpg",
+                "brand": "Rivotril",
+                "strength": "0.5 mg",
+                "expiry": "2026-10",
+                "condition": "bangla"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": [
+            "রিউটাটিল"
+          ]
+        },
+        {
+          "image": "photos/handwritten_01.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/handwritten_01.jpg",
+                "brand": "Ace",
+                "strength": "500 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Ace",
+                "strength": "500 mg",
+                "form": "Tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "prescription",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            },
+            {
+              "expected": {
+                "image_path": "photos/handwritten_01.jpg",
+                "brand": "Naprosyn",
+                "strength": "250 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Naprosyn",
+                "strength": "250 mg",
+                "form": "Tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "prescription",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            },
+            {
+              "expected": {
+                "image_path": "photos/handwritten_01.jpg",
+                "brand": "Seclo",
+                "strength": "20 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Seclo",
+                "strength": "20 mg",
+                "form": "Capsule",
+                "expiry": null,
+                "prescriber": null,
+                "source": "prescription",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/handwritten_02.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/handwritten_02.jpg",
+                "brand": "Atova",
+                "strength": "10 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Atova",
+                "strength": "10 mg",
+                "form": "Tab",
+                "expiry": null,
+                "prescriber": null,
+                "source": "prescription",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            },
+            {
+              "expected": {
+                "image_path": "photos/handwritten_02.jpg",
+                "brand": "Comet",
+                "strength": "500 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Comet",
+                "strength": "500 mg",
+                "form": "Tab",
+                "expiry": null,
+                "prescriber": null,
+                "source": "prescription",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            },
+            {
+              "expected": {
+                "image_path": "photos/handwritten_02.jpg",
+                "brand": "Secrin",
+                "strength": "2 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Secrin",
+                "strength": "2 mg",
+                "form": "Tab",
+                "expiry": null,
+                "prescriber": null,
+                "source": "prescription",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/handwritten_03.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/handwritten_03.jpg",
+                "brand": "Napa Extra",
+                "strength": "500 mg + 65 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Napa Extra",
+                "strength": "500 mg + 65 mg",
+                "form": "tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "prescription",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            },
+            {
+              "expected": {
+                "image_path": "photos/handwritten_03.jpg",
+                "brand": "Osartil",
+                "strength": "50 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Osartil",
+                "strength": "50 mg",
+                "form": "tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "prescription",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/handwritten_04.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/handwritten_04.jpg",
+                "brand": "Maxpro",
+                "strength": "20 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Maxpro",
+                "strength": "20 mg",
+                "form": "Tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "prescription",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            },
+            {
+              "expected": {
+                "image_path": "photos/handwritten_04.jpg",
+                "brand": "Ecosprin",
+                "strength": "75 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Ecosprin",
+                "strength": "75 mg",
+                "form": "Tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "prescription",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            },
+            {
+              "expected": {
+                "image_path": "photos/handwritten_04.jpg",
+                "brand": "Sergel",
+                "strength": "20 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Sergel",
+                "strength": "20 mg",
+                "form": "Tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "prescription",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/handwritten_05.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/handwritten_05.jpg",
+                "brand": "Amdocal",
+                "strength": "5 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Amdocal",
+                "strength": "5 mg",
+                "form": "tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "prescription",
+                "confidence": 0.98,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            },
+            {
+              "expected": {
+                "image_path": "photos/handwritten_05.jpg",
+                "brand": "Osartil Plus",
+                "strength": "50 mg + 12.5 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Osartil Plus",
+                "strength": "50 mg + 12.5 mg",
+                "form": "tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "prescription",
+                "confidence": 0.98,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            },
+            {
+              "expected": {
+                "image_path": "photos/handwritten_05.jpg",
+                "brand": "Angilock",
+                "strength": "50 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Angilock",
+                "strength": "50 mg",
+                "form": "tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "prescription",
+                "confidence": 0.98,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/clear_01.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/clear_01.jpg",
+                "brand": "Osartil Plus",
+                "strength": "50 mg + 12.5 mg",
+                "expiry": "2028-11",
+                "condition": "clear"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Osartil Plus",
+                "strength": "50 mg + 12.5 mg",
+                "form": "Tablet",
+                "expiry": "2028-11",
+                "prescriber": null,
+                "source": "box",
+                "confidence": 1.0,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/clear_02.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/clear_02.jpg",
+                "brand": "Amdocal Plus",
+                "strength": "5 mg + 25 mg",
+                "expiry": "2026-10",
+                "condition": "clear"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Amdocal Plus",
+                "strength": "5 mg + 25 mg",
+                "form": "Tablet",
+                "expiry": "2026-06",
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.99,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            },
+            {
+              "expected": {
+                "image_path": "photos/clear_02.jpg",
+                "brand": "Amdocal Plus",
+                "strength": "5 mg + 25 mg",
+                "expiry": "2026-06",
+                "condition": "clear"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Amdocal Plus",
+                "strength": "5 mg + 25 mg",
+                "form": "Tablet",
+                "expiry": "2026-06",
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.99,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            },
+            {
+              "expected": {
+                "image_path": "photos/clear_02.jpg",
+                "brand": "Napa",
+                "strength": "500 mg",
+                "expiry": "2026-04",
+                "condition": "clear"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Napa",
+                "strength": "500 mg",
+                "form": "Tablet",
+                "expiry": "2026-04",
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/clear_03.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/clear_03.jpg",
+                "brand": "Camlodin",
+                "strength": "5 mg",
+                "expiry": "2027-10",
+                "condition": "clear"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Camlodin",
+                "strength": "5 mg",
+                "form": "tablet",
+                "expiry": "2027-10",
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.98,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/clear_04.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/clear_04.jpg",
+                "brand": "Clofenac",
+                "strength": "50 mg",
+                "expiry": "2025-06",
+                "condition": "clear"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Clofenac",
+                "strength": "50 mg",
+                "form": "Tablet",
+                "expiry": "2025-06",
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.98,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/clear_05.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/clear_05.jpg",
+                "brand": "Amdocal Plus",
+                "strength": "5 mg + 25 mg",
+                "expiry": "2027-02",
+                "condition": "clear"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            },
+            {
+              "expected": {
+                "image_path": "photos/clear_05.jpg",
+                "brand": "Tryptin",
+                "strength": "10 mg",
+                "expiry": "2028-10",
+                "condition": "clear"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            },
+            {
+              "expected": {
+                "image_path": "photos/clear_05.jpg",
+                "brand": "Rivotril",
+                "strength": "0.5 mg",
+                "expiry": "2025-07",
+                "condition": "clear"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Rivotril",
+                "strength": "0.5 mg",
+                "form": "Tablet",
+                "expiry": "2025-07",
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.98,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": [
+            "Trptin",
+            "Amodac Plus"
+          ]
+        },
+        {
+          "image": "photos/clear_06.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/clear_06.jpg",
+                "brand": "Ace",
+                "strength": "500 mg",
+                "expiry": "2026-03",
+                "condition": "clear"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Ace",
+                "strength": "500 mg",
+                "form": "Tablet",
+                "expiry": "2026-03",
+                "prescriber": null,
+                "source": "box",
+                "confidence": 1.0,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        }
+      ],
+      "photos_without_answer": 0
+    },
+    "nvidia/nvidia/nemotron-3.5-super-vl-120b-a12b": {
+      "model_id": "private/nvidia/nemotron-3.5-super-120b-a12b",
+      "photos": 30,
+      "labelled_items": 45,
+      "brand": {
+        "label": "brand",
+        "k": 39,
+        "n": 45,
+        "p": 0.8667,
+        "ci_low": 0.7382,
+        "ci_high": 0.9374
+      },
+      "strength": {
+        "label": "strength",
+        "k": 39,
+        "n": 45,
+        "p": 0.8667,
+        "ci_low": 0.7382,
+        "ci_high": 0.9374
+      },
+      "expiry": {
+        "label": "expiry",
+        "k": 17,
+        "n": 25,
+        "p": 0.68,
+        "ci_low": 0.4841,
+        "ci_high": 0.8279
+      },
+      "needs_check": {
+        "label": "needs_check",
+        "k": 1,
+        "n": 39,
+        "p": 0.0256,
+        "ci_low": 0.0045,
+        "ci_high": 0.1318
+      },
+      "second_read": {
+        "ran_on_items": 39,
+        "strength": {
+          "catch": null,
+          "false_alarm": {
+            "label": "strength_false_alarm",
+            "k": 4,
+            "n": 39,
+            "p": 0.1026,
+            "ci_low": 0.0406,
+            "ci_high": 0.2358
+          }
+        },
+        "expiry": {
+          "catch": {
+            "label": "expiry_catch",
+            "k": 0,
+            "n": 3,
+            "p": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.5615
+          },
+          "false_alarm": {
+            "label": "expiry_false_alarm",
+            "k": 3,
+            "n": 17,
+            "p": 0.1765,
+            "ci_low": 0.0619,
+            "ci_high": 0.4103
+          }
+        },
+        "needs_check_with_second_read": {
+          "label": "needs_check_2",
+          "k": 8,
+          "n": 39,
+          "p": 0.2051,
+          "ci_low": 0.1078,
+          "ci_high": 0.3553
+        }
+      },
+      "reliability": [
+        {
+          "confidence": "0.00-0.50",
+          "items": 0,
+          "observed": null
+        },
+        {
+          "confidence": "0.50-0.75",
+          "items": 1,
+          "observed": {
+            "label": "observed",
+            "k": 1,
+            "n": 1,
+            "p": 1.0,
+            "ci_low": 0.2065,
+            "ci_high": 1.0
+          }
+        },
+        {
+          "confidence": "0.75-0.90",
+          "items": 3,
+          "observed": {
+            "label": "observed",
+            "k": 1,
+            "n": 3,
+            "p": 0.3333,
+            "ci_low": 0.0615,
+            "ci_high": 0.7923
+          }
+        },
+        {
+          "confidence": "0.90-1.00",
+          "items": 41,
+          "observed": {
+            "label": "observed",
+            "k": 37,
+            "n": 41,
+            "p": 0.9024,
+            "ci_low": 0.7745,
+            "ci_high": 0.9614
+          }
+        }
+      ],
+      "by_condition": {
+        "bangla": {
+          "label": "bangla",
+          "k": 1,
+          "n": 5,
+          "p": 0.2,
+          "ci_low": 0.0362,
+          "ci_high": 0.6245
+        },
+        "clear": {
+          "label": "clear",
+          "k": 10,
+          "n": 10,
+          "p": 1.0,
+          "ci_low": 0.7225,
+          "ci_high": 1.0
+        },
+        "cut_strip": {
+          "label": "cut_strip",
+          "k": 8,
+          "n": 8,
+          "p": 1.0,
+          "ci_low": 0.6756,
+          "ci_high": 1.0
+        },
+        "glare": {
+          "label": "glare",
+          "k": 7,
+          "n": 8,
+          "p": 0.875,
+          "ci_low": 0.5291,
+          "ci_high": 0.9776
+        },
+        "handwritten": {
+          "label": "handwritten",
+          "k": 13,
+          "n": 14,
+          "p": 0.9286,
+          "ci_low": 0.6853,
+          "ci_high": 0.9873
+        }
+      },
+      "by_source": {
+        "synthetic": {
+          "label": "synthetic",
+          "k": 39,
+          "n": 45,
+          "p": 0.8667,
+          "ci_low": 0.7382,
+          "ci_high": 0.9374
+        }
+      },
+      "avg_confidence": 0.96,
+      "per_image": [
+        {
+          "image": "photos/cut_01.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/cut_01.jpg",
+                "brand": "Rivotril",
+                "strength": "0.5 mg",
+                "expiry": "",
+                "condition": "cut_strip"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Rivotril",
+                "strength": "0.5 mg",
+                "form": null,
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/cut_02.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/cut_02.jpg",
+                "brand": "Ace",
+                "strength": "500 mg",
+                "expiry": "",
+                "condition": "cut_strip"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Ace",
+                "strength": "500 mg",
+                "form": null,
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/cut_03.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/cut_03.jpg",
+                "brand": "Naprosyn",
+                "strength": "250 mg",
+                "expiry": "",
+                "condition": "cut_strip"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Naprosyn",
+                "strength": "250 mg",
+                "form": "tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.98,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/cut_04.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/cut_04.jpg",
+                "brand": "Seclo",
+                "strength": "20 mg",
+                "expiry": "",
+                "condition": "cut_strip"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Seclo",
+                "strength": "20 mg",
+                "form": "tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.98,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/cut_05.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/cut_05.jpg",
+                "brand": "Atova",
+                "strength": "10 mg",
+                "expiry": "2028-11",
+                "condition": "cut_strip"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Atova",
+                "strength": "10 mg",
+                "form": "Tablet",
+                "expiry": "2028-11",
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/cut_06.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/cut_06.jpg",
+                "brand": "Comet",
+                "strength": "500 mg",
+                "expiry": "",
+                "condition": "cut_strip"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Comet",
+                "strength": "500 mg",
+                "form": "tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/cut_07.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/cut_07.jpg",
+                "brand": "Secrin",
+                "strength": "2 mg",
+                "expiry": "2026-03",
+                "condition": "cut_strip"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Secrin",
+                "strength": "2 mg",
+                "form": "Tablet",
+                "expiry": "2026-03",
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/cut_08.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/cut_08.jpg",
+                "brand": "Napa Extra",
+                "strength": "500 mg + 65 mg",
+                "expiry": "",
+                "condition": "cut_strip"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Napa Extra",
+                "strength": "500 mg + 65 mg",
+                "form": null,
+                "expiry": "2027-02",
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/glare_01.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/glare_01.jpg",
+                "brand": "Osartil",
+                "strength": "50 mg",
+                "expiry": "2026-02",
+                "condition": "glare"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Osartil",
+                "strength": "50 mg",
+                "form": "Tablet",
+                "expiry": "2026-02",
+                "prescriber": null,
+                "source": "box",
+                "confidence": 1.0,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/glare_02.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/glare_02.jpg",
+                "brand": "Maxpro",
+                "strength": "20 mg",
+                "expiry": "2028-10",
+                "condition": "glare"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Maxpro®",
+                "strength": "20 mg",
+                "form": "Tablet",
+                "expiry": "2028-10",
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.98,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/glare_03.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/glare_03.jpg",
+                "brand": "Ecosprin",
+                "strength": "75 mg",
+                "expiry": "2026-09",
+                "condition": "glare"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Ecosprin",
+                "strength": "75 mg",
+                "form": "Tablet",
+                "expiry": "2026-09",
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 1.0,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            },
+            {
+              "expected": {
+                "image_path": "photos/glare_03.jpg",
+                "brand": "Sergel",
+                "strength": "20 mg",
+                "expiry": "2027-01",
+                "condition": "glare"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Sergel",
+                "strength": "20 mg",
+                "form": "Tablet",
+                "expiry": "2027-01",
+                "prescriber": null,
+                "source": "box",
+                "confidence": 1.0,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/glare_04.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/glare_04.jpg",
+                "brand": "Amdocal",
+                "strength": "5 mg",
+                "expiry": "2028-04",
+                "condition": "glare"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": [
+            "Amlodocal"
+          ]
+        },
+        {
+          "image": "photos/glare_05.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/glare_05.jpg",
+                "brand": "Osartil Plus",
+                "strength": "50 mg + 12.5 mg",
+                "expiry": "2027-08",
+                "condition": "glare"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Osartil Plus",
+                "strength": "50 mg + 12.5 mg",
+                "form": "Tablet",
+                "expiry": "2027-08",
+                "prescriber": null,
+                "source": "box",
+                "confidence": 1.0,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/glare_06.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/glare_06.jpg",
+                "brand": "Angilock",
+                "strength": "50 mg",
+                "expiry": "2028-05",
+                "condition": "glare"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Angilock",
+                "strength": "50 mg",
+                "form": "Tablet",
+                "expiry": "2028-05",
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            },
+            {
+              "expected": {
+                "image_path": "photos/glare_06.jpg",
+                "brand": "Amdocal Plus",
+                "strength": "5 mg + 25 mg",
+                "expiry": "2027-09",
+                "condition": "glare"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Amdocal Plus",
+                "strength": "5 mg + 25 mg",
+                "form": "Tablet",
+                "expiry": "2027-09",
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.98,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/bangla_01.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/bangla_01.jpg",
+                "brand": "Napa",
+                "strength": "500 mg",
+                "expiry": "2028-07",
+                "condition": "bangla"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "নাপা",
+                "strength": "500 mg",
+                "form": "Tablet",
+                "expiry": "2028-07",
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.98,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/bangla_02.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/bangla_02.jpg",
+                "brand": "Camlodin",
+                "strength": "5 mg",
+                "expiry": "2026-04",
+                "condition": "bangla"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": [
+            "Amlodipine"
+          ]
+        },
+        {
+          "image": "photos/bangla_03.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/bangla_03.jpg",
+                "brand": "Clofenac",
+                "strength": "50 mg",
+                "expiry": "2028-01",
+                "condition": "bangla"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": [
+            "ডাইক্লোফিনাক"
+          ]
+        },
+        {
+          "image": "photos/bangla_04.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/bangla_04.jpg",
+                "brand": "Tryptin",
+                "strength": "10 mg",
+                "expiry": "2028-06",
+                "condition": "bangla"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": [
+            "Tripatin"
+          ]
+        },
+        {
+          "image": "photos/bangla_05.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/bangla_05.jpg",
+                "brand": "Rivotril",
+                "strength": "0.5 mg",
+                "expiry": "2026-10",
+                "condition": "bangla"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": [
+            "রিউট্যাপিল"
+          ]
+        },
+        {
+          "image": "photos/handwritten_01.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/handwritten_01.jpg",
+                "brand": "Ace",
+                "strength": "500 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Ace",
+                "strength": "500 mg",
+                "form": "tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "prescription",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            },
+            {
+              "expected": {
+                "image_path": "photos/handwritten_01.jpg",
+                "brand": "Naprosyn",
+                "strength": "250 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Naprosyn",
+                "strength": "250 mg",
+                "form": "tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "prescription",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            },
+            {
+              "expected": {
+                "image_path": "photos/handwritten_01.jpg",
+                "brand": "Seclo",
+                "strength": "20 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Seclo",
+                "strength": "20 mg",
+                "form": "capsule",
+                "expiry": null,
+                "prescriber": null,
+                "source": "prescription",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/handwritten_02.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/handwritten_02.jpg",
+                "brand": "Atova",
+                "strength": "10 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Atova",
+                "strength": "10 mg",
+                "form": "Tab",
+                "expiry": null,
+                "prescriber": null,
+                "source": "prescription",
+                "confidence": 0.98,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            },
+            {
+              "expected": {
+                "image_path": "photos/handwritten_02.jpg",
+                "brand": "Comet",
+                "strength": "500 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Comet",
+                "strength": "500 mg",
+                "form": "Tab",
+                "expiry": null,
+                "prescriber": null,
+                "source": "prescription",
+                "confidence": 0.98,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            },
+            {
+              "expected": {
+                "image_path": "photos/handwritten_02.jpg",
+                "brand": "Secrin",
+                "strength": "2 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Secrin",
+                "strength": "2 mg",
+                "form": "Tab",
+                "expiry": null,
+                "prescriber": null,
+                "source": "prescription",
+                "confidence": 0.98,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/handwritten_03.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/handwritten_03.jpg",
+                "brand": "Napa Extra",
+                "strength": "500 mg + 65 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Napa Extra",
+                "strength": "500 mg + 65 mg",
+                "form": "tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "prescription",
+                "confidence": 1.0,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            },
+            {
+              "expected": {
+                "image_path": "photos/handwritten_03.jpg",
+                "brand": "Osartil",
+                "strength": "50 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Osartil",
+                "strength": "50 mg",
+                "form": "tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "prescription",
+                "confidence": 1.0,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/handwritten_04.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/handwritten_04.jpg",
+                "brand": "Maxpro",
+                "strength": "20 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Maxpro",
+                "strength": "20 mg",
+                "form": "Tab.",
+                "expiry": null,
+                "prescriber": null,
+                "source": "prescription",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            },
+            {
+              "expected": {
+                "image_path": "photos/handwritten_04.jpg",
+                "brand": "Ecosprin",
+                "strength": "75 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Ecosprin",
+                "strength": "75 mg",
+                "form": "Tab.",
+                "expiry": null,
+                "prescriber": null,
+                "source": "prescription",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            },
+            {
+              "expected": {
+                "image_path": "photos/handwritten_04.jpg",
+                "brand": "Sergel",
+                "strength": "20 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Sergel",
+                "strength": "20 mg",
+                "form": "Tab.",
+                "expiry": null,
+                "prescriber": null,
+                "source": "prescription",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/handwritten_05.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/handwritten_05.jpg",
+                "brand": "Amdocal",
+                "strength": "5 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            },
+            {
+              "expected": {
+                "image_path": "photos/handwritten_05.jpg",
+                "brand": "Osartil Plus",
+                "strength": "50 mg + 12.5 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Osartil Plus",
+                "strength": "50 mg + 12.5 mg",
+                "form": "Tab",
+                "expiry": null,
+                "prescriber": null,
+                "source": "prescription",
+                "confidence": 0.98,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            },
+            {
+              "expected": {
+                "image_path": "photos/handwritten_05.jpg",
+                "brand": "Angilock",
+                "strength": "50 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Angilock",
+                "strength": "50 mg",
+                "form": "Tab",
+                "expiry": null,
+                "prescriber": null,
+                "source": "prescription",
+                "confidence": 0.98,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": [
+            "Amodcal"
+          ]
+        },
+        {
+          "image": "photos/clear_01.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/clear_01.jpg",
+                "brand": "Osartil Plus",
+                "strength": "50 mg + 12.5 mg",
+                "expiry": "2028-11",
+                "condition": "clear"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Osartil Plus",
+                "strength": "50 mg + 12.5 mg",
+                "form": "Tablet",
+                "expiry": "2028-11",
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.98,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/clear_02.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/clear_02.jpg",
+                "brand": "Amdocal Plus",
+                "strength": "5 mg + 25 mg",
+                "expiry": "2026-10",
+                "condition": "clear"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Amdocal Plus",
+                "strength": "5 mg + 25 mg",
+                "form": "Tablet",
+                "expiry": "2026-10",
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            },
+            {
+              "expected": {
+                "image_path": "photos/clear_02.jpg",
+                "brand": "Amdocal Plus",
+                "strength": "5 mg + 25 mg",
+                "expiry": "2026-06",
+                "condition": "clear"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Amdocal Plus",
+                "strength": "5 mg + 25 mg",
+                "form": "Tablet",
+                "expiry": "2026-10",
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            },
+            {
+              "expected": {
+                "image_path": "photos/clear_02.jpg",
+                "brand": "Napa",
+                "strength": "500 mg",
+                "expiry": "2026-04",
+                "condition": "clear"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Napa",
+                "strength": "500 mg",
+                "form": "Tablet",
+                "expiry": "2026-04",
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/clear_03.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/clear_03.jpg",
+                "brand": "Camlodin",
+                "strength": "5 mg",
+                "expiry": "2027-10",
+                "condition": "clear"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Camlodin",
+                "strength": "5 mg",
+                "form": "Tablet",
+                "expiry": "2027-10",
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/clear_04.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/clear_04.jpg",
+                "brand": "Clofenac",
+                "strength": "50 mg",
+                "expiry": "2025-06",
+                "condition": "clear"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Clofenac",
+                "strength": "50 mg",
+                "form": "Tablet",
+                "expiry": "2025-06",
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/clear_05.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/clear_05.jpg",
+                "brand": "Amdocal Plus",
+                "strength": "5 mg + 25 mg",
+                "expiry": "2027-02",
+                "condition": "clear"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Amdocal Plus",
+                "strength": "5 mg + 25 mg",
+                "form": "Tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.85,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            },
+            {
+              "expected": {
+                "image_path": "photos/clear_05.jpg",
+                "brand": "Tryptin",
+                "strength": "10 mg",
+                "expiry": "2028-10",
+                "condition": "clear"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Tryptin",
+                "strength": "10 mg",
+                "form": "Tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.7,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            },
+            {
+              "expected": {
+                "image_path": "photos/clear_05.jpg",
+                "brand": "Rivotril",
+                "strength": "0.5 mg",
+                "expiry": "2025-07",
+                "condition": "clear"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Rivotril®",
+                "strength": "0.5 mg",
+                "form": "Tablet",
+                "expiry": "2025-07",
+                "prescriber": null,
+                "source": "box",
+                "confidence": 1.0,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/clear_06.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/clear_06.jpg",
+                "brand": "Ace",
+                "strength": "500 mg",
+                "expiry": "2026-03",
+                "condition": "clear"
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Ace®",
+                "strength": "500 mg",
+                "form": "Tablet",
+                "expiry": "2026-03",
+                "prescriber": null,
+                "source": "box",
+                "confidence": 1.0,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        }
+      ],
+      "photos_without_answer": 0
+    },
+    "openrouter/openrouter/free": {
+      "model_id": null,
+      "photos": 30,
+      "labelled_items": 45,
+      "brand": null,
+      "strength": null,
+      "expiry": null,
+      "needs_check": null,
+      "second_read": {
+        "ran_on_items": 0,
+        "strength": {
+          "catch": null,
+          "false_alarm": null
+        },
+        "expiry": {
+          "catch": null,
+          "false_alarm": null
+        },
+        "needs_check_with_second_read": null
+      },
+      "reliability": [
+        {
+          "confidence": "0.00-0.50",
+          "items": 0,
+          "observed": null
+        },
+        {
+          "confidence": "0.50-0.75",
+          "items": 0,
+          "observed": null
+        },
+        {
+          "confidence": "0.75-0.90",
+          "items": 0,
+          "observed": null
+        },
+        {
+          "confidence": "0.90-1.00",
+          "items": 0,
+          "observed": null
+        }
+      ],
+      "by_condition": {},
+      "by_source": {},
+      "avg_confidence": null,
+      "per_image": [
+        {
+          "image": "photos/cut_01.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/cut_01.jpg",
+                "brand": "Rivotril",
+                "strength": "0.5 mg",
+                "expiry": "",
+                "condition": "cut_strip"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/cut_02.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/cut_02.jpg",
+                "brand": "Ace",
+                "strength": "500 mg",
+                "expiry": "",
+                "condition": "cut_strip"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/cut_03.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/cut_03.jpg",
+                "brand": "Naprosyn",
+                "strength": "250 mg",
+                "expiry": "",
+                "condition": "cut_strip"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/cut_04.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/cut_04.jpg",
+                "brand": "Seclo",
+                "strength": "20 mg",
+                "expiry": "",
+                "condition": "cut_strip"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/cut_05.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/cut_05.jpg",
+                "brand": "Atova",
+                "strength": "10 mg",
+                "expiry": "2028-11",
+                "condition": "cut_strip"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/cut_06.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/cut_06.jpg",
+                "brand": "Comet",
+                "strength": "500 mg",
+                "expiry": "",
+                "condition": "cut_strip"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/cut_07.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/cut_07.jpg",
+                "brand": "Secrin",
+                "strength": "2 mg",
+                "expiry": "2026-03",
+                "condition": "cut_strip"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/cut_08.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/cut_08.jpg",
+                "brand": "Napa Extra",
+                "strength": "500 mg + 65 mg",
+                "expiry": "",
+                "condition": "cut_strip"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/glare_01.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/glare_01.jpg",
+                "brand": "Osartil",
+                "strength": "50 mg",
+                "expiry": "2026-02",
+                "condition": "glare"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/glare_02.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/glare_02.jpg",
+                "brand": "Maxpro",
+                "strength": "20 mg",
+                "expiry": "2028-10",
+                "condition": "glare"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/glare_03.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/glare_03.jpg",
+                "brand": "Ecosprin",
+                "strength": "75 mg",
+                "expiry": "2026-09",
+                "condition": "glare"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            },
+            {
+              "expected": {
+                "image_path": "photos/glare_03.jpg",
+                "brand": "Sergel",
+                "strength": "20 mg",
+                "expiry": "2027-01",
+                "condition": "glare"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/glare_04.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/glare_04.jpg",
+                "brand": "Amdocal",
+                "strength": "5 mg",
+                "expiry": "2028-04",
+                "condition": "glare"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/glare_05.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/glare_05.jpg",
+                "brand": "Osartil Plus",
+                "strength": "50 mg + 12.5 mg",
+                "expiry": "2027-08",
+                "condition": "glare"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/glare_06.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/glare_06.jpg",
+                "brand": "Angilock",
+                "strength": "50 mg",
+                "expiry": "2028-05",
+                "condition": "glare"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            },
+            {
+              "expected": {
+                "image_path": "photos/glare_06.jpg",
+                "brand": "Amdocal Plus",
+                "strength": "5 mg + 25 mg",
+                "expiry": "2027-09",
+                "condition": "glare"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/bangla_01.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/bangla_01.jpg",
+                "brand": "Napa",
+                "strength": "500 mg",
+                "expiry": "2028-07",
+                "condition": "bangla"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/bangla_02.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/bangla_02.jpg",
+                "brand": "Camlodin",
+                "strength": "5 mg",
+                "expiry": "2026-04",
+                "condition": "bangla"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/bangla_03.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/bangla_03.jpg",
+                "brand": "Clofenac",
+                "strength": "50 mg",
+                "expiry": "2028-01",
+                "condition": "bangla"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/bangla_04.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/bangla_04.jpg",
+                "brand": "Tryptin",
+                "strength": "10 mg",
+                "expiry": "2028-06",
+                "condition": "bangla"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/bangla_05.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/bangla_05.jpg",
+                "brand": "Rivotril",
+                "strength": "0.5 mg",
+                "expiry": "2026-10",
+                "condition": "bangla"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/handwritten_01.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/handwritten_01.jpg",
+                "brand": "Ace",
+                "strength": "500 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            },
+            {
+              "expected": {
+                "image_path": "photos/handwritten_01.jpg",
+                "brand": "Naprosyn",
+                "strength": "250 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            },
+            {
+              "expected": {
+                "image_path": "photos/handwritten_01.jpg",
+                "brand": "Seclo",
+                "strength": "20 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/handwritten_02.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/handwritten_02.jpg",
+                "brand": "Atova",
+                "strength": "10 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            },
+            {
+              "expected": {
+                "image_path": "photos/handwritten_02.jpg",
+                "brand": "Comet",
+                "strength": "500 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            },
+            {
+              "expected": {
+                "image_path": "photos/handwritten_02.jpg",
+                "brand": "Secrin",
+                "strength": "2 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/handwritten_03.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/handwritten_03.jpg",
+                "brand": "Napa Extra",
+                "strength": "500 mg + 65 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            },
+            {
+              "expected": {
+                "image_path": "photos/handwritten_03.jpg",
+                "brand": "Osartil",
+                "strength": "50 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/handwritten_04.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/handwritten_04.jpg",
+                "brand": "Maxpro",
+                "strength": "20 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            },
+            {
+              "expected": {
+                "image_path": "photos/handwritten_04.jpg",
+                "brand": "Ecosprin",
+                "strength": "75 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            },
+            {
+              "expected": {
+                "image_path": "photos/handwritten_04.jpg",
+                "brand": "Sergel",
+                "strength": "20 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/handwritten_05.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/handwritten_05.jpg",
+                "brand": "Amdocal",
+                "strength": "5 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            },
+            {
+              "expected": {
+                "image_path": "photos/handwritten_05.jpg",
+                "brand": "Osartil Plus",
+                "strength": "50 mg + 12.5 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            },
+            {
+              "expected": {
+                "image_path": "photos/handwritten_05.jpg",
+                "brand": "Angilock",
+                "strength": "50 mg",
+                "expiry": "",
+                "condition": "handwritten"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/clear_01.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/clear_01.jpg",
+                "brand": "Osartil Plus",
+                "strength": "50 mg + 12.5 mg",
+                "expiry": "2028-11",
+                "condition": "clear"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/clear_02.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/clear_02.jpg",
+                "brand": "Amdocal Plus",
+                "strength": "5 mg + 25 mg",
+                "expiry": "2026-10",
+                "condition": "clear"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            },
+            {
+              "expected": {
+                "image_path": "photos/clear_02.jpg",
+                "brand": "Amdocal Plus",
+                "strength": "5 mg + 25 mg",
+                "expiry": "2026-06",
+                "condition": "clear"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            },
+            {
+              "expected": {
+                "image_path": "photos/clear_02.jpg",
+                "brand": "Napa",
+                "strength": "500 mg",
+                "expiry": "2026-04",
+                "condition": "clear"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/clear_03.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/clear_03.jpg",
+                "brand": "Camlodin",
+                "strength": "5 mg",
+                "expiry": "2027-10",
+                "condition": "clear"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/clear_04.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/clear_04.jpg",
+                "brand": "Clofenac",
+                "strength": "50 mg",
+                "expiry": "2025-06",
+                "condition": "clear"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/clear_05.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/clear_05.jpg",
+                "brand": "Amdocal Plus",
+                "strength": "5 mg + 25 mg",
+                "expiry": "2027-02",
+                "condition": "clear"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            },
+            {
+              "expected": {
+                "image_path": "photos/clear_05.jpg",
+                "brand": "Tryptin",
+                "strength": "10 mg",
+                "expiry": "2028-10",
+                "condition": "clear"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            },
+            {
+              "expected": {
+                "image_path": "photos/clear_05.jpg",
+                "brand": "Rivotril",
+                "strength": "0.5 mg",
+                "expiry": "2025-07",
+                "condition": "clear"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/clear_06.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/clear_06.jpg",
+                "brand": "Ace",
+                "strength": "500 mg",
+                "expiry": "2026-03",
+                "condition": "clear"
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": []
+        }
+      ],
+      "photos_without_answer": 30,
+      "status": "no answer: every request failed (rate limit or provider error) - not an accuracy result"
+    }
+  }
+}

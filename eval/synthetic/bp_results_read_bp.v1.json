@@ -1,0 +1,419 @@
+{
+  "prompt_version": "read_bp.v1",
+  "run_at": "2026-11-19T18:33:44+00:00",
+  "kind": "synthetic",
+  "labels_file": "eval/synthetic/bp_labels.csv",
+  "n_photos": 20,
+  "label": {
+    "en": "Synthetic benchmark (computer-drawn images) — not real-photo accuracy",
+    "bn": "কৃত্রিম বেঞ্চমার্ক (কম্পিউটারে আঁকা ছবি) — আসল ছবিতে নির্ভুলতা নয়"
+  },
+  "photos": 20,
+  "systolic_accuracy": 1.0,
+  "diastolic_accuracy": 1.0,
+  "pulse_accuracy": 1.0,
+  "asked_to_check": 0.0,
+  "wrong_and_not_flagged": 0,
+  "results": [
+    {
+      "image": "bp_photos/bp_angle_01.jpg",
+      "want": {
+        "systolic": 162,
+        "diastolic": 100,
+        "pulse": 99
+      },
+      "got": {
+        "systolic": 162,
+        "diastolic": 100,
+        "pulse": 99
+      },
+      "exact": {
+        "systolic": true,
+        "diastolic": true,
+        "pulse": true
+      },
+      "needs_check": false,
+      "silent_error": false
+    },
+    {
+      "image": "bp_photos/bp_glare_02.jpg",
+      "want": {
+        "systolic": 119,
+        "diastolic": 64,
+        "pulse": 65
+      },
+      "got": {
+        "systolic": 119,
+        "diastolic": 64,
+        "pulse": 65
+      },
+      "exact": {
+        "systolic": true,
+        "diastolic": true,
+        "pulse": true
+      },
+      "needs_check": false,
+      "silent_error": false
+    },
+    {
+      "image": "bp_photos/bp_clear_03.jpg",
+      "want": {
+        "systolic": 167,
+        "diastolic": 77,
+        "pulse": 82
+      },
+      "got": {
+        "systolic": 167,
+        "diastolic": 77,
+        "pulse": 82
+      },
+      "exact": {
+        "systolic": true,
+        "diastolic": true,
+        "pulse": true
+      },
+      "needs_check": false,
+      "silent_error": false
+    },
+    {
+      "image": "bp_photos/bp_angle_04.jpg",
+      "want": {
+        "systolic": 108,
+        "diastolic": 78,
+        "pulse": 82
+      },
+      "got": {
+        "systolic": 108,
+        "diastolic": 78,
+        "pulse": 82
+      },
+      "exact": {
+        "systolic": true,
+        "diastolic": true,
+        "pulse": true
+      },
+      "needs_check": false,
+      "silent_error": false
+    },
+    {
+      "image": "bp_photos/bp_glare_05.jpg",
+      "want": {
+        "systolic": 109,
+        "diastolic": 68,
+        "pulse": 87
+      },
+      "got": {
+        "systolic": 109,
+        "diastolic": 68,
+        "pulse": 87
+      },
+      "exact": {
+        "systolic": true,
+        "diastolic": true,
+        "pulse": true
+      },
+      "needs_check": false,
+      "silent_error": false
+    },
+    {
+      "image": "bp_photos/bp_clear_06.jpg",
+      "want": {
+        "systolic": 173,
+        "diastolic": 91,
+        "pulse": 98
+      },
+      "got": {
+        "systolic": 173,
+        "diastolic": 91,
+        "pulse": 98
+      },
+      "exact": {
+        "systolic": true,
+        "diastolic": true,
+        "pulse": true
+      },
+      "needs_check": false,
+      "silent_error": false
+    },
+    {
+      "image": "bp_photos/bp_angle_07.jpg",
+      "want": {
+        "systolic": 151,
+        "diastolic": 66,
+        "pulse": 74
+      },
+      "got": {
+        "systolic": 151,
+        "diastolic": 66,
+        "pulse": 74
+      },
+      "exact": {
+        "systolic": true,
+        "diastolic": true,
+        "pulse": true
+      },
+      "needs_check": false,
+      "silent_error": false
+    },
+    {
+      "image": "bp_photos/bp_glare_08.jpg",
+      "want": {
+        "systolic": 161,
+        "diastolic": 76,
+        "pulse": 72
+      },
+      "got": {
+        "systolic": 161,
+        "diastolic": 76,
+        "pulse": 72
+      },
+      "exact": {
+        "systolic": true,
+        "diastolic": true,
+        "pulse": true
+      },
+      "needs_check": false,
+      "silent_error": false
+    },
+    {
+      "image": "bp_photos/bp_clear_09.jpg",
+      "want": {
+        "systolic": 179,
+        "diastolic": 68,
+        "pulse": 78
+      },
+      "got": {
+        "systolic": 179,
+        "diastolic": 68,
+        "pulse": 78
+      },
+      "exact": {
+        "systolic": true,
+        "diastolic": true,
+        "pulse": true
+      },
+      "needs_check": false,
+      "silent_error": false
+    },
+    {
+      "image": "bp_photos/bp_angle_10.jpg",
+      "want": {
+        "systolic": 136,
+        "diastolic": 101,
+        "pulse": 78
+      },
+      "got": {
+        "systolic": 136,
+        "diastolic": 101,
+        "pulse": 78
+      },
+      "exact": {
+        "systolic": true,
+        "diastolic": true,
+        "pulse": true
+      },
+      "needs_check": false,
+      "silent_error": false
+    },
+    {
+      "image": "bp_photos/bp_glare_11.jpg",
+      "want": {
+        "systolic": 159,
+        "diastolic": 64,
+        "pulse": 64
+      },
+      "got": {
+        "systolic": 159,
+        "diastolic": 64,
+        "pulse": 64
+      },
+      "exact": {
+        "systolic": true,
+        "diastolic": true,
+        "pulse": true
+      },
+      "needs_check": false,
+      "silent_error": false
+    },
+    {
+      "image": "bp_photos/bp_clear_12.jpg",
+      "want": {
+        "systolic": 110,
+        "diastolic": 80,
+        "pulse": 92
+      },
+      "got": {
+        "systolic": 110,
+        "diastolic": 80,
+        "pulse": 92
+      },
+      "exact": {
+        "systolic": true,
+        "diastolic": true,
+        "pulse": true
+      },
+      "needs_check": false,
+      "silent_error": false
+    },
+    {
+      "image": "bp_photos/bp_angle_13.jpg",
+      "want": {
+        "systolic": 141,
+        "diastolic": 64,
+        "pulse": 100
+      },
+      "got": {
+        "systolic": 141,
+        "diastolic": 64,
+        "pulse": 100
+      },
+      "exact": {
+        "systolic": true,
+        "diastolic": true,
+        "pulse": true
+      },
+      "needs_check": false,
+      "silent_error": false
+    },
+    {
+      "image": "bp_photos/bp_glare_14.jpg",
+      "want": {
+        "systolic": 177,
+        "diastolic": 70,
+        "pulse": 65
+      },
+      "got": {
+        "systolic": 177,
+        "diastolic": 70,
+        "pulse": 65
+      },
+      "exact": {
+        "systolic": true,
+        "diastolic": true,
+        "pulse": true
+      },
+      "needs_check": false,
+      "silent_error": false
+    },
+    {
+      "image": "bp_photos/bp_clear_15.jpg",
+      "want": {
+        "systolic": 153,
+        "diastolic": 71,
+        "pulse": 65
+      },
+      "got": {
+        "systolic": 153,
+        "diastolic": 71,
+        "pulse": 65
+      },
+      "exact": {
+        "systolic": true,
+        "diastolic": true,
+        "pulse": true
+      },
+      "needs_check": false,
+      "silent_error": false
+    },
+    {
+      "image": "bp_photos/bp_angle_16.jpg",
+      "want": {
+        "systolic": 112,
+        "diastolic": 82,
+        "pulse": 59
+      },
+      "got": {
+        "systolic": 112,
+        "diastolic": 82,
+        "pulse": 59
+      },
+      "exact": {
+        "systolic": true,
+        "diastolic": true,
+        "pulse": true
+      },
+      "needs_check": false,
+      "silent_error": false
+    },
+    {
+      "image": "bp_photos/bp_glare_17.jpg",
+      "want": {
+        "systolic": 180,
+        "diastolic": 72,
+        "pulse": 62
+      },
+      "got": {
+        "systolic": 180,
+        "diastolic": 72,
+        "pulse": 62
+      },
+      "exact": {
+        "systolic": true,
+        "diastolic": true,
+        "pulse": true
+      },
+      "needs_check": false,
+      "silent_error": false
+    },
+    {
+      "image": "bp_photos/bp_clear_18.jpg",
+      "want": {
+        "systolic": 139,
+        "diastolic": 91,
+        "pulse": 68
+      },
+      "got": {
+        "systolic": 139,
+        "diastolic": 91,
+        "pulse": 68
+      },
+      "exact": {
+        "systolic": true,
+        "diastolic": true,
+        "pulse": true
+      },
+      "needs_check": false,
+      "silent_error": false
+    },
+    {
+      "image": "bp_photos/bp_angle_19.jpg",
+      "want": {
+        "systolic": 109,
+        "diastolic": 79,
+        "pulse": 87
+      },
+      "got": {
+        "systolic": 109,
+        "diastolic": 79,
+        "pulse": 87
+      },
+      "exact": {
+        "systolic": true,
+        "diastolic": true,
+        "pulse": true
+      },
+      "needs_check": false,
+      "silent_error": false
+    },
+    {
+      "image": "bp_photos/bp_glare_20.jpg",
+      "want": {
+        "systolic": 129,
+        "diastolic": 62,
+        "pulse": 62
+      },
+      "got": {
+        "systolic": 129,
+        "diastolic": 62,
+        "pulse": 62
+      },
+      "exact": {
+        "systolic": true,
+        "diastolic": true,
+        "pulse": true
+      },
+      "needs_check": false,
+      "silent_error": false
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 # API reference
 
 Generated from the FastAPI app by [`backend/scripts/gen_docs.py`](../backend/scripts/gen_docs.py); do not edit by hand.
-95 endpoints.
+96 endpoints.
 
 The interactive version with request and response schemas runs at `/docs` on the API (for example http://localhost:8000/docs).
 
@@ -147,6 +147,7 @@ Webhook routes check the provider's signature themselves.
 | Method | Path | Who | What it does |
 | --- | --- | --- | --- |
 | `GET` | `/eval/results` | public | Summaries of eval/results_*.json. |
+| `GET` | `/eval/synthetic` | public | The synthetic benchmark (eval/synthetic/), kept apart from real-photo accuracy and always labelled. |
 | `GET` | `/pilot/stats` | public | Pilot proportions with 95% Wilson intervals, from eval/pilot.csv (real households only). |
 | `GET` | `/eval/sathi` | public | Summaries of eval/sathi_results_*.json, read by /docs and the README. |
 | `GET` | `/eval/review-time` | public | Median minutes from opening a finding to deciding it: the cost of a review. |

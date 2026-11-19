@@ -695,7 +695,32 @@
       "retrievalMeta": "{n} questions in Bangla, Banglish and English ({draft} drafted by the build agent, to be checked by the team). Embeddings: {model}. 95% Wilson intervals.",
       "evalProgress": "Evaluation in progress (n = {n} labelled photos; numbers are published from 25).",
       "expiry": "Expiry",
-      "needsCheck": "Needs check"
+      "needsCheck": "Needs check",
+      "synthetic": {
+        "title": "Synthetic benchmark",
+        "body": "Computer-drawn images of strips, boxes, prescriptions and BP screens, made to test the pipeline and compare providers. These numbers say nothing about accuracy on real phone photos, which is reported above.",
+        "strip": "Medicine images: {n} images, {items} labelled medicines",
+        "bp": "BP screens: {n} images.",
+        "bpLine": "Systolic read exactly {sys}, diastolic {dia}; {wrong} wrong readings were not flagged for a check.",
+        "byCondition": "By condition",
+        "notRun": "second reader not run",
+        "howMade": "How the synthetic set was made (eval/synthetic/README.md)",
+        "m": {
+          "brand": "Brand read",
+          "strength": "Brand and strength right",
+          "expiry": "Brand and expiry right",
+          "needs_check": "Shown for a human check",
+          "catch": "Wrong strengths caught by the second reader"
+        },
+        "c": {
+          "clear": "Clear",
+          "cut_strip": "Cut strip",
+          "glare": "Glare",
+          "bangla": "Bangla print",
+          "handwritten": "Handwritten"
+        }
+      },
+      "rxCredit": "Handwritten prescription photos from <a>Badhon D.R. et al., “Image-to-Text Bilingual Dataset from Medical Prescriptions”, Mendeley Data V2, 2026, doi:10.17632/tg2hm7n2bs.2</a>, CC BY 4.0; identifying details blacked out."
     }
   },
   "models": {

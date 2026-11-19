@@ -215,6 +215,8 @@ export interface EvalResult {
   needs_check_rate?: number | null;
   avg_confidence: number | null;
   status?: string;
+  /** own | mendeley:tg2hm7n2bs ...: where the labelled photos came from */
+  sources?: string[];
   brand_accuracy_ci?: [number, number];
   strength_accuracy_ci?: [number, number];
   expiry_accuracy_ci?: [number, number];

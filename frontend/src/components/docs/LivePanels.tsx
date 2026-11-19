@@ -116,6 +116,11 @@ export function EvalPanel() {
   if (results.error || !results.data)
     return <div className="h-24 rounded-card bg-paper-sunk" style={{ animation: "breathe 1.6s ease-in-out infinite" }} />;
   const measured = results.data.filter((r) => r.brand_accuracy != null);
+  // credit the prescription dataset wherever its photos are part of the numbers (CC BY 4.0)
+  const credit = results.data.some((r) => (r.sources ?? []).some((s) => s.startsWith("mendeley:"))) && (
+    <p className="mt-3 text-[13px] text-ink-faint">{t.rich("rxCredit", { a: (c) => (
+      <a href="https://doi.org/10.17632/tg2hm7n2bs.2" target="_blank" rel="noreferrer" className="underline">{c}</a>) })}</p>
+  );
   if (measured.length === 0)
     return (
       <div className="rounded-card border border-dashed border-rule-strong p-5">
@@ -126,32 +131,36 @@ export function EvalPanel() {
           </p>
         )}
         <p className="mt-1 text-ink-soft">{t.rich("evalBody", { code })}</p>
+        {credit}
       </div>
     );
   return (
-    <table className="w-full border-collapse text-left text-[15px]">
-      <thead className="text-ink-faint">
-        <tr className="border-b border-rule-strong">
-          <th className="py-2 font-medium">{t("prompt")}</th><th className="font-medium">{t("model")}</th><th className="font-medium">{t("photos")}</th>
-          <th className="font-medium">{t("brand")}</th><th className="font-medium">{t("strength")}</th>
-          <th className="font-medium">{t("expiry")}</th><th className="font-medium">{t("needsCheck")}</th><th className="font-medium">{t("conf")}</th>
-        </tr>
-      </thead>
-      <tbody className="tabular">
-        {measured.map((r) => (
-          <tr key={r.prompt_version + r.run_at} className="border-b border-rule">
-            <td className="py-2.5 font-medium">{r.prompt_version}</td>
-            <td className="break-all text-ink-soft">{r.model_id ?? "—"}</td>
-            <td>{r.images} / {r.labelled_items}</td>
-            <td>{pctOr(r.brand_accuracy)}<Ci ci={r.brand_accuracy_ci} label={t("ci")} /></td>
-            <td>{pctOr(r.strength_accuracy)}<Ci ci={r.strength_accuracy_ci} label={t("ci")} /></td>
-            <td>{pctOr(r.expiry_accuracy)}<Ci ci={r.expiry_accuracy_ci} label={t("ci")} /></td>
-            <td>{pctOr(r.needs_check_rate)}<Ci ci={r.needs_check_rate_ci} label={t("ci")} /></td>
-            <td>{r.avg_confidence ?? "—"}</td>
+    <div>
+      <table className="w-full border-collapse text-left text-[15px]">
+        <thead className="text-ink-faint">
+          <tr className="border-b border-rule-strong">
+            <th className="py-2 font-medium">{t("prompt")}</th><th className="font-medium">{t("model")}</th><th className="font-medium">{t("photos")}</th>
+            <th className="font-medium">{t("brand")}</th><th className="font-medium">{t("strength")}</th>
+            <th className="font-medium">{t("expiry")}</th><th className="font-medium">{t("needsCheck")}</th><th className="font-medium">{t("conf")}</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody className="tabular">
+          {measured.map((r) => (
+            <tr key={r.prompt_version + r.run_at} className="border-b border-rule">
+              <td className="py-2.5 font-medium">{r.prompt_version}</td>
+              <td className="break-all text-ink-soft">{r.model_id ?? "—"}</td>
+              <td>{r.images} / {r.labelled_items}</td>
+              <td>{pctOr(r.brand_accuracy)}<Ci ci={r.brand_accuracy_ci} label={t("ci")} /></td>
+              <td>{pctOr(r.strength_accuracy)}<Ci ci={r.strength_accuracy_ci} label={t("ci")} /></td>
+              <td>{pctOr(r.expiry_accuracy)}<Ci ci={r.expiry_accuracy_ci} label={t("ci")} /></td>
+              <td>{pctOr(r.needs_check_rate)}<Ci ci={r.needs_check_rate_ci} label={t("ci")} /></td>
+              <td>{r.avg_confidence ?? "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+        {credit}
+    </div>
   );
 }
 

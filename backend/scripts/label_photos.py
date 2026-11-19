@@ -22,7 +22,7 @@ from urllib.parse import parse_qs, quote, unquote, urlparse
 EVAL = Path(__file__).resolve().parents[2] / "eval"
 PHOTOS = EVAL / "photos"
 LABELS = EVAL / "labels.csv"
-FIELDS = ["image_path", "brand", "strength", "expiry", "condition"]
+FIELDS = ["image_path", "brand", "strength", "expiry", "condition", "source"]  # source: empty = our own photo
 CONDITIONS = ["clear", "cut_strip", "glare", "bangla", "handwritten"]
 ROWS = 6
 _YM = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
@@ -44,7 +44,7 @@ def todo() -> list[str]:
 
 
 def append(rows: list[dict]) -> None:
-    """Writes the header (with the newer columns) if needed; older 3-column files are upgraded."""
+    """Writes the header (with the newer columns) if needed; older 3- and 5-column files are upgraded."""
     existing = []
     if LABELS.exists():
         with LABELS.open(encoding="utf-8") as f:

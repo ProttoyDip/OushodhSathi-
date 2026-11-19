@@ -771,6 +771,8 @@ def eval_results() -> list[dict]:
         # eval/run_eval.py sets brand/strength to None below its photo minimum; the status says why
         row["status"] = data.get("status", "measured")
         chain = (data.get("runs") or {}).get("chain")
+        # where the photos came from (own photos, or a credited dataset such as mendeley:tg2hm7n2bs)
+        row["sources"] = sorted(((chain or {}).get("by_source") or {}).keys())
         if chain:  # Wilson intervals computed by run_eval.py, shown only once there are enough photos
             measured = row["status"] == "measured"
             for key, name in (("brand", "brand_accuracy"), ("strength", "strength_accuracy"),

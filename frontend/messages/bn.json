@@ -719,7 +719,8 @@
           "bangla": "বাংলা লেখা",
           "handwritten": "হাতে লেখা"
         }
-      }
+      },
+      "rxCredit": "হাতে লেখা প্রেসক্রিপশনের ছবি <a>Badhon D.R. et al., “Image-to-Text Bilingual Dataset from Medical Prescriptions”, Mendeley Data V2, 2026, doi:10.17632/tg2hm7n2bs.2</a> থেকে, CC BY 4.0; পরিচয় বোঝা যায় এমন তথ্য কালো করে ঢাকা।"
     }
   },
   "models": {

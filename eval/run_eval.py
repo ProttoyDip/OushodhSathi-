@@ -10,9 +10,11 @@ to the labels for --kind synthetic), --kind real|synthetic. image_path is relati
 folder. Real and synthetic results never mix: a synthetic run refuses to write a real results file, and
 only real runs are held to the MIN_PHOTOS rule.
 
-Reads eval/labels.csv: image_path,brand,strength,expiry,condition - one row per medicine visible in a
-photo (image_path relative to eval/, expiry YYYY-MM or empty, condition one of cut_strip, glare,
-bangla, handwritten, clear). Label photos with backend/scripts/label_photos.py.
+Reads eval/labels.csv: image_path,brand,strength,expiry,condition[,source] - one row per medicine visible
+in a photo (image_path relative to eval/, expiry YYYY-MM or empty, condition one of cut_strip, glare,
+bangla, handwritten, clear; source empty for our own photos, or e.g. mendeley:tg2hm7n2bs for a dataset
+prescription). Results are also reported per source. Label photos with backend/scripts/label_photos.py;
+pick dataset prescriptions with backend/scripts/pick_prescriptions.py.
 
 Reports, each as a proportion with a 95% Wilson interval:
   brand      the brand was read (normalised exact match)
@@ -91,6 +93,7 @@ def score(labels: dict[str, list[dict]], outputs: dict[str, list], seconds: dict
     flagged_total = 0
     found_conf: list[float] = []
     by_condition: dict[str, list[int]] = defaultdict(lambda: [0, 0])
+    by_source: dict[str, list[int]] = defaultdict(lambda: [0, 0])  # own photos vs dataset photos
     reliability = [[0, 0] for _ in BUCKETS]  # [correct, total] per confidence bucket
     per_image = []
     for image, expected in labels.items():
@@ -122,6 +125,9 @@ def score(labels: dict[str, list[dict]], outputs: dict[str, list], seconds: dict
             cond = (exp.get("condition") or "unlabelled").strip() or "unlabelled"
             by_condition[cond][0] += b_ok
             by_condition[cond][1] += 1
+            src = (exp.get("source") or "").strip() or "own"
+            by_source[src][0] += b_ok
+            by_source[src][1] += 1
             rows.append({"expected": exp, "brand_ok": b_ok, "strength_ok": s_ok,
                          "got": match.model_dump() if match else None})
         wanted = {normalise(e["brand"]) for e in expected}
@@ -150,6 +156,7 @@ def score(labels: dict[str, list[dict]], outputs: dict[str, list], seconds: dict
                          "observed": proportion("observed", c, t) if t else None}
                         for (lo, hi), (c, t) in zip(BUCKETS, reliability)],
         "by_condition": {k: proportion(k, ok, t) for k, (ok, t) in sorted(by_condition.items())},
+        "by_source": {k: proportion(k, ok, t) for k, (ok, t) in sorted(by_source.items())},
         "avg_confidence": round(sum(found_conf) / len(found_conf), 3) if found_conf else None,
         "per_image": per_image,
     }
@@ -226,6 +233,8 @@ async def main(argv: list[str] | None = None) -> int:
                 v = sr[key][part]
                 if v:
                     print(f"  2nd read {key} {part:11} {v['k']}/{v['n']} = {v['p']:.0%}  (95% CI {v['ci_low']:.0%}-{v['ci_high']:.0%})")
+        for src, v in r["by_source"].items():
+            print(f"  source {src:22} brand {v['k']}/{v['n']} = {v['p']:.0%}  (95% CI {v['ci_low']:.0%}-{v['ci_high']:.0%})")
         print("  reliability  " + "  ".join(
             f"{b['confidence']}: {b['observed']['p']:.0%} of {b['items']}" for b in r["reliability"] if b["observed"]))
     print(f"\n{summary['status']}\nwrote {out}")

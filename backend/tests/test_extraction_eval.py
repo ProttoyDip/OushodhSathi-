@@ -131,3 +131,17 @@ def test_labeller_prefills_drafts_but_still_needs_the_privacy_tick(tmp_path):
         assert errors == ["Tick the privacy checklist first."]
     finally:
         labeller.DRAFTS.clear()
+
+
+def test_a_provider_that_never_answered_is_not_scored_as_zero():
+    labels = {"photos/a.jpg": [{"image_path": "photos/a.jpg", "brand": "Napa", "strength": "500 mg"}]}
+    dead = run_eval.mark_answers({"model_id": None, **run_eval.score(labels, {"photos/a.jpg": []})})
+    assert dead["status"].startswith("no answer") and dead["brand"] is None and dead["photos_without_answer"] == 1
+    alive = run_eval.mark_answers({"model_id": "m", **run_eval.score(labels, {"photos/a.jpg": [item("Ace")]})})
+    assert "status" not in alive and alive["brand"]["k"] == 0 and alive["photos_without_answer"] == 0
+
+
+def test_bangla_reading_maps_through_the_alias_table():
+    labels = {"photos/b.jpg": [{"image_path": "photos/b.jpg", "brand": "Napa", "strength": "500 mg"}]}
+    r = run_eval.score(labels, {"photos/b.jpg": [item("নাপা", "500 mg")]})
+    assert r["brand"]["k"] == 1 and r["strength"]["k"] == 1 and r["per_image"][0]["extra_items"] == []

@@ -42,9 +42,9 @@ FastAPI, Pydantic, Pydantic-AI, Next.js, next-intl, Motion, Recharts, Supabase P
 
 Embeddings: NVIDIA nemotron-3.5-embed-1b through NVIDIA's API (input type query or passage, 2048 dimensions truncated to 1024 and re-normalised), stored in pgvector. Model serving: hosted APIs (NVIDIA, OpenRouter) with Ollama as the local fallback; the API runs on Render, the frontend on Vercel. Every feature still works with no keys at all: keyword search replaces vectors, and fixed templates replace model wording.
 
-## Evaluation
+## Evaluation & Quality Measurement
 
-Sathi safety (83 cases, no model): app questions answered from the right guide entry 34/35; medical questions sent to a pharmacist 33/33; emergencies escalated 10/10; rule-breaking attempts refused 5/5 [eval/sathi_results_sathi_bn.v1.json]. Guide retrieval recall@1 on 79 questions: hybrid 95% (95% CI 88-98%) vs keyword 90% [eval/help_retrieval_results.json]. Pharmacist case summary, 10 uncached runs each on the demo household: v1 and Graph RAG v2 both passed every safety check 8/10 times [eval/case_summary_results.json]. Strip-reading accuracy: evaluation in progress (n = 0 labelled photos; numbers are published from 25), with a labelling tool and Wilson intervals ready. 399 automated backend tests run in CI.
+Real-photo strip reading: evaluation in progress. 40 real medicine photos from the team are collected and privacy-checked; 0 are labelled so far, and no accuracy figure is published until at least 25 are labelled. Synthetic benchmark (computer-drawn images, not real-photo accuracy): on 30 images with 45 medicines, brand read 40/45 (89%, 95% CI 76%-95%), expiry 19/25 (76%, 95% CI 57%-88%); on 20 synthetic BP screens, systolic read exactly 100% and diastolic 100%. It also measured overconfidence: 3 of the model's 5 misreads came with confidence of 0.9 or more, so the 0.75 "please check" cut-off flagged only 2 of 5. Sathi safety (83 cases, no model): medical questions to a pharmacist 33/33, emergencies 10/10, rule-breaking refused 5/5. Guide retrieval recall@1: hybrid 95% (95% CI 88%-98%) vs keyword 90%. Handwritten-prescription images for future runs: Badhon D.R. et al., Mendeley Data V2, 2026, doi:10.17632/tg2hm7n2bs.2, CC BY 4.0. All numbers come from results files in eval/.
 
 ## Solution description: the voice-call sentence
 

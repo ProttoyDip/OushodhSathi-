@@ -49,7 +49,7 @@ from dotenv import load_dotenv  # noqa: E402
 load_dotenv(ROOT.parent / "backend" / ".env")
 
 from app import agent, llm_router, prompts  # noqa: E402
-from app.brands import has_bangla, normalise, normalise_bn  # noqa: E402
+from app.brands import _bn_index, has_bangla, normalise, normalise_bn  # noqa: E402
 from app.llm_router import NoProviderAvailable, configured_providers  # noqa: E402
 from app.stats import proportion  # noqa: E402
 from evalcommon import LabelError, check_strip_rows, parse, provenance, read_rows  # noqa: E402
@@ -64,8 +64,13 @@ def norm_strength(s: str | None) -> str:
 
 
 def brand_key(name: str) -> str:
-    """Comparable form of a brand in either script (Latin or Bangla)."""
-    return normalise_bn(name) if has_bangla(name) else normalise(name)
+    """Comparable form of a brand in either script. A Bangla reading is mapped through the same
+    pharmacist-checked alias table the app uses (data/brands_bn.csv), so "নাপা" counts as Napa."""
+    if has_bangla(name):
+        bn = normalise_bn(name)
+        alias = _bn_index().get(bn)
+        return normalise(alias) if alias else bn
+    return normalise(name)
 
 
 def brand_keys(label: str) -> set[str]:
@@ -93,7 +98,8 @@ def _second_read_gain(flagged_when_wrong: list[bool], flagged_when_right: list[b
             "false_alarm": proportion(f"{name}_false_alarm", sum(r), len(r)) if r else None}
 
 
-def score(labels: dict[str, list[dict]], outputs: dict[str, list], seconds: dict[str, list] | None = None) -> dict:
+def score(labels: dict[str, list[dict]], outputs: dict[str, list], seconds: dict[str, list] | None = None,
+          default_source: str = "own") -> dict:
     """outputs: image_path -> extracted items (brand, strength, expiry, confidence); seconds: the same
     shape with each item's OCR second-read verdict (or None). Pure; tested."""
     seconds = seconds or {}
@@ -141,7 +147,7 @@ def score(labels: dict[str, list[dict]], outputs: dict[str, list], seconds: dict
             cond = (exp.get("condition") or "unlabelled").strip() or "unlabelled"
             by_condition[cond][0] += b_ok
             by_condition[cond][1] += 1
-            src = (exp.get("source") or "").strip() or "own"
+            src = (exp.get("source") or "").strip() or default_source
             by_source[src][0] += b_ok
             by_source[src][1] += 1
             rows.append({"expected": exp, "brand_ok": b_ok, "strength_ok": s_ok,
@@ -178,6 +184,24 @@ def score(labels: dict[str, list[dict]], outputs: dict[str, list], seconds: dict
     }
 
 
+METRICS = ("brand", "strength", "expiry", "needs_check")
+
+
+def mark_answers(run: dict) -> dict:
+    """Separates a provider that failed from one that read badly. `photos_without_answer` counts photos
+    where nothing at all came back. If the provider never answered (no model id, every photo empty), the
+    run is marked "no answer" and its accuracy fields are cleared, so a rate limit is never shown as 0%."""
+    empty = sum(1 for img in run.get("per_image", [])
+                if not any(r.get("got") for r in img.get("results", [])) and not img.get("extra_items"))
+    run["photos_without_answer"] = empty
+    if run.get("model_id") is None and empty == run.get("photos"):
+        run["status"] = "no answer: every request failed (rate limit or provider error) - not an accuracy result"
+        for k in METRICS:
+            run[k] = None
+        run["by_condition"], run["by_source"] = {}, {}
+    return run
+
+
 async def extract_all(labels: dict[str, list[dict]], base: Path = ROOT) -> tuple[dict[str, list], dict[str, list], str | None]:
     outputs, seconds, model_id = {}, {}, None
     for image in labels:
@@ -203,7 +227,8 @@ async def main(argv: list[str] | None = None) -> int:
     try:
         print(f"chain (as the app runs it) · {a.kind} · {a.labels}")
         outputs, seconds, model_id = await extract_all(labels, a.base)
-        runs = {"chain": {"model_id": model_id, **score(labels, outputs, seconds)}}
+        src = "synthetic" if a.kind == "synthetic" else "own"
+        runs = {"chain": mark_answers({"model_id": model_id, **score(labels, outputs, seconds, src)})}
         if a.per_provider:
             for p in configured_providers("vision"):
                 print(f"{p.name} / {p.model} alone")
@@ -211,7 +236,7 @@ async def main(argv: list[str] | None = None) -> int:
                 agent.configured_providers = only
                 llm_router.configured_providers = only
                 outs, secs, mid = await extract_all(labels, a.base)
-                runs[f"{p.name}/{p.model}"] = {"model_id": mid, **score(labels, outs, secs)}
+                runs[f"{p.name}/{p.model}"] = mark_answers({"model_id": mid, **score(labels, outs, secs, src)})
     except NoProviderAvailable as e:
         print(f"No vision provider available: {e}")
         return 2
@@ -238,7 +263,11 @@ async def main(argv: list[str] | None = None) -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
     for name, r in runs.items():
-        print(f"\n{name}  ({r['photos']} photos, {r['labelled_items']} medicines)")
+        print(f"\n{name}  ({r['photos']} photos, {r['labelled_items']} medicines, "
+              f"{r['photos_without_answer']} with no answer)")
+        if r.get("status", "").startswith("no answer"):
+            print(f"  {r['status']}")
+            continue
         for key in ("brand", "strength", "expiry", "needs_check"):
             v = r[key]
             if v:

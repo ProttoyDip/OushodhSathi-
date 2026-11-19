@@ -2,6 +2,10 @@
 
   backend/.venv/Scripts/python eval/run_bp_eval.py          (Windows)
   backend/.venv/bin/python eval/run_bp_eval.py              (macOS/Linux)
+  ... eval/run_bp_eval.py --kind synthetic --labels eval/synthetic/bp_labels.csv
+
+Options: --labels PATH (default eval/bp_labels.csv), --out PATH, --kind real|synthetic; image_path is
+relative to the labels file's folder; a synthetic run never writes a real results file.
 
 Reads eval/bp_labels.csv (image_path,systolic,diastolic,pulse; image_path relative to
 eval/, pulse may be blank). Reports exact-match accuracy per number, how often the
@@ -11,7 +15,6 @@ Needs a vision provider configured in backend/.env. Never prints keys.
 """
 from __future__ import annotations
 
-import csv
 import json
 import sys
 from datetime import datetime, timezone
@@ -19,6 +22,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT.parent / "backend"))
+sys.path.insert(0, str(ROOT))  # evalcommon, also when loaded by path in the tests
 
 from dotenv import load_dotenv  # noqa: E402
 
@@ -27,19 +31,25 @@ load_dotenv(ROOT.parent / "backend" / ".env")
 from app import prompts  # noqa: E402
 from app.clinical import read_bp_photo  # noqa: E402
 from app.llm_router import NoProviderAvailable, Router  # noqa: E402
+from evalcommon import LabelError, check_bp_rows, parse, provenance, read_rows  # noqa: E402
 
 
-def main() -> int:
-    labels_path = ROOT / "bp_labels.csv"
-    with labels_path.open(encoding="utf-8") as f:
-        rows = [r for r in csv.DictReader(f) if r.get("image_path")]
+def main(argv: list[str] | None = None) -> int:
+    version = prompts.version("read_bp")
+    a = parse(argv, default_labels="bp_labels.csv", out_name=f"bp_results_{version}.json", per_provider=False)
+    try:
+        rows = read_rows(a.labels, ("image_path", "systolic", "diastolic", "pulse"))
+        check_bp_rows(rows, a.base)
+    except LabelError as e:
+        print(e)
+        return 3
     if not rows:
-        print("No labelled BP photos yet: add them to eval/bp_photos/ and eval/bp_labels.csv (see eval/README.md).")
+        print(f"No labelled BP photos yet in {a.labels.name} (see eval/README.md).")
         return 0
     router = Router()
     results = []
     for r in rows:
-        photo = (ROOT / r["image_path"]).read_bytes()
+        photo = (a.base / r["image_path"]).read_bytes()
         try:
             out = read_bp_photo(photo, router)
         except NoProviderAvailable as e:
@@ -58,8 +68,9 @@ def main() -> int:
         return round(sum(vals) / len(vals), 3) if vals else None
 
     summary = {
-        "prompt_version": prompts.version("read_bp"),
+        "prompt_version": version,
         "run_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        **provenance(a, n),
         "photos": n,
         "systolic_accuracy": rate("systolic"),
         "diastolic_accuracy": rate("diastolic"),
@@ -68,8 +79,9 @@ def main() -> int:
         "wrong_and_not_flagged": sum(x["silent_error"] for x in results),
         "results": results,
     }
-    out_path = ROOT / f"bp_results_{prompts.version('read_bp')}.json"
-    out_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    out_path = a.out
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print({k: v for k, v in summary.items() if k != "results"})
     return 0
 

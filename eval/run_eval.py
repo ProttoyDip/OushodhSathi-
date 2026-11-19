@@ -3,6 +3,12 @@
   backend/.venv/Scripts/python eval/run_eval.py                  (Windows)
   backend/.venv/bin/python eval/run_eval.py                      (macOS / Linux)
   ... eval/run_eval.py --per-provider                            (also each vision provider alone)
+  ... eval/run_eval.py --kind synthetic --labels eval/synthetic/labels.csv   (the synthetic benchmark)
+
+Options: --labels PATH (default eval/labels.csv), --out PATH (default eval/results_<prompt>.json, or next
+to the labels for --kind synthetic), --kind real|synthetic. image_path is relative to the labels file's
+folder. Real and synthetic results never mix: a synthetic run refuses to write a real results file, and
+only real runs are held to the MIN_PHOTOS rule.
 
 Reads eval/labels.csv: image_path,brand,strength,expiry,condition - one row per medicine visible in a
 photo (image_path relative to eval/, expiry YYYY-MM or empty, condition one of cut_strip, glare,
@@ -24,9 +30,7 @@ Writes eval/results_<prompt_version>.json. Needs a vision provider in backend/.e
 """
 from __future__ import annotations
 
-import argparse
 import asyncio
-import csv
 import json
 import re
 import sys
@@ -36,6 +40,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT.parent / "backend"))
+sys.path.insert(0, str(ROOT))  # evalcommon, also when loaded by path in the tests
 
 from dotenv import load_dotenv  # noqa: E402
 
@@ -45,6 +50,7 @@ from app import agent, llm_router, prompts  # noqa: E402
 from app.brands import normalise  # noqa: E402
 from app.llm_router import NoProviderAvailable, configured_providers  # noqa: E402
 from app.stats import proportion  # noqa: E402
+from evalcommon import LabelError, check_strip_rows, parse, provenance, read_rows  # noqa: E402
 
 MIN_PHOTOS = 25            # below this, no accuracy number is shown anywhere
 CONFIDENCE_CUTOFF = 0.75   # the app shows anything below this for a human check
@@ -55,12 +61,15 @@ def norm_strength(s: str | None) -> str:
     return re.sub(r"\s+", "", (s or "").lower())
 
 
-def load_labels(path: Path = ROOT / "labels.csv") -> dict[str, list[dict]]:
+def load_labels(path: Path = ROOT / "labels.csv", check_images: bool = False) -> dict[str, list[dict]]:
+    """image_path -> its label rows. Older 3- and 5-column files still load (missing columns read as "")."""
+    rows = read_rows(path, ("image_path", "brand"))
+    if check_images:
+        check_strip_rows(rows, path.parent)
     labels: dict[str, list[dict]] = defaultdict(list)
-    with path.open(encoding="utf-8") as f:
-        for r in csv.DictReader(f):
-            if r.get("image_path") and r.get("brand"):
-                labels[r["image_path"]].append(r)
+    for r in rows:
+        if r.get("image_path") and r.get("brand"):
+            labels[r["image_path"]].append(r)
     return labels
 
 
@@ -146,10 +155,10 @@ def score(labels: dict[str, list[dict]], outputs: dict[str, list], seconds: dict
     }
 
 
-async def extract_all(labels: dict[str, list[dict]]) -> tuple[dict[str, list], dict[str, list], str | None]:
+async def extract_all(labels: dict[str, list[dict]], base: Path = ROOT) -> tuple[dict[str, list], dict[str, list], str | None]:
     outputs, seconds, model_id = {}, {}, None
     for image in labels:
-        outcome = await agent.read_shelf([(ROOT / image).read_bytes()])
+        outcome = await agent.read_shelf([(base / image).read_bytes()])
         model_id = model_id or outcome.model_id
         outputs[image] = [s.item for s in outcome.items]
         seconds[image] = [s.match.get("second_read") for s in outcome.items]
@@ -157,17 +166,20 @@ async def extract_all(labels: dict[str, list[dict]]) -> tuple[dict[str, list], d
     return outputs, seconds, model_id
 
 
-async def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--per-provider", action="store_true")
-    a = ap.parse_args()
-    labels = load_labels()
+async def main(argv: list[str] | None = None) -> int:
+    version = prompts.version("extract_strip")
+    a = parse(argv, default_labels="labels.csv", out_name=f"results_{version}.json")
+    try:
+        labels = load_labels(a.labels, check_images=True)
+    except LabelError as e:
+        print(e)
+        return 3
     if not labels:
-        print("eval/labels.csv has no rows yet. Label photos with backend/scripts/label_photos.py (see eval/README.md).")
+        print(f"{a.labels.name} has no rows yet. Label photos with backend/scripts/label_photos.py (see eval/README.md).")
         return 1
     try:
-        print("chain (as the app runs it)")
-        outputs, seconds, model_id = await extract_all(labels)
+        print(f"chain (as the app runs it) · {a.kind} · {a.labels}")
+        outputs, seconds, model_id = await extract_all(labels, a.base)
         runs = {"chain": {"model_id": model_id, **score(labels, outputs, seconds)}}
         if a.per_provider:
             for p in configured_providers("vision"):
@@ -175,19 +187,22 @@ async def main() -> int:
                 only = lambda *_a, _p=p, **_k: [_p]  # noqa: E731
                 agent.configured_providers = only
                 llm_router.configured_providers = only
-                outs, secs, mid = await extract_all(labels)
+                outs, secs, mid = await extract_all(labels, a.base)
                 runs[f"{p.name}/{p.model}"] = {"model_id": mid, **score(labels, outs, secs)}
     except NoProviderAvailable as e:
         print(f"No vision provider available: {e}")
         return 2
 
     chain = runs["chain"]
-    version = prompts.version("extract_strip")
-    enough = len(labels) >= MIN_PHOTOS
+    # the real-photo minimum applies to real photos only; a synthetic run always reports, labelled as such
+    enough = a.kind == "synthetic" or len(labels) >= MIN_PHOTOS
+    status = ("synthetic benchmark" if a.kind == "synthetic" else
+              "measured" if enough else f"evaluation in progress (n = {len(labels)} photos; {MIN_PHOTOS} needed)")
     summary = {
         "prompt_version": version, "model_id": chain["model_id"],
         "run_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "status": "measured" if enough else f"evaluation in progress (n = {len(labels)} photos; {MIN_PHOTOS} needed)",
+        **provenance(a, len(labels)),
+        "status": status,
         "images": len(labels), "labelled_items": chain["labelled_items"],
         # point estimates for /docs and the README, only once there are enough photos
         "brand_accuracy": chain["brand"]["p"] if enough else None,
@@ -196,7 +211,8 @@ async def main() -> int:
         "confidence_cutoff": CONFIDENCE_CUTOFF,
         "runs": runs,
     }
-    out = ROOT / f"results_{version}.json"
+    out = a.out
+    out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
     for name, r in runs.items():
         print(f"\n{name}  ({r['photos']} photos, {r['labelled_items']} medicines)")

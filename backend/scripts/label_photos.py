@@ -85,13 +85,31 @@ table{{width:100%}} td{{padding:2px}} .err{{color:#b00020}} button{{font:inherit
 <h1>Label eval photos <small>({left} left)</small></h1>{body}"""
 
 
+DRAFTS: dict[str, list[dict]] = {}  # image_path -> draft rows (--drafts): suggestions to check, never saved unseen
+
+
+def load_drafts(path: Path) -> dict[str, list[dict]]:
+    out: dict[str, list[dict]] = {}
+    with path.open(encoding="utf-8", newline="") as f:
+        for r in csv.DictReader(f):
+            if r.get("image_path"):
+                out.setdefault(r["image_path"], []).append(r)
+    return out
+
+
 def page(image: str | None, left: int, errors: list[str] | None = None) -> str:
     if image is None:
         return PAGE.format(left=0, body="<p>Every photo in eval/photos/ is labelled. Run eval/run_eval.py next.</p>")
-    rows = "".join(f"<tr><td><input name=brand{i} placeholder='Brand as printed'></td>"
-                   f"<td><input name=strength{i} placeholder='500 mg'></td>"
-                   f"<td><input name=expiry{i} placeholder='2027-03'></td></tr>" for i in range(ROWS))
-    conds = "".join(f"<option>{c}</option>" for c in CONDITIONS)
+    draft = DRAFTS.get(image, [])
+
+    def val(i: int, key: str) -> str:
+        return html.escape(draft[i].get(key, "") if i < len(draft) else "", quote=True)
+
+    rows = "".join(f"<tr><td><input name=brand{i} placeholder='Brand as printed' value=\"{val(i, 'brand')}\"></td>"
+                   f"<td><input name=strength{i} placeholder='500 mg' value=\"{val(i, 'strength')}\"></td>"
+                   f"<td><input name=expiry{i} placeholder='2027-03' value=\"{val(i, 'expiry')}\"></td></tr>" for i in range(ROWS))
+    chosen = draft[0].get("condition", "") if draft else ""
+    conds = "".join(f"<option{' selected' if c == chosen else ''}>{c}</option>" for c in CONDITIONS)
     errs = "".join(f"<p class=err>{html.escape(e)}</p>" for e in errors or [])
     body = f"""<div class=wrap><img src="/img/{quote(image)}" alt="photo to label">
 <form method=post action="/save"><input type=hidden name=image value="{html.escape(image)}">
@@ -100,7 +118,10 @@ def page(image: str | None, left: int, errors: list[str] | None = None) -> str:
 are visible (cover or crop them first).</label>
 <p>Condition <select name=condition>{conds}</select></p>
 <table><tr><th>Brand</th><th>Strength</th><th>Expiry</th></tr>{rows}</table>
-<p>One row per medicine visible. Type exactly what is printed; leave expiry empty if it is cut off.</p>
+<p>One row per medicine visible. Type exactly what is printed; leave expiry empty if it is cut off, and
+strength empty when the pack prints no dose strength (a syrup's volume is not a strength). A brand printed in
+both scripts can be written "Nasovap|ন্যাসোভ্যাপ".</p>
+{"<p class=err>Pre-filled from a draft: check every field against the photo before saving.</p>" if draft else ""}
 <button>Save and next</button> <button formaction="/skip">Skip this photo</button></form></div>"""
     return PAGE.format(left=left, body=body)
 
@@ -147,6 +168,14 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
+    import argparse
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--drafts", type=Path, help="CSV of suggested labels to pre-fill (each still checked and saved by hand)")
+    a = ap.parse_args()
+    if a.drafts:
+        DRAFTS.update(load_drafts(a.drafts))
+        print(f"{len(DRAFTS)} photos have draft labels to check")
     PHOTOS.mkdir(parents=True, exist_ok=True)
     print(f"{len(todo())} photos to label in {PHOTOS}\nOpen http://127.0.0.1:{PORT}  (Ctrl+C to stop)")
     server = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)

@@ -34,6 +34,12 @@ produced here — nothing is typed in by hand.
    photos/box_02.jpg,Seclo,20 mg,,bangla
    ```
 
+**Two labelling rules.** Leave strength empty when the pack prints no dose strength (a syrup's "100 ml"
+or a spray's "120 metered sprays" is not a strength); such rows are left out of the strength score. A brand
+printed in both scripts may be labelled with both spellings, `Nasovap|ন্যাসোভ্যাপ`, so a correct read in either
+script counts. `label_photos.py --drafts FILE` pre-fills suggested labels, but every photo is still checked
+and saved by hand.
+
 ## Real handwritten prescriptions from a public dataset
 
 Handwritten prescriptions are hard to collect with consent, so the eval can also use a public dataset:

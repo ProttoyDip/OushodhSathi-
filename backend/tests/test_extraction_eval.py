@@ -105,3 +105,29 @@ def test_score_measures_the_second_reader_gain():
     assert sr["expiry"]["catch"] is None and sr["expiry"]["false_alarm"]["n"] == 2
     assert sr["ran_on_items"] == 3 and sr["needs_check_with_second_read"]["k"] == 2
     assert run_eval.score(LABELS, outputs)["second_read"]["ran_on_items"] == 0              # OCR off: nothing claimed
+
+
+def test_brand_alternatives_in_either_script_and_strength_only_where_labelled():
+    labels = {"photos/s.jpg": [{"image_path": "photos/s.jpg", "brand": "Nasovap|ন্যাসোভ্যাপ", "strength": "", "condition": "bangla"}],
+              "photos/t.jpg": [{"image_path": "photos/t.jpg", "brand": "Napa", "strength": "500 mg", "condition": "clear"}]}
+    outputs = {"photos/s.jpg": [item("ন্যাসোভ্যাপ", "100 ml")], "photos/t.jpg": [item("Napa", "500 mg")]}
+    r = run_eval.score(labels, outputs)
+    assert (r["brand"]["k"], r["brand"]["n"]) == (2, 2)          # the Bangla read of Nasovap counts
+    assert (r["strength"]["k"], r["strength"]["n"]) == (1, 1)    # the syrup's volume is not scored as a strength
+    assert r["per_image"][0]["extra_items"] == []
+    assert run_eval.score(labels, {"photos/s.jpg": [item("Nasovap")]})["brand"]["k"] == 1
+
+
+def test_labeller_prefills_drafts_but_still_needs_the_privacy_tick(tmp_path):
+    f = tmp_path / "drafts.csv"
+    f.write_text("image_path,brand,strength,expiry,condition\nphotos/x.jpg,Napa,500 mg,,glare\n", encoding="utf-8")
+    labeller.DRAFTS.clear()
+    labeller.DRAFTS.update(labeller.load_drafts(f))
+    try:
+        h = labeller.page("photos/x.jpg", 1)
+        assert 'value="Napa"' in h and 'value="500 mg"' in h and "<option selected>glare" in h and "Pre-filled" in h
+        assert "Pre-filled" not in labeller.page("photos/other.jpg", 1)
+        _, errors = labeller.validate({"brand0": ["Napa"], "condition": ["glare"]}, "photos/x.jpg")
+        assert errors == ["Tick the privacy checklist first."]
+    finally:
+        labeller.DRAFTS.clear()

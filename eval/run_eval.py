@@ -18,7 +18,7 @@ pick dataset prescriptions with backend/scripts/pick_prescriptions.py.
 
 Reports, each as a proportion with a 95% Wilson interval:
   brand      the brand was read (normalised exact match)
-  strength   brand and strength both right
+  strength   brand and strength both right (rows with a labelled strength only)
   expiry     brand and expiry both right (rows with a labelled expiry only)
   needs check  share of correctly found medicines the app would show for a human check
              (confidence below CONFIDENCE_CUTOFF, the app's own cut-off)
@@ -49,7 +49,7 @@ from dotenv import load_dotenv  # noqa: E402
 load_dotenv(ROOT.parent / "backend" / ".env")
 
 from app import agent, llm_router, prompts  # noqa: E402
-from app.brands import normalise  # noqa: E402
+from app.brands import has_bangla, normalise, normalise_bn  # noqa: E402
 from app.llm_router import NoProviderAvailable, configured_providers  # noqa: E402
 from app.stats import proportion  # noqa: E402
 from evalcommon import LabelError, check_strip_rows, parse, provenance, read_rows  # noqa: E402
@@ -61,6 +61,16 @@ BUCKETS = [(0.0, 0.5), (0.5, 0.75), (0.75, 0.9), (0.9, 1.01)]
 
 def norm_strength(s: str | None) -> str:
     return re.sub(r"\s+", "", (s or "").lower())
+
+
+def brand_key(name: str) -> str:
+    """Comparable form of a brand in either script (Latin or Bangla)."""
+    return normalise_bn(name) if has_bangla(name) else normalise(name)
+
+
+def brand_keys(label: str) -> set[str]:
+    """A label may list the same brand in both scripts, "Nasovap|ন্যাসোভ্যাপ": a read of either counts."""
+    return {k for k in (brand_key(part) for part in label.split("|")) if k}
 
 
 def load_labels(path: Path = ROOT / "labels.csv", check_images: bool = False) -> dict[str, list[dict]]:
@@ -87,7 +97,7 @@ def score(labels: dict[str, list[dict]], outputs: dict[str, list], seconds: dict
     """outputs: image_path -> extracted items (brand, strength, expiry, confidence); seconds: the same
     shape with each item's OCR second-read verdict (or None). Pure; tested."""
     seconds = seconds or {}
-    n = brand = strength = 0
+    n = brand = strength = str_n = 0
     exp_n = exp_ok = 0
     s_wrong, s_right, e_wrong, e_right = [], [], [], []
     flagged_total = 0
@@ -102,13 +112,18 @@ def score(labels: dict[str, list[dict]], outputs: dict[str, list], seconds: dict
         rows = []
         for exp in expected:
             n += 1
-            idx = next((i for i, g in enumerate(got) if normalise(g.brand) == normalise(exp["brand"])), None)
+            keys = brand_keys(exp["brand"])
+            idx = next((i for i, g in enumerate(got) if brand_key(g.brand) in keys), None)
             match = got[idx] if idx is not None else None
             sr = srs[idx] if idx is not None else None
             b_ok = match is not None
-            s_ok = b_ok and norm_strength(match.strength) == norm_strength(exp.get("strength"))
+            # strength is scored only where the pack prints one (a syrup's "100 ml" is not a strength)
+            s_ok = None
+            if (exp.get("strength") or "").strip():
+                str_n += 1
+                s_ok = b_ok and norm_strength(match.strength) == norm_strength(exp.get("strength"))
+                strength += s_ok
             brand += b_ok
-            strength += s_ok
             e_ok = None
             if (exp.get("expiry") or "").strip():
                 exp_n += 1
@@ -118,7 +133,8 @@ def score(labels: dict[str, list[dict]], outputs: dict[str, list], seconds: dict
                 found_conf.append(match.confidence)
             if b_ok and sr:  # the second reader ran on this photo
                 s_flag, e_flag = sr.get("strength") == "disagree", sr.get("expiry") == "disagree"
-                (s_right if s_ok else s_wrong).append(s_flag)
+                if s_ok is not None:
+                    (s_right if s_ok else s_wrong).append(s_flag)
                 if e_ok is not None:
                     (e_right if e_ok else e_wrong).append(e_flag)
                 flagged_total += (s_flag or e_flag or match.confidence < CONFIDENCE_CUTOFF)
@@ -130,18 +146,18 @@ def score(labels: dict[str, list[dict]], outputs: dict[str, list], seconds: dict
             by_source[src][1] += 1
             rows.append({"expected": exp, "brand_ok": b_ok, "strength_ok": s_ok,
                          "got": match.model_dump() if match else None})
-        wanted = {normalise(e["brand"]) for e in expected}
+        wanted = set().union(*(brand_keys(e["brand"]) for e in expected))
         for g in got:  # every extracted item: was the brand it claims really there?
             i = next(k for k, (lo, hi) in enumerate(BUCKETS) if lo <= g.confidence < hi)
-            reliability[i][0] += normalise(g.brand) in wanted
+            reliability[i][0] += brand_key(g.brand) in wanted
             reliability[i][1] += 1
         per_image.append({"image": image, "results": rows,
-                          "extra_items": [g.brand for g in got if normalise(g.brand) not in wanted]})
+                          "extra_items": [g.brand for g in got if brand_key(g.brand) not in wanted]})
     low = sum(c < CONFIDENCE_CUTOFF for c in found_conf)
     return {
         "photos": len(labels), "labelled_items": n,
         "brand": proportion("brand", brand, n) if n else None,
-        "strength": proportion("strength", strength, n) if n else None,
+        "strength": proportion("strength", strength, str_n) if str_n else None,
         "expiry": proportion("expiry", exp_ok, exp_n) if exp_n else None,
         "needs_check": proportion("needs_check", low, len(found_conf)) if found_conf else None,
         # the OCR second reader (app/ocr_check.py): how many vision mistakes it caught, at what cost

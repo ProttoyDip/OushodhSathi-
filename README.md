@@ -20,15 +20,20 @@ strips; and a registered pharmacist or doctor confirms every finding before the 
 | --- | --- |
 | **Live app** | <https://oushodhsathi.vercel.app> (English and Bangla; switch at the top right) |
 | **Guided walkthrough** | [/demo](https://oushodhsathi.vercel.app/demo): the whole story, step by step with the arrow keys, on an invented household |
-| **Demo video** | [YouTube](https://youtu.be/a3wnCDDxxm0) |
+| **Demo video** | [Watch on YouTube](https://youtu.be/4otfEkUm2-I) |
 | **Live numbers** | [/docs](https://oushodhsathi.vercel.app/docs): evaluation results, served from the results files |
 | **Reviewer dashboard** | [/review](https://oushodhsathi.vercel.app/review): judges receive a reviewer token in the submission's Judge Access Note |
 | **Try it yourself** | [/start](https://oushodhsathi.vercel.app/start) creates a private household that opens only with its own link |
 
-The API runs on a free hosting plan and sleeps when idle, so the first request can take up to a minute.
+The API runs on a free hosting plan. It is kept awake from 06:00 to 24:00 Bangladesh time; outside those hours the first visit can take a minute or two while it starts, and the app shows a "Starting the server" notice and continues by itself.
 
 <p align="center">
   <img src="docs/video/hero.gif" width="1200" alt="The /demo walkthrough: a shelf of medicine strips is scanned, the list assembles itself, and Napa and Ace snap together under a red bracket labelled 'both are paracetamol'.">
+</p>
+
+<p align="center">
+  <a href="https://youtu.be/4otfEkUm2-I"><img src="https://img.youtube.com/vi/4otfEkUm2-I/maxresdefault.jpg" width="720" alt="Watch the OushodhSathi demo video on YouTube"></a><br>
+  <sub><a href="https://youtu.be/4otfEkUm2-I">▶ Watch the demo video on YouTube</a></sub>
 </p>
 
 **Contents:** [In 30 seconds](#in-30-seconds) · [A 3-minute tour](#a-3-minute-tour-for-judges) · [Why Bangladesh](#why-bangladesh-needs-this) · [How it works](#how-it-works) · [Results](#measured-results) · [Safety](#safety-by-design) · [Features](#whats-inside) · [AI](#ai-used-carefully) · [Architecture](#architecture) · [Quick start](#quick-start) · [Docs](#documentation) · [Limitations](#limitations) · [Roadmap](#roadmap) · [Team](#team)

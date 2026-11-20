@@ -119,6 +119,47 @@ def load_brands() -> dict[str, BrandRow]:
                 mrp_bdt=_price(r.get("mrp_bdt")),
                 pack_source=(r.get("pack_source") or "").strip(),
             )
+    return _with_base_generics(out)
+
+
+def _known_generics(rows: dict[str, BrandRow]) -> set[str]:
+    """Generic names the curated tables use, plus dataset generics listed bare (no salt, no note)."""
+    from .generic_names import SALT_WORDS
+
+    known: set[str] = set()
+    for row in rows.values():
+        for g in row.generic.split("+"):
+            g = " ".join(g.split())
+            if not g:
+                continue
+            if row.source_file != "brands_full.csv" or ("(" not in g and g.split()[-1] not in SALT_WORDS):
+                known.add(g)
+    known |= set(load_generics_bn()) | {k for g in load_aware() for k in g.split(" + ")}
+    t = load_rule_tables()
+    known |= set(t.acb) | {r.target for r in t.renal} | {r.target for r in t.beers}
+    known |= {x for r in t.interactions for x in (r.a, r.b)}
+    return {k for k in known if k and not k.startswith("class:")}
+
+
+def _with_base_generics(rows: dict[str, BrandRow]) -> dict[str, BrandRow]:
+    """Dataset rows get the base generic name the rules use ("azithromycin dihydrate" -> "azithromycin"),
+    and, when that generic is exactly a curated seed generic, the seed's drug class. Seed rows are untouched."""
+    from dataclasses import replace
+
+    from .generic_names import base_generic
+
+    if not any(r.source_file == "brands_full.csv" for r in rows.values()):
+        return rows
+    known = _known_generics(rows)
+    seed_class = {r.generic: r.drug_class for r in rows.values() if r.source_file == "brands_seed.csv" and r.drug_class}
+    out = {}
+    for key, row in rows.items():
+        if row.source_file == "brands_full.csv":
+            generic = base_generic(row.generic, known)
+            cls = row.drug_class or seed_class.get(generic, "")
+            if generic != row.generic or cls != row.drug_class:
+                row = replace(row, generic=generic, drug_class=cls)
+        out[key] = row
     return out
 
 

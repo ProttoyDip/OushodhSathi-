@@ -48,3 +48,29 @@ def test_every_dataset_row_is_unverified_and_names_a_generic():
     assert len(rows) > 10_000
     assert all(r["verified"].strip().lower() not in ("yes", "true", "1") for r in rows)
     assert all(r["generic"].strip() for r in rows)
+
+
+def _item(i, name, kind="unknown"):
+    from app.models import RuleItem
+
+    m = brands.match_brand(name).row
+    return RuleItem(id=i, brand=m.brand, generic=m.generic, drug_class=m.drug_class, prescriber_kind=kind)
+
+
+def test_a_seed_brand_and_a_dataset_brand_of_the_same_medicine_are_a_double_dose(full_list):
+    from app import rules
+
+    # Zimax (seed: azithromycin) + Azithrocin (dataset: "azithromycin dihydrate") is the same medicine twice
+    flags = rules.duplicate_generic([_item(1, "Zimax"), _item(2, "Azithrocin")])
+    assert [f.code for f in flags] == ["DUPLICATE_GENERIC"] and flags[0].meta["generic"] == "azithromycin"
+    flags = rules.duplicate_generic([_item(1, "Seclo"), _item(2, "Losectil")])  # omeprazole (mups tablet)
+    assert [f.meta["generic"] for f in flags] == ["omeprazole"]
+
+
+def test_dataset_antibiotics_are_checked_like_seed_antibiotics(full_list):
+    from app import rules
+
+    flags = rules.antibiotic_no_prescription([_item(1, "Azithrocin", "drug_shop")])
+    assert [f.code for f in flags] == ["ANTIBIOTIC_NO_PRESCRIPTION"]
+    assert brands.match_brand("Azithrocin").row.drug_class == "antibiotic-macrolide"  # taken from the seed
+    assert not brands.match_brand("Azithrocin").row.verified

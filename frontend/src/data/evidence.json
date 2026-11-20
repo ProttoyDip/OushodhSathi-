@@ -1,25 +1,25 @@
 {
   "realPhotos": 40,
   "realBrand": {
-    "k": 34,
+    "k": 35,
     "n": 40,
-    "pct": 85,
-    "lo": 71,
-    "hi": 93
+    "pct": 88,
+    "lo": 74,
+    "hi": 95
   },
   "realStrength": {
-    "k": 23,
+    "k": 24,
     "n": 28,
-    "pct": 82,
-    "lo": 64,
-    "hi": 92
+    "pct": 86,
+    "lo": 69,
+    "hi": 94
   },
   "realBangla": {
     "k": 1,
     "n": 4
   },
   "realClear": {
-    "k": 18,
+    "k": 19,
     "n": 19
   },
   "syntheticBrand": {

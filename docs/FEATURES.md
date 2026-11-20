@@ -39,7 +39,7 @@ The safety rules that every feature follows are in [`AGENTS.md`](../AGENTS.md):
 | Scan strips, boxes, prescriptions | Up to 12 photos at once; a vision model reads brand, strength, expiry, prescriber and its own confidence. | `/p/{id}/scan` | `backend/app/agent.py` (Pydantic-AI agent), `backend/app/llm_router.py` | live |
 | Photo-quality warning | Flags a photo as blurry, glare, too dark or too small before it is sent, using image statistics in the browser (no model; the photo does not leave the phone for this). Warns only, never blocks. | `/p/{id}/scan` | `frontend/src/lib/photoQuality.ts` | live |
 | OCR second reader | A dedicated OCR model (NVIDIA `nemotron-ocr-v2`, PaddleOCR fallback) re-reads each photo; if the strength or expiry it sees disagrees with the vision model's reading, the item is marked "please check" with what it saw. Never changes a reading or creates a finding. | confirm screen | `backend/app/ocr_check.py` | live with an NVIDIA key |
-| Brand → generic | Exact match, then strict fuzzy (ratio ≥ 88); Bangla-script names match through a pharmacist-checked spelling table; a cut-off fragment is never guessed. | automatic | `backend/app/brands.py` | live |
+| Brand → generic | Exact match, then strict fuzzy (ratio ≥ 88), over the 30 curated brands and the 13,622 brands of the national *Medicinal Products in Bangladesh* dataset (curated rows win); Bangla-script names match through a spelling table; a cut-off fragment is never guessed. See [`DATA.md`](DATA.md). | automatic | `backend/app/brands.py` | live |
 | Unknown-brand lookup | Searches Bangladeshi medicine sites with Tavily (Perplexity only if `WEB_LOOKUP` lists it); the answer must cite a source and stays marked "found on the web, not verified". | automatic | `backend/app/research.py` | live with keys |
 | "Is it one of these?" | For a brand the app did not recognise, up to three table brands to tap: spelling matching (typos, cut-off names) fused with embeddings (other scripts, generic names). A tap fills in the name as if typed. | `/p/{id}/confirm` | `backend/app/brand_suggest.py`, `GET /brands/suggest` | live |
 | Confirm the list | The family checks each card; anything under 0.75 confidence, web-matched or flagged by the second reader is dashed and says "please check". Edit, add by hand, set the times of day, and say where each medicine came from. | `/p/{id}/confirm` | `frontend/src/components/StripCard.tsx` | live |
@@ -122,7 +122,7 @@ Full setup guide: [`CHECKINS.md`](CHECKINS.md).
 
 All of these are deterministic Python with tests; none uses a language model. Sources are in the code and in each data row.
 
-- **Duplicates:** the same generic twice (combination tablets are checked ingredient by ingredient) and two medicines of the same class.
+- **Duplicates:** the same generic twice (combination tablets are checked ingredient by ingredient, and registered salt names are reduced to the base generic, so Zimax and Azithrocin are both azithromycin) and two medicines of the same class.
 - **Drug interactions:** including the hypertension and diabetes pairs (a beta-blocker with a sulfonylurea, a steroid with metformin).
 - **AGS Beers Criteria for 65+.**
 - **Expired and expiring strips.**

@@ -1,0 +1,1410 @@
+{
+  "prompt_version": "extract_strip.v3",
+  "model_id": "private/nvidia/nemotron-3.5-super-120b-a12b",
+  "run_at": "2026-11-20T19:27:04+00:00",
+  "kind": "real",
+  "labels_file": "eval/labels.csv",
+  "n_photos": 40,
+  "status": "measured",
+  "images": 40,
+  "labelled_items": 40,
+  "brand_accuracy": 0.875,
+  "strength_accuracy": 0.8571,
+  "avg_confidence": 0.82,
+  "confidence_cutoff": 0.75,
+  "runs": {
+    "chain": {
+      "model_id": "private/nvidia/nemotron-3.5-super-120b-a12b",
+      "photos": 40,
+      "labelled_items": 40,
+      "brand": {
+        "label": "brand",
+        "k": 35,
+        "n": 40,
+        "p": 0.875,
+        "ci_low": 0.7389,
+        "ci_high": 0.9454
+      },
+      "strength": {
+        "label": "strength",
+        "k": 24,
+        "n": 28,
+        "p": 0.8571,
+        "ci_low": 0.6851,
+        "ci_high": 0.943
+      },
+      "expiry": {
+        "label": "expiry",
+        "k": 1,
+        "n": 1,
+        "p": 1.0,
+        "ci_low": 0.2065,
+        "ci_high": 1.0
+      },
+      "needs_check": {
+        "label": "needs_check",
+        "k": 9,
+        "n": 35,
+        "p": 0.2571,
+        "ci_low": 0.1416,
+        "ci_high": 0.4207
+      },
+      "second_read": {
+        "ran_on_items": 26,
+        "strength": {
+          "catch": {
+            "label": "strength_catch",
+            "k": 0,
+            "n": 2,
+            "p": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.6576
+          },
+          "false_alarm": {
+            "label": "strength_false_alarm",
+            "k": 1,
+            "n": 24,
+            "p": 0.0417,
+            "ci_low": 0.0074,
+            "ci_high": 0.2024
+          }
+        },
+        "expiry": {
+          "catch": null,
+          "false_alarm": {
+            "label": "expiry_false_alarm",
+            "k": 0,
+            "n": 1,
+            "p": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.7935
+          }
+        },
+        "needs_check_with_second_read": {
+          "label": "needs_check_2",
+          "k": 11,
+          "n": 26,
+          "p": 0.4231,
+          "ci_low": 0.2554,
+          "ci_high": 0.6105
+        }
+      },
+      "reliability": [
+        {
+          "confidence": "0.00-0.50",
+          "items": 11,
+          "observed": {
+            "label": "observed",
+            "k": 8,
+            "n": 11,
+            "p": 0.7273,
+            "ci_low": 0.4344,
+            "ci_high": 0.9025
+          }
+        },
+        {
+          "confidence": "0.50-0.75",
+          "items": 1,
+          "observed": {
+            "label": "observed",
+            "k": 1,
+            "n": 1,
+            "p": 1.0,
+            "ci_low": 0.2065,
+            "ci_high": 1.0
+          }
+        },
+        {
+          "confidence": "0.75-0.90",
+          "items": 0,
+          "observed": null
+        },
+        {
+          "confidence": "0.90-1.00",
+          "items": 28,
+          "observed": {
+            "label": "observed",
+            "k": 26,
+            "n": 28,
+            "p": 0.9286,
+            "ci_low": 0.7735,
+            "ci_high": 0.9802
+          }
+        }
+      ],
+      "by_condition": {
+        "bangla": {
+          "label": "bangla",
+          "k": 1,
+          "n": 4,
+          "p": 0.25,
+          "ci_low": 0.0456,
+          "ci_high": 0.6994
+        },
+        "clear": {
+          "label": "clear",
+          "k": 19,
+          "n": 19,
+          "p": 1.0,
+          "ci_low": 0.8318,
+          "ci_high": 1.0
+        },
+        "cut_strip": {
+          "label": "cut_strip",
+          "k": 3,
+          "n": 3,
+          "p": 1.0,
+          "ci_low": 0.4385,
+          "ci_high": 1.0
+        },
+        "glare": {
+          "label": "glare",
+          "k": 12,
+          "n": 14,
+          "p": 0.8571,
+          "ci_low": 0.6006,
+          "ci_high": 0.9599
+        }
+      },
+      "by_source": {
+        "own": {
+          "label": "own",
+          "k": 35,
+          "n": 40,
+          "p": 0.875,
+          "ci_low": 0.7389,
+          "ci_high": 0.9454
+        }
+      },
+      "avg_confidence": 0.82,
+      "per_image": [
+        {
+          "image": "photos/own_01.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_01.jpg",
+                "brand": "Nasovap|ন্যাসোভ্যাপ",
+                "strength": "",
+                "expiry": "",
+                "condition": "bangla",
+                "source": ""
+              },
+              "brand_ok": false,
+              "strength_ok": null,
+              "got": null
+            }
+          ],
+          "extra_items": [
+            "ন্যাজল"
+          ]
+        },
+        {
+          "image": "photos/own_02.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_02.jpg",
+                "brand": "Nasovap",
+                "strength": "",
+                "expiry": "",
+                "condition": "clear",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": null,
+              "got": {
+                "brand": "Nasovap",
+                "strength": "2% w/v + 10% v/v",
+                "form": "Suspension for inhalation",
+                "expiry": null,
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_03.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_03.jpg",
+                "brand": "Basok Plus|বাসক প্লাস",
+                "strength": "",
+                "expiry": "",
+                "condition": "bangla",
+                "source": ""
+              },
+              "brand_ok": false,
+              "strength_ok": null,
+              "got": null
+            }
+          ],
+          "extra_items": [
+            "বাজক ফ্রশ"
+          ]
+        },
+        {
+          "image": "photos/own_04.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_04.jpg",
+                "brand": "Basok Plus",
+                "strength": "",
+                "expiry": "",
+                "condition": "clear",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": null,
+              "got": {
+                "brand": "Basok Plus",
+                "strength": null,
+                "form": "syrup",
+                "expiry": null,
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.4,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_05.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_05.jpg",
+                "brand": "Basok",
+                "strength": "",
+                "expiry": "",
+                "condition": "clear",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": null,
+              "got": {
+                "brand": "BASOK",
+                "strength": null,
+                "form": "Syrup",
+                "expiry": null,
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.4,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_06.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_06.jpg",
+                "brand": "Basok|বাসক",
+                "strength": "",
+                "expiry": "",
+                "condition": "bangla",
+                "source": ""
+              },
+              "brand_ok": false,
+              "strength_ok": null,
+              "got": null
+            }
+          ],
+          "extra_items": [
+            "জ্যান্টিল"
+          ]
+        },
+        {
+          "image": "photos/own_07.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_07.jpg",
+                "brand": "Neotison",
+                "strength": "",
+                "expiry": "",
+                "condition": "glare",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": null,
+              "got": {
+                "brand": "Neotison",
+                "strength": null,
+                "form": "Nasal Spray Suspension",
+                "expiry": null,
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.4,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_08.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_08.jpg",
+                "brand": "Aristovit-B",
+                "strength": "",
+                "expiry": "",
+                "condition": "clear",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": null,
+              "got": {
+                "brand": "Aristovit®-B",
+                "strength": null,
+                "form": "tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.4,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_09.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_09.jpg",
+                "brand": "Aristovit-B",
+                "strength": "",
+                "expiry": "",
+                "condition": "clear",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": null,
+              "got": {
+                "brand": "Aristovit - B",
+                "strength": null,
+                "form": "Tablets",
+                "expiry": null,
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.4,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_10.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_10.jpg",
+                "brand": "Trumega",
+                "strength": "1000 mg",
+                "expiry": "",
+                "condition": "clear",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "TRUMEGA",
+                "strength": "1000 mg",
+                "form": "Softgel Capsules",
+                "expiry": null,
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_11.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_11.jpg",
+                "brand": "Menoral",
+                "strength": "5 mg",
+                "expiry": "",
+                "condition": "clear",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Menoral",
+                "strength": "5 mg",
+                "form": "Tablets",
+                "expiry": null,
+                "prescriber": null,
+                "source": "box",
+                "confidence": 1.0,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_12.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_12.jpg",
+                "brand": "Multivit Plus",
+                "strength": "",
+                "expiry": "2028-03",
+                "condition": "clear",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": null,
+              "got": {
+                "brand": "Multivit Plus",
+                "strength": null,
+                "form": "tablet",
+                "expiry": "2028-03",
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.4,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_13.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_13.jpg",
+                "brand": "Trilock",
+                "strength": "4 mg",
+                "expiry": "",
+                "condition": "clear",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Trilock 4",
+                "strength": "4 mg",
+                "form": "Oral Granules",
+                "expiry": null,
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_14.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_14.jpg",
+                "brand": "Ebanex",
+                "strength": "10 mg",
+                "expiry": "",
+                "condition": "glare",
+                "source": ""
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": [
+            "Ebanine BP"
+          ]
+        },
+        {
+          "image": "photos/own_15.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_15.jpg",
+                "brand": "Ebanex",
+                "strength": "10 mg",
+                "expiry": "",
+                "condition": "glare",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Ebanex",
+                "strength": "10 mg",
+                "form": null,
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.9,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_16.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_16.jpg",
+                "brand": "Montair",
+                "strength": "10 mg",
+                "expiry": "",
+                "condition": "glare",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Montair",
+                "strength": "10 mg",
+                "form": "tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_17.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_17.jpg",
+                "brand": "Napa",
+                "strength": "500 mg",
+                "expiry": "",
+                "condition": "clear",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Napa",
+                "strength": "500 mg",
+                "form": null,
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_18.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_18.jpg",
+                "brand": "Ratinol Forte",
+                "strength": "50,000 I.U.",
+                "expiry": "",
+                "condition": "cut_strip",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Ratinol Forte",
+                "strength": "50,000 I.U.",
+                "form": null,
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_19.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_19.jpg",
+                "brand": "Joytrip",
+                "strength": "300 mcg",
+                "expiry": "",
+                "condition": "cut_strip",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": false,
+              "got": {
+                "brand": "Joytrip 300",
+                "strength": null,
+                "form": null,
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.7,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_20.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_20.jpg",
+                "brand": "Savlon",
+                "strength": "",
+                "expiry": "",
+                "condition": "clear",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": null,
+              "got": {
+                "brand": "Savlon",
+                "strength": null,
+                "form": "cream",
+                "expiry": null,
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.4,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_21.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_21.jpg",
+                "brand": "Aeron",
+                "strength": "10 mg",
+                "expiry": "",
+                "condition": "glare",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Aeron",
+                "strength": "10 mg",
+                "form": null,
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_22.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_22.jpg",
+                "brand": "Fexo",
+                "strength": "120 mg",
+                "expiry": "",
+                "condition": "glare",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Fexo",
+                "strength": "120 mg",
+                "form": "tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_23.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_23.jpg",
+                "brand": "Bilastin",
+                "strength": "20 mg",
+                "expiry": "",
+                "condition": "clear",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Bilastin",
+                "strength": "20 mg",
+                "form": "tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_24.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_24.jpg",
+                "brand": "Napa Extra",
+                "strength": "500 mg + 65 mg",
+                "expiry": "",
+                "condition": "glare",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": false,
+              "got": {
+                "brand": "Napa Extra",
+                "strength": "Paracetamol 500 mg & Caffeine 65 mg",
+                "form": "tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.98,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_25.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_25.jpg",
+                "brand": "Alatrol",
+                "strength": "10 mg",
+                "expiry": "",
+                "condition": "glare",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Alatrol",
+                "strength": "10 mg",
+                "form": "tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_26.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_26.jpg",
+                "brand": "Rynex",
+                "strength": "0.05%",
+                "expiry": "",
+                "condition": "clear",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Rynex",
+                "strength": "0.05%",
+                "form": "Nasal Drops",
+                "expiry": null,
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_27.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_27.jpg",
+                "brand": "Topicort",
+                "strength": "1%",
+                "expiry": "",
+                "condition": "clear",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Topicort Cream",
+                "strength": "1%",
+                "form": "Cream",
+                "expiry": null,
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_28.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_28.jpg",
+                "brand": "Trumega",
+                "strength": "1000 mg",
+                "expiry": "",
+                "condition": "clear",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "TRUMEGA",
+                "strength": "1000 mg",
+                "form": "Softgel Capsules",
+                "expiry": null,
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_29.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_29.jpg",
+                "brand": "Rupadin|রুপাডিন",
+                "strength": "10 mg",
+                "expiry": "",
+                "condition": "bangla",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Rupadin",
+                "strength": "10 mg",
+                "form": "tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_30.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_30.jpg",
+                "brand": "Fixal",
+                "strength": "120 mg",
+                "expiry": "",
+                "condition": "glare",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Fixal",
+                "strength": "120 mg",
+                "form": null,
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_31.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_31.jpg",
+                "brand": "Finix",
+                "strength": "20 mg",
+                "expiry": "",
+                "condition": "glare",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Finix",
+                "strength": "20 mg",
+                "form": "Tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.98,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_32.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_32.jpg",
+                "brand": "Trilock",
+                "strength": "10 mg",
+                "expiry": "",
+                "condition": "glare",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Trilock-10",
+                "strength": "10 mg",
+                "form": null,
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_33.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_33.jpg",
+                "brand": "Monas",
+                "strength": "10 mg",
+                "expiry": "",
+                "condition": "glare",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Monas",
+                "strength": "10 mg",
+                "form": null,
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_34.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_34.jpg",
+                "brand": "Montair",
+                "strength": "10 mg",
+                "expiry": "",
+                "condition": "clear",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Montair",
+                "strength": "10 mg",
+                "form": "Tablets",
+                "expiry": null,
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.99,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_35.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_35.jpg",
+                "brand": "Neotison",
+                "strength": "",
+                "expiry": "",
+                "condition": "clear",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": null,
+              "got": {
+                "brand": "Neotison",
+                "strength": null,
+                "form": "Nasal Spray Suspension",
+                "expiry": null,
+                "prescriber": null,
+                "source": "box",
+                "confidence": 0.4,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_36.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_36.jpg",
+                "brand": "Finix",
+                "strength": "20 mg",
+                "expiry": "",
+                "condition": "glare",
+                "source": ""
+              },
+              "brand_ok": false,
+              "strength_ok": false,
+              "got": null
+            }
+          ],
+          "extra_items": [
+            "Fimx 20"
+          ]
+        },
+        {
+          "image": "photos/own_37.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_37.jpg",
+                "brand": "Ebanex",
+                "strength": "10 mg",
+                "expiry": "",
+                "condition": "glare",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Ebanex",
+                "strength": "10 mg",
+                "form": null,
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_38.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_38.jpg",
+                "brand": "Rolac",
+                "strength": "10 mg",
+                "expiry": "",
+                "condition": "cut_strip",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Rolac",
+                "strength": "10 mg",
+                "form": "Tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_39.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_39.jpg",
+                "brand": "Citrux-C",
+                "strength": "250 mg",
+                "expiry": "",
+                "condition": "clear",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Citrux-C",
+                "strength": "250 mg",
+                "form": "Chewable Tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        },
+        {
+          "image": "photos/own_40.jpg",
+          "results": [
+            {
+              "expected": {
+                "image_path": "photos/own_40.jpg",
+                "brand": "Furoclav",
+                "strength": "250 mg + 62.5 mg",
+                "expiry": "",
+                "condition": "clear",
+                "source": ""
+              },
+              "brand_ok": true,
+              "strength_ok": true,
+              "got": {
+                "brand": "Furoclav",
+                "strength": "250 mg + 62.5 mg",
+                "form": "Tablet",
+                "expiry": null,
+                "prescriber": null,
+                "source": "strip",
+                "confidence": 0.95,
+                "schedule": [],
+                "pills_left": null,
+                "doses_per_day": null,
+                "per_dose": 1,
+                "prescriber_kind": "unknown"
+              }
+            }
+          ],
+          "extra_items": []
+        }
+      ],
+      "photos_without_answer": 0
+    }
+  }
+}

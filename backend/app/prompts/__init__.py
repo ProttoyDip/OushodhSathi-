@@ -8,7 +8,7 @@ from pathlib import Path
 PROMPT_DIR = Path(__file__).resolve().parent
 
 ACTIVE: dict[str, str] = {
-    "extract_strip": "extract_strip.v2.md",  # v2: never guess a strength
+    "extract_strip": "extract_strip.v3.md",  # v3: Bangla-only names, brand vs company, combination strengths
     "brand_lookup": "brand_lookup.v1.md",
     "explain_bn": "explain_bn.v1.md",
     "sathi_bn": "sathi_bn.v1.md",

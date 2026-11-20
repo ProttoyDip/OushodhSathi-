@@ -295,6 +295,8 @@ What is not built or not measured yet, so nothing here is read as more than it i
 | <img src="frontend/public/team/prottoy.webp" alt="Prottoy Saha Dip" width="96"> | Prottoy Saha Dip | Team lead · Backend and AI | [@ProttoyDip](https://github.com/ProttoyDip) |
 | <img src="frontend/public/team/suchismita.webp" alt="Suchismita Sarkar" width="96"> | Suchismita Sarkar | Design and presentation | [@Suchi1806](https://github.com/Suchi1806) |
 | <img src="frontend/public/team/sakin.webp" alt="Sakin" width="96"> | Sakin | Frontend | [@Sakin542](https://github.com/Sakin542) |
+| <img src="frontend/public/team/thouhidul.webp" alt="Md. Thouhidul Islam" width="96"> | Md. Thouhidul Islam | Research and testing | [@rakeythouhid](https://github.com/rakeythouhid) |
+| <img src="frontend/public/team/tanmoy.webp" alt="Tanmoy Chowdhury Turjo" width="96"> | Tanmoy Chowdhury Turjo | Data and evaluation | [@Turjo101365](https://github.com/Turjo101365) |
 
 ## Data and licences
 

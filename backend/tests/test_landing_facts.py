@@ -27,3 +27,13 @@ def test_landing_check_in_texts_match_what_is_sent():
     page = (Path(__file__).resolve().parents[2] / "frontend" / "src" / "app" / "page.tsx").read_text(encoding="utf-8")
     for text in (flow.DAILY, *flow.TEMPLATE_BUTTONS, PROMPTS["slot_morning"]["bn"]):
         assert f'"{text}"' in page, text
+
+
+def test_server_only_message_namespaces_are_not_read_on_the_client():
+    """layout.tsx keeps landing, legal and docs (except docs.live) out of the browser bundle."""
+    import re
+
+    src = Path(__file__).resolve().parents[2] / "frontend" / "src"
+    bad = re.compile(r'useTranslations\(\s*"(landing|legal|docs(?!\.live))')
+    hits = [str(f) for f in src.rglob("*.tsx") if bad.search(f.read_text(encoding="utf-8"))]
+    assert not hits, hits

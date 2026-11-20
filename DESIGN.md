@@ -69,7 +69,18 @@ Motion explains, it never decorates. One spring for the product (`SPRING` in
 - The duplicate bracket reveals from the middle outwards after the pair lands.
 - Panels enter with a short rise (24–28px) and settle; captions crossfade.
 - Buttons answer a press (scale 0.97); linked cards lift 2px on hover.
-- `MotionConfig reducedMotion="user"` and the CSS reduced-motion rule turn all of it off.
+- `MotionConfig reducedMotion="user"` and the CSS reduced-motion rule turn all of it off, and so does the site-wide **Pause motion** switch (WCAG 2.2.2): `lib/motionPref.ts` sets `html.motion-ok` before first paint only when neither applies, and every animation is gated on it.
+
+### The landing page (v3)
+- **Static first.** The server renders every section in its final state; nothing waits for a scroll trigger
+  and nothing starts at `opacity: 0`. Animation, where there is any, starts from a state that exists only
+  under `html.motion-ok`, so without it the reader sees the finished page from the first paint.
+- **Three moving things, no more:** the hero moment (once per visit, replayable), the many-names marquee
+  (CSS, with a visible pause button) and the how-it-works stage on desktop (scroll-linked crossfade).
+- **One dyed band per page** (`.dyed-band`, deep indigo with a kantha hem): the safety rules.
+- **Every number is generated** from `backend/data` and `eval/` results into `frontend/src/data/*.json`
+  by `backend/scripts/gen_landing_facts.py`; `tests/test_landing_facts.py` fails when they are stale.
+- Illustration cards on the landing page use `StripCard titleAs="p"` so the heading outline stays h1 → h2 → h3.
 
 ## ANTI-SLOP CHECKLIST — reject the screen if any of these appear
 - Purple/blue gradients, glassmorphism, neon glow, 3D blobs, mesh backgrounds.

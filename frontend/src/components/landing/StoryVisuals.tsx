@@ -25,8 +25,8 @@ export async function storyVisuals(): Promise<React.ReactNode[]> {
     </div>,
     // 2 read
     <div key="v2" className={`${frame} grid content-start gap-3 overflow-hidden`}>
-      <StripCard item={DEMO_ITEMS.napa} density="compact" />
-      <StripCard item={DEMO_ITEMS.ace} density="compact" />
+      <StripCard item={DEMO_ITEMS.napa} density="compact" titleAs="p" />
+      <StripCard item={DEMO_ITEMS.ace} density="compact" titleAs="p" />
     </div>,
     // 3 match
     <div key="v3" className={`${frame} grid content-center gap-4`}>

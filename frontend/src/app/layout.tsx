@@ -14,6 +14,7 @@ const hind = Hind_Siliguri({
   weight: ["400", "500", "600", "700"],
   variable: "--font-hind-siliguri",
   display: "swap",
+  preload: false, // body text: 4 files (~160 KB); preloading them delayed first paint on slow phones
 });
 const anek = Anek_Bangla({
   subsets: ["bengali", "latin"],
@@ -24,6 +25,7 @@ const instrumentSans = Instrument_Sans({
   subsets: ["latin"],
   variable: "--font-instrument-sans",
   display: "swap",
+  preload: false, // body text; only the display faces (the h1) are preloaded
 });
 const schibsted = Schibsted_Grotesk({
   subsets: ["latin"],
@@ -65,7 +67,12 @@ const themeScript = `(function(){try{var q=new URLSearchParams(location.search).
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
-  const messages = await getMessages();
+  const all = await getMessages();
+  // Namespaces only server components read (getTranslations) stay on the server: about 11 KB less HTML on
+  // every page. Client components read docs.live only (LivePanels); a test keeps this list honest.
+  const { landing: _landing, legal: _legal, docs, ...rest } = all as Record<string, unknown> & { docs?: { live?: unknown } };
+  void _landing; void _legal;
+  const messages = { ...rest, docs: { live: docs?.live } } as typeof all;
   return (
     <html
       lang={locale}

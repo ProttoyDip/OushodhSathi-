@@ -27,6 +27,8 @@ import { TEAM } from "@/lib/team";
 
 export const metadata: Metadata = {
   title: "OushodhSathi · ওষুধসাথী — a pharmacist for every elderly home in Bangladesh",
+  description:
+    "Photograph every medicine in the house. OushodhSathi finds the same medicine twice, risky combinations and expired strips, and a pharmacist or doctor confirms before the family sees anything.",
 };
 
 const EVIDENCE = [

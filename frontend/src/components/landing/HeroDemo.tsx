@@ -66,10 +66,10 @@ export function HeroDemo({ replayLabel }: { replayLabel: string }) {
           </div>
           <div className="grid gap-3 text-[18px]">
             <DuplicateConnector label="দুটোই প্যারাসিটামল" animate={false} className="hero-pair">
-              <StripCard item={DEMO_ITEMS.napa} density="compact" highlight="red" />
-              <div className="hero-ace"><StripCard item={DEMO_ITEMS.ace} density="compact" highlight="red" /></div>
+              <StripCard item={DEMO_ITEMS.napa} density="compact" titleAs="p" highlight="red" />
+              <div className="hero-ace"><StripCard item={DEMO_ITEMS.ace} density="compact" titleAs="p" highlight="red" /></div>
             </DuplicateConnector>
-            <StripCard item={DEMO_ITEMS.camlodin} density="compact" />
+            <StripCard item={DEMO_ITEMS.camlodin} density="compact" titleAs="p" />
           </div>
           <p className="hero-status mt-4 flex min-h-8 items-center text-[16px] font-semibold">
             <span className="hero-done inline-flex items-center gap-2 text-green">

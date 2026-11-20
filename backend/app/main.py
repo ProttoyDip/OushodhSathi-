@@ -40,7 +40,7 @@ from .next_step import StepContext, next_step  # noqa: E402
 from .refills import counts, refills_due  # noqa: E402
 from .rules import run_rules, start_omissions  # noqa: E402
 from . import kidney as kidney_fn  # noqa: E402
-from . import clinical, sathi  # noqa: E402
+from . import clinical, research, sathi  # noqa: E402
 from .demo_seed import demo_patient_id, seed_demo  # noqa: E402
 from .savings import find_savings  # noqa: E402
 from .stats import bp_trend, pilot_stats, proportion  # noqa: E402
@@ -239,7 +239,7 @@ def health(store: Store = Depends(get_store)) -> dict:
             "explain_bn_local": _env("OLLAMA_MODEL") or None,
         },
         "ollama_reachable": ollama_up,
-        "web_lookup": {"tavily": bool(_env("TAVILY_API_KEY")), "perplexity": bool(_env("PERPLEXITY_API_KEY"))},
+        "web_lookup": {p: p in research.lookup_providers() for p in ("tavily", "perplexity")},
         "prompts": {name: prompts.version(name) for name in prompts.ACTIVE},
         "reviewer_login": "demo token" if demo_mode() else "personal accounts",
         "email": notify.configured(),

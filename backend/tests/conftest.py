@@ -1,9 +1,14 @@
+import os
 import sys
 from pathlib import Path
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+# Tests run on the curated 30-brand seed so results do not depend on whether data/brands_full.csv is present;
+# tests/test_brands_full.py covers the full list on its own.
+os.environ.setdefault("OUSHODH_BRANDS", "seed")
 
 # Tests never call real providers: blank every key before the app reads the environment
 _BLANK = ["NVIDIA_API_KEY", "OPENROUTER_API_KEY", "NARAROUTER_BASE_URL", "EXPLAB_BASE_URL", "AGENTROUTER_BASE_URL",
@@ -45,3 +50,12 @@ def client(store):
     main.app.dependency_overrides[main.get_store] = lambda: store
     yield TestClient(main.app)
     main.app.dependency_overrides.clear()
+
+
+@pytest.fixture(autouse=True)
+def _reset_embedding_pause():
+    """The outage pause is module state; never let one test's failure pause embeddings for the next."""
+    from app import embeddings
+    embeddings._down_until = 0.0
+    yield
+    embeddings._down_until = 0.0

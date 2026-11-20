@@ -150,3 +150,19 @@ def test_health_reports_names_not_keys(client, monkeypatch):
     h = client.get("/health").json()
     assert "tvly-secret-value" not in str(h)
     assert h["web_lookup"]["tavily"] is True
+
+
+def test_editing_an_item_that_was_removed_meanwhile_is_404_not_500(client, store, monkeypatch):
+    from app import main as main_mod
+    pid = make_patient(client)
+    iid = add(client, pid, "Napa")["id"]
+    real = main_mod.resolve_brand
+
+    def slow_resolve(brand, strength, store=None):
+        store_ = store
+        store_.delete_item(iid)  # the family tapped "remove" while the lookup ran
+        return real(brand, strength, store_)
+
+    monkeypatch.setattr(main_mod, "resolve_brand", slow_resolve)
+    r = client.patch(f"/items/{iid}", json={"brand": "Rupadin"})
+    assert r.status_code == 404, r.text

@@ -56,3 +56,18 @@ def test_editing_the_reading_clears_the_second_read(client, store):
                                      "seen_strengths": ["500 mg"], "seen_expiries": []})
     r = client.patch(f"/items/{it.id}", json={"strength": "500 mg"}).json()
     assert r["second_read"] is None and r["needs_review"] is False
+
+
+def test_unrelated_medicines_are_never_suggested():
+    # A misread of "Rupadin" (rupatadine): before the fix, "Tryptin" (amitriptyline) came first.
+    assert "Tryptin" not in names("Rupain")
+    assert all(n[0].lower() == "r" for n in names("Rupain"))
+
+
+def test_meaning_hits_must_also_look_plausible(monkeypatch):
+    monkeypatch.setenv("NVIDIA_API_KEY", "nv")
+    brand_suggest._brand_vectors.clear()
+    monkeypatch.setattr(embeddings, "embed", lambda texts, kind, client=None: [[1.0] + [0.0] * 3 for _ in texts])
+    # every brand is "close in meaning" to everything here, yet only plausible names come back
+    assert "Tryptin" not in names("Rupain")
+    assert names("Camlodn")[0] == "Camlodin"

@@ -1,8 +1,9 @@
 """lookup_unknown_brand: find the generic of a brand that is not in our tables.
 
 Tavily search restricted to Bangladeshi medicine sites -> LLM (brand_lookup prompt)
-reads ONLY those numbered snippets and must cite one -> if unknown, the Perplexity
-Agent API with citations. Results are always stored as match_method "web_unverified" with the
+reads ONLY those numbered snippets and must cite one. Tavily is the only lookup by default; the
+Perplexity Agent API (paid credits only) is a fallback only when WEB_LOOKUP lists it
+(WEB_LOOKUP=tavily,perplexity). Results are always stored as match_method "web_unverified" with the
 source URL, and shown as needing human confirmation. Successes are cached; failures never.
 """
 from __future__ import annotations
@@ -17,6 +18,13 @@ from .llm_router import NoProviderAvailable, Router, _env, parse_json
 from .tables import class_for_generic
 
 log = logging.getLogger("oushodh.research")
+
+
+def lookup_providers() -> list[str]:
+    """Web lookups in order: WEB_LOOKUP (comma list, default "tavily"), each only when its key is set."""
+    wanted = [p.strip().lower() for p in (_env("WEB_LOOKUP") or "tavily").split(",") if p.strip()]
+    keys = {"tavily": "TAVILY_API_KEY", "perplexity": "PERPLEXITY_API_KEY"}
+    return [p for p in wanted if p in keys and _env(keys[p])]
 
 DOMAINS = ["medex.com.bd", "arogga.com", "medeasy.health"]
 TAVILY_URL = "https://api.tavily.com/search"
@@ -101,7 +109,8 @@ def _perplexity(brand: str, strength: str, client: httpx.Client) -> dict | None:
 def lookup_unknown_brand(brand: str, strength: str | None, store=None, router: Router | None = None,
                          client: httpx.Client | None = None) -> dict | None:
     """Returns {"generic", "drug_class", "source_url", "match_method": "web_unverified", "via"} or None."""
-    if not (_env("TAVILY_API_KEY") or _env("PERPLEXITY_API_KEY")):
+    providers = lookup_providers()
+    if not providers:
         return None
     strength = strength or ""
     cache_key = "lookup:" + json.dumps([brand.lower().strip(), strength.lower().strip()])
@@ -110,13 +119,14 @@ def lookup_unknown_brand(brand: str, strength: str | None, store=None, router: R
     client = client or httpx.Client(timeout=30)
     router = router or Router(store=store, client=client)
     found = None
-    try:
-        results = _tavily(f"{brand} {strength} generic name Bangladesh", client)
-        if results:
-            found = _from_snippets(brand, strength, results, router)
-    except (httpx.HTTPError, ValueError, KeyError, NoProviderAvailable) as e:
-        log.warning("tavily lookup failed: %s", type(e).__name__)
-    if found is None:
+    if "tavily" in providers:
+        try:
+            results = _tavily(f"{brand} {strength} generic name Bangladesh", client)
+            if results:
+                found = _from_snippets(brand, strength, results, router)
+        except (httpx.HTTPError, ValueError, KeyError, NoProviderAvailable) as e:
+            log.warning("tavily lookup failed: %s", type(e).__name__)
+    if found is None and "perplexity" in providers:
         try:
             found = _perplexity(brand, strength, client)
         except (httpx.HTTPError, ValueError, KeyError, IndexError) as e:

@@ -107,4 +107,10 @@ Settings marked **secret** are keys or tokens: keep them out of the repository, 
 | `WRITE_LIMIT_PER_IP` | `120` | item, check and BP writes per IP per hour |
 | `SATHI_LIMIT_PER_IP` | `60` | questions to Sathi per IP per hour |
 
+## Other
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| `WEB_LOOKUP` | `tavily` | unknown-brand web lookups, in order; add ",perplexity" for its fallback (paid credits) |
+
 The frontend reads `NEXT_PUBLIC_API_URL` (the API's address; required for a production build), `NEXT_PUBLIC_SITE_URL` and `NEXT_PUBLIC_DEMO_SITE_URL` from `frontend/.env.local` or the Vercel project.

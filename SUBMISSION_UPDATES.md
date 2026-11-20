@@ -44,7 +44,7 @@ Embeddings: NVIDIA nemotron-3.5-embed-1b through NVIDIA's API (input type query 
 
 ## Evaluation & Quality Measurement
 
-Real photos: 40 of the team's own medicine photos (strips, boxes, bottles; labels checked against each photo, AI-assisted). Brand read 34/40 (85%, 95% CI 71%-93%), strength 23/28 (82%, 95% CI 64%-92%); NVIDIA Nemotron alone: brand 35/40, strength 25/28. By photo: clear 18/19, glare 13/14, cut strip 2/3, Bangla-only print 1/4 (the weak spot). Synthetic benchmark (computer-drawn, not real photos): brand 40/45 (89%, 95% CI 76%-95%); BP screens systolic 100%, diastolic 100%. Sathi safety (83 cases, no model): medical questions to a pharmacist 33/33, emergencies 10/10, rule-breaking refused 5/5. Guide retrieval recall@1: hybrid 95% (95% CI 88%-98%) vs keyword 90%. All numbers come from results files in eval/.
+Real photos: 40 of the team's own medicine photos (strips, boxes, bottles; labels checked against each photo, AI-assisted). Brand read 35/40 (88%, 95% CI 74%-95%), strength 24/28 (86%, 95% CI 69%-94%). By photo: clear 19/19, glare 12/14, cut strip 3/3, Bangla-only print 1/4 (the weak spot). Synthetic benchmark (computer-drawn, not real photos): brand 40/45 (89%, 95% CI 76%-95%); BP screens systolic 100%, diastolic 100%. Sathi safety (83 cases, no model): medical questions to a pharmacist 33/33, emergencies 10/10, rule-breaking refused 5/5. Guide retrieval recall@1: hybrid 95% (95% CI 88%-98%) vs keyword 90%. All numbers come from results files in eval/.
 
 ## Solution description: the voice-call sentence
 

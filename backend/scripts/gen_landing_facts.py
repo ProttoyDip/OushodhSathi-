@@ -51,7 +51,7 @@ def evidence() -> dict:
     def load(name: str) -> dict:
         return json.loads((EVAL / name).read_text(encoding="utf-8"))
 
-    real = load("results_extract_strip.v2.json")["runs"]["chain"]
+    real = load("results_extract_strip.v3.json")["runs"]["chain"]
     synth = load("synthetic/results_extract_strip.v1.json")["runs"]["chain"]
     sathi = load("sathi_results_sathi_bn.v1.json")["by_category"]
     hybrid = load("help_retrieval_results.json")["methods"]["hybrid"]["recall@1"]

@@ -1,85 +1,158 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/brand/banner-dark.svg">
-  <img alt="OushodhSathi (ওষুধসাথী) — a pharmacist for every elderly home in Bangladesh" src="docs/brand/banner-light.svg" width="100%">
+  <img alt="OushodhSathi (ওষুধসাথী): a pharmacist for every elderly home in Bangladesh" src="docs/brand/banner-light.svg" width="100%">
 </picture>
 
-**A pharmacist for every elderly home in Bangladesh: we scan every medicine a parent takes, catch dangerous duplicates and interactions, and a clinician confirms every finding before the family sees it.**
+<p align="center"><b lang="bn">প্রতিটি বয়স্ক মানুষের ঘরে একজন ফার্মাসিস্ট</b><br><sub>"A pharmacist in every elderly person's home"</sub></p>
+
+**A pharmacist for every elderly home in Bangladesh.** A family photographs every medicine in the house; AI
+reads the strips; a fixed set of safety rules finds the same medicine twice, risky combinations and expired
+strips; and a registered pharmacist or doctor confirms every finding before the family sees it, in plain Bangla.
 
 [![CI](https://github.com/ProttoyDip/OushodhSathi-/actions/workflows/ci.yml/badge.svg)](https://github.com/ProttoyDip/OushodhSathi-/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-2A3B91)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-2A3B91)](backend/requirements.txt)
 [![Next.js 15](https://img.shields.io/badge/Next.js-15-0E1530)](frontend/package.json)
-[![Congress 2026 · HealthSphere AI](https://img.shields.io/badge/Congress%202026-HealthSphere%20AI-8F9BD6)](#acknowledgements)
+[![Tests: 444](https://img.shields.io/badge/tests-444%20passing-067647)](docs/EVALUATION.md#6-software-tests)
+[![International AI Builders Congress 2026](https://img.shields.io/badge/AI%20Builders%20Congress%202026-HealthSphere%20AI-8F9BD6)](#acknowledgements)
 
-**Live demo:** <https://oushodhsathi.vercel.app> · **Docs:** [/docs](https://oushodhsathi.vercel.app/docs) · **Walkthrough:** [/demo](https://oushodhsathi.vercel.app/demo) · **Demo video:** [YouTube](https://youtu.be/a3wnCDDxxm0) · **Reviewer login:** [/review](https://oushodhsathi.vercel.app/review) asks for a name and a reviewer token; judges get the live token in the submission's Judge Access Note (locally, the quick start uses `demo-reviewer`). The hosted API runs on Render's free plan: it sleeps when idle, so the first request can take up to a minute. Data lives in a free Supabase Postgres, so households and reviews survive restarts. **Try it with your own family:** [/start](https://oushodhsathi.vercel.app/start) creates a private household that opens only with its family link.
+| | |
+| --- | --- |
+| **Live app** | <https://oushodhsathi.vercel.app> (English and Bangla; switch at the top right) |
+| **Guided walkthrough** | [/demo](https://oushodhsathi.vercel.app/demo): the whole story, step by step with the arrow keys, on an invented household |
+| **Demo video** | [YouTube](https://youtu.be/a3wnCDDxxm0) |
+| **Live numbers** | [/docs](https://oushodhsathi.vercel.app/docs): evaluation results, served from the results files |
+| **Reviewer dashboard** | [/review](https://oushodhsathi.vercel.app/review): judges receive a reviewer token in the submission's Judge Access Note |
+| **Try it yourself** | [/start](https://oushodhsathi.vercel.app/start) creates a private household that opens only with its own link |
+
+The API runs on a free hosting plan and sleeps when idle, so the first request can take up to a minute.
 
 <p align="center">
-  <img src="docs/video/hero.gif" width="1200" alt="The /demo walkthrough: a messy shelf of medicine strips is scanned, the list assembles itself, and Napa and Ace snap together under a red bracket labelled 'both are paracetamol'.">
+  <img src="docs/video/hero.gif" width="1200" alt="The /demo walkthrough: a shelf of medicine strips is scanned, the list assembles itself, and Napa and Ace snap together under a red bracket labelled 'both are paracetamol'.">
 </p>
 
----
+**Contents:** [In 30 seconds](#in-30-seconds) · [A 3-minute tour](#a-3-minute-tour-for-judges) · [Why Bangladesh](#why-bangladesh-needs-this) · [How it works](#how-it-works) · [Results](#measured-results) · [Safety](#safety-by-design) · [Features](#whats-inside) · [AI](#ai-used-carefully) · [Architecture](#architecture) · [Quick start](#quick-start) · [Docs](#documentation) · [Limitations](#limitations) · [Roadmap](#roadmap) · [Team](#team)
 
-## The problem
+## In 30 seconds
 
-- **Hypertension is now the most common illness in Bangladesh**, at 78.28 per 1,000 people (BBS Health and Morbidity Status Survey 2025, reported by [BSS](https://www.bssnews.net/others/337437) and [The Daily Star](https://www.thedailystar.net/health/disease/news/hypertension-most-common-illness-country-4047686)).
-- **Only 11% of people with hypertension had their blood pressure controlled** below 140/90, a background figure in the [WHO-HEARTS evaluation in Bangladesh (Heart, 2024)](https://heart.bmj.com/content/heartjnl/early/2024/07/16/heartjnl-2024-324253.full.pdf).
-- **69% of geriatric outpatients were prescribed five or more medicines** in a small 2011 study of 35 patients at a private hospital ([Trends of prescribing for out-door geriatric patients](https://www.academia.edu/111376182/Trends_of_prescribing_for_out_door_geriatric_patients_in_a_private_hospital_of_Bangladesh)).
+- **The problem.** Older people in Bangladesh collect medicines from several prescribers and shops, and the
+  same medicine is sold under many brand names. Nobody sees the whole shelf, so double doses and risky
+  combinations go unnoticed.
+- **What we built.** A Bangla-first web app that turns photos of a household's medicines into one checked list,
+  with a pharmacist or doctor confirming every safety finding.
+- **How we use AI.** Models *read*; deterministic rules *judge*; people *decide*. No model can create, remove or
+  grade a safety finding.
+- **Where it stands.** Live and working end to end. Brands read correctly on **35 of 40 real medicine photos
+  (88%)**. **444 automated tests**. No pilot with real families yet.
 
-An elderly patient often collects medicines from a hospital outpatient doctor, a village doctor and the local drug shop. Each sees only their own prescription, and the same molecule is sold under many brand names, so nobody notices that **Napa** and **Ace** are both paracetamol, or that two doctors have each started amlodipine.
+## A 3-minute tour for judges
 
-## Features at a glance
+1. **Open the [walkthrough](https://oushodhsathi.vercel.app/demo)** and press → to step through: a shelf of strips
+   is scanned, the list builds itself, and *Napa* and *Ace* snap together as the same medicine.
+2. **Open the family app** from the demo bar at the top of the walkthrough: confirmed findings in Bangla,
+   *Today's medicines* and the printable passport (switch to English at the top right).
+3. **Open the [reviewer dashboard](https://oushodhsathi.vercel.app/review)** with the token from the Judge Access
+   Note. Press **J/K** to move through findings, open **"Why?"** on one, and press **C** to confirm.
+4. **Try the [daily check-in simulator](https://oushodhsathi.vercel.app/call-demo):** the Bangla call with keys 1, 2 and 9.
+5. **Check the numbers on [/docs](https://oushodhsathi.vercel.app/docs)**: they are read from the same results files as this page.
 
-| For | What they get |
-| --- | --- |
-| **Families** | Photograph every strip, box and prescription; a photo-quality warning before sending; a second OCR reader checks strength and expiry; "Is it one of these?" for unrecognised brands; only clinician-confirmed findings in plain Bangla; Today's medicines with pictures and Listen; a printable medicine passport with an emergency QR; before-the-visit page; blood pressure from a photo; Ramadan plans; a daily Bangla check-in by phone call or WhatsApp; export, link rotation and delete |
-| **Pharmacists and doctors** | A personal invite login; a queue ordered by an explainable risk score; evidence side by side with keyboard shortcuts; a "Why?" knowledge-graph path for every finding; a cited AI case summary (Graph RAG); eGFR and kidney-dose checks; BP trend and adherence with confidence intervals; check-in history |
-| **Everyone** | Sathi, an in-app helper that answers only from the app guide (hybrid keyword + vector search) and passes every medical question to a person; Bangla ⇄ English and light ⇄ dark on every page |
-| **The team** | Reviewer invites and lost-link recovery at `/admin`; "results ready" and weekly emails; n8n alerts; scheduled jobs |
-| **Judges and developers** | `/demo` walkthrough, a resettable invented household, `/docs` with live numbers, `/models`, an MCP server with four read-only tools, and evaluations for every model |
+A demo bar on `/demo`, `/p/1` and `/review` resets the invented household in about a second.
 
-The full list, with where each feature lives in the app and the code and whether it is live, is in **[`docs/FEATURES.md`](docs/FEATURES.md)**. See also [Documentation](#documentation).
+## Why Bangladesh needs this
+
+A reader outside Bangladesh may not know how medicines reach an older patient there:
+
+- **Many prescribers, nobody with the whole picture.** One patient often gets medicines from a hospital outpatient
+  doctor, a *village doctor* (a rural practitioner, often without formal registration) and the local drug shop.
+  Each sees only their own prescription.
+- **One medicine, many names.** A national dataset lists 13,622 medicine brands (see [Data](docs/DATA.md)). *Napa* and *Ace*
+  are both paracetamol; *Camlodin* and *Amdocal* are both amlodipine. A family cannot tell.
+- **Medicines without prescriptions.** Many medicines, antibiotics included, are bought over the counter.
+- **Bangla first.** Strips are printed in English, Bangla or both, and many older patients and carers read
+  Bangla more comfortably than English.
+
+The scale of the need:
+
+- **Hypertension is now the most common illness in Bangladesh**, at 78.28 per 1,000 people (BBS Health and
+  Morbidity Status Survey 2025, reported by [BSS](https://www.bssnews.net/others/337437) and
+  [The Daily Star](https://www.thedailystar.net/health/disease/news/hypertension-most-common-illness-country-4047686)).
+- **Only 11% of people with hypertension had it controlled** below 140/90, a background figure in the
+  [WHO-HEARTS evaluation in Bangladesh (Heart, 2024)](https://heart.bmj.com/content/heartjnl/early/2024/07/16/heartjnl-2024-324253.full.pdf).
+- **69% of older outpatients were prescribed five or more medicines** in a small 2011 study of 35 patients at a
+  private hospital ([Trends of prescribing for out-door geriatric patients](https://www.academia.edu/111376182/Trends_of_prescribing_for_out_door_geriatric_patients_in_a_private_hospital_of_Bangladesh)).
+
+Unfamiliar words are explained in the [glossary](docs/GLOSSARY.md).
 
 ## How it works
 
 ```mermaid
 flowchart TD
-    A["Family photographs<br/>every strip, box<br/>and prescription"] --> B["Vision model reads<br/>brand, strength,<br/>expiry, confidence"]
-    B --> Q["OCR second reader<br/>checks strength and expiry<br/>(disagree → please check)"]
-    Q --> C{"Brand known?"}
-    C -- "yes" --> D["Brand → generic<br/>(exact, then strict fuzzy)"]
-    C -- "no" --> W["Web lookup on Bangladeshi<br/>medicine sites (Tavily)<br/>must cite a source → unverified"]
-    W --> D
-    D --> E["Rules engine<br/>duplicates · same class · interactions<br/>Beers 65+ · expiry<br/><b>no AI</b>"]
-    E --> F["Pharmacist / doctor review<br/>confirm or dismiss, with a note"]
-    F --> G["Family view in plain Bangla<br/>+ weekly report<br/>+ medicine passport (QR)"]
-    G --> H["Daily check-in<br/>Bangla call or WhatsApp message<br/>answers → dose ticks"]
-    H --> F
+    A["1 · Photograph<br/>every strip, box<br/>and prescription"] --> B["2 · Read<br/>a vision model reads brand,<br/>strength, expiry, confidence"]
+    B --> C["3 · Match<br/>brand → generic<br/>(13,600+ brands, Bangla spellings)"]
+    C --> D["4 · Check<br/>deterministic rules<br/><b>no AI</b>"]
+    D --> E["5 · Confirm<br/>a pharmacist or doctor<br/>confirms or dismisses"]
+    E --> F["6 · Understand<br/>the family sees confirmed<br/>findings in plain Bangla"]
+    F --> G["Daily check-in<br/>phone call or WhatsApp"]
+    G --> E
 ```
 
-Anything read with under 0.75 confidence, every web-found brand match, and every item where the OCR second reader saw a different strength or expiry is shown to a human for confirmation before it enters the list. Before sending, the scan page warns about blurry, glary, dark or tiny photos, and for a brand it does not recognise it offers "Is it one of these?" suggestions to tap.
+1. **Photograph.** The family photographs every strip, box and prescription, cut strips included. The phone warns
+   about blurry, dark or glary photos before sending.
+2. **Read.** A vision model (NVIDIA Nemotron first, with free fallbacks) reads each medicine into typed data. A
+   second OCR model re-reads strength and expiry. Anything uncertain is marked for a person to check.
+3. **Match.** Each brand is mapped to its generic: 30 curated brands plus the 13,622 brands of the national
+   *Medicinal Products in Bangladesh* dataset. A misread gets "Is it one of these?" suggestions ("Ripadin" →
+   Rupadin); an unknown brand can be searched on Bangladeshi medicine sites and is marked unverified.
+4. **Check.** Eleven rules, each citing its source: the same medicine twice (across brands and salt names),
+   two medicines of the same class, interactions, medicines risky after 65 (AGS Beers 2023), anticholinergic
+   burden, look-alike names, the kidney "triple whammy", dose for the latest kidney test, a kidney test due,
+   antibiotics bought without a prescription (WHO AWaRe 2025), and expired strips.
+5. **Confirm.** A pharmacist works one queue, riskiest first. Each finding shows the photos, the rule, its source
+   and a "Why?" path through a medicine knowledge graph. Keyboard: J/K move, C confirm, D dismiss, N note.
+6. **Understand.** The family sees only confirmed findings, explained in plain Bangla, plus a weekly report, a
+   printable **medicine passport** with an emergency QR code, and a daily check-in by phone call or WhatsApp.
 
-**Sathi (সাথী), the in-app helper,** always shows the family the one next step (chosen by a state machine, not by AI), answers "how do I…" questions only from a written app guide, and passes every medical question to the pharmacist. Emergency words get a fixed "go to hospital or call 999" card with no AI involved. It takes voice input and reads answers aloud when the phone has a Bangla voice.
+## Measured results
 
-**Made for real families:**
-- **Today's medicines** works without reading: morning, noon and night as pictures, the strip's own photo from this phone, and tablets drawn as shapes. A Listen button reads it out, and it prints as a fridge sheet. Only times a pharmacist approved appear.
-- **Before the doctor visit** puts everything on one printable page: what changed since the last visit and who changed it, confirmed findings, four weeks of blood pressure, and the family's questions.
-- **Set aside** lists expired strips and medicines the reviewer stopped, so nobody takes them by mistake.
+Every number below comes from a results file in [`eval/`](eval), with a 95% confidence interval because the
+samples are small. Real and computer-drawn test images are never mixed. Full methods: **[docs/EVALUATION.md](docs/EVALUATION.md)**.
 
-**Elder-specific checks:** an **anticholinergic burden** rule adds up each medicine's score on the Anticholinergic Cognitive Burden scale (2012 update) and sends a total of 3 or more in a patient aged 65+ to the pharmacist, because it is linked to confusion, falls and memory problems. A **look-alike / sound-alike** rule catches two brands in one house whose names look or sound alike but contain different medicines (Jaro-Winkler similarity with a shared start, plus a phonetic key that knows "Ceclo" sounds like "Seclo"); it raises no false alarm across the whole seed brand table. Brand names written in **Bangla script** ("নাপা ৫০০ মিগ্রা" on a handwritten prescription) now match through a pharmacist-checked spelling table, and a cut-off fragment is never guessed. For the reviewer, the queue is ordered by an explainable **household risk score** (open findings, age, number of medicines and prescribers, anticholinergic burden; every point shows its reason), and a **blood-pressure trend** box gives the weekly change in systolic pressure with a 95% confidence interval. All of these are deterministic code with tests; none uses a language model.
+| What | Result |
+| --- | --- |
+| Brand read correctly, 40 real medicine photos | **35 / 40 (88%)**, 95% CI 74%–95% |
+| Strength read correctly | **24 / 28 (86%)**, 95% CI 69%–94% |
+| By photo: clear · glare · cut strip | 19 / 19 · 12 / 14 · 3 / 3 |
+| By photo: **printed only in Bangla** | **1 / 4: our weak spot**, being worked on |
+| Medical questions to the helper, sent to a pharmacist | **33 / 33** (never answered by the app) |
+| Emergencies, sent to the 999 card | **10 / 10** |
+| Help search finds the right article first | 95%, 95% CI 88%–98% |
+| Computer-drawn benchmark (not real-photo accuracy) | brand 40 / 45; blood-pressure screens 20 / 20 |
+| Automated tests | **444 passing**, on every push |
 
-**Kidneys, antibiotics and adherence.** A **triple whammy** rule catches an ACE inhibitor or ARB, a diuretic and an NSAID in the same house (a known cause of acute kidney injury in older adults; Medsafe NZ 2013, Lapi et al. BMJ 2013), counting combination tablets ingredient by ingredient. A reviewer can enter a **creatinine** result; the backend computes **eGFR with the 2021 CKD-EPI equation** (race-free) and the KDIGO stage, and a **kidney-dose** rule uses only sourced rows (metformin below eGFR 45 and 30, FDA 2016), with a **kidney-test-due** reminder when metformin has had no test in a year. Antibiotics carry their **WHO AWaRe** group (Access / Watch / Reserve) as a chip, and a Watch antibiotic from a drug shop or bought by the family, or any Reserve antibiotic, goes to the pharmacist or doctor; the family says where each medicine came from with one tap, and no model guesses it. On **Today's medicines** the family ticks each dose as taken or not taken (never advice to take it late or double it); the reviewer sees 14-day adherence per medicine with a 95% Wilson interval and how many expected doses were recorded at all. A **STOPP/START v3** engine is ready for criteria our pharmacist enters and verifies (START notes go to the doctor only, never to the family), and a reviewer-only checklist records pack and seller observations without ever calling a medicine fake.
+The photo labels were checked against each photo with AI assistance and have not yet been re-checked by a person.
 
-**Chronic care:** combination medicines are checked ingredient by ingredient (Napa Extra and Ace are still paracetamol twice), and the rules cover the hypertension and diabetes pairs that matter most (a beta-blocker hiding low sugar with a sulfonylurea, a steroid raising sugar with metformin). **Same medicine, lower price** compares only identical generic, strength and form, never switches a brand, and sends the question to the pharmacist. **Ramadan:** the family asks, a pharmacist or doctor maps each medicine to sehri or iftar, and only then does Today's medicines change, with a fixed safety card on when to break the fast. **For siblings abroad:** a shared activity log and a Bangla + English WhatsApp digest with the read-only emergency link. **For judges:** a demo bar on `/demo`, `/p/1` and `/review` resets the demo household in about a second.
+## Safety by design
 
-**Daily check-ins.** With recorded consent the family picks a time and a channel: a short **recorded Bangla phone call** (press 1 taken, 2 not taken, 9 emergency) or a **WhatsApp message** with buttons (one paid template a day, free follow-ups inside WhatsApp's 24-hour window). Answers become dose ticks for the pharmacist; 9 or the emergency button gives the fixed 999 message and alerts the family contact; no AI and no advice anywhere. Both run as browser simulators until a phone provider and a WhatsApp Business number are connected ([`docs/CHECKINS.md`](docs/CHECKINS.md)).
+**AI for perception, rules and people for judgement.** The six rules every change must follow, each enforced in
+code and covered by a test ([docs/SAFETY.md](docs/SAFETY.md)):
 
-**For the reviewer, explanations come from a knowledge graph.** Every finding has a "Why?" path (Osartil Plus → losartan → ARB → raas group) with the source of each step, and the AI case summary is built only from numbered graph facts and must cite one in every sentence.
+1. **Rules make every finding.** Language models never create, remove or grade a safety finding.
+2. **A clinician confirms before the family sees anything.** The API itself returns only confirmed findings to families.
+3. **No instruction to stop or change a medicine.** Every explanation ends: *"Do not stop or change any medicine without talking to your doctor."*
+4. **Uncertain readings are marked** for a person to check (confidence under 0.75, web-found brands, OCR disagreements).
+5. **Names stay out of models.** Only medicine photos and names are sent, never patient names or phone numbers.
+6. **Photos are not kept.** They are read in memory and discarded.
 
-**Pilot-ready accounts and data rights.** Each pharmacist or doctor signs in with a personal invite link (only a hash of the token is stored, and every decision records who made it); the team manages invites at `/admin`. Families accept the privacy notice to start, and can rotate their private link, export everything and delete the household. On the pilot server photos go only to providers that do not keep them. Families who opt in get a "results ready" email and a weekly report.
+## What's inside
 
-**The passport** shows what each medicine is for (written by the pharmacist), allergies and who prescribed what. Its QR opens a read-only emergency page with no login and first name only; the family can renew or switch it off. **Blood pressure** can be read from a photo of the machine, and the family checks the numbers before saving. The confirmed list also exports as **FHIR R4**.
+| For | What they get |
+| --- | --- |
+| **Families** | Photo scanning with quality warnings; "Is it one of these?" for unknown brands; confirmed findings in plain Bangla; *Today's medicines* with pictures and a Listen button; a printable medicine passport with an emergency QR; a before-the-doctor-visit page; blood pressure from a photo; Ramadan medicine plans; a daily check-in by phone call or WhatsApp; export, link rotation and delete |
+| **Pharmacists and doctors** | A personal invite login; a queue ordered by an explainable risk score; evidence side by side with keyboard shortcuts; a "Why?" knowledge-graph path for every finding; a cited AI case summary; kidney-function (eGFR) checks; blood-pressure trend and adherence with confidence intervals |
+| **Everyone** | *Sathi* (সাথী, "companion"), an in-app helper that answers only from the app guide and passes every medical question to a person; Bangla ⇄ English and light ⇄ dark on every page |
+| **Judges and developers** | The `/demo` walkthrough, a resettable invented household, `/docs` with live numbers, `/models` showing which AI model answered, a read-only MCP server, and an evaluation for every model |
 
-Every page has a **Bangla ⇄ English** switch and a **light / dark** switch. The family app is built for a phone first and spreads into a working desktop layout on a laptop; the reviewer dashboard collapses into Queue / Evidence / Patient tabs on small screens.
+Every feature, where it lives and whether it is live: [docs/FEATURES.md](docs/FEATURES.md).
 
 ## Screenshots
 
@@ -90,7 +163,7 @@ Every page has a **Bangla ⇄ English** switch and a **light / dark** switch. Th
   </tr>
   <tr>
     <td><b>Scan (family, phone).</b> Bangla first, one action per screen, tips for cut strips and glare.</td>
-    <td><b>Confirmed result (family, phone).</b> Only clinician-confirmed findings appear, in plain Bangla.</td>
+    <td><b>Confirmed finding (family, phone).</b> Only clinician-confirmed findings appear, in plain Bangla.</td>
   </tr>
   <tr>
     <td><img src="docs/screens/d-review.png" alt="Reviewer dashboard on desktop: the queue on the left, Napa and Ace side by side with the rule that fired, the data source and a note box"></td>
@@ -102,120 +175,41 @@ Every page has a **Bangla ⇄ English** switch and a **light / dark** switch. Th
   </tr>
 </table>
 
-All screenshots use the invented demo household of Rahima Begum, 68, Cumilla.
+All screenshots use the invented demo household of Rahima Begum, 68, from Cumilla.
 
-## Why it's safe
+## AI, used carefully
 
-**AI for perception, rules and humans for judgement.** Models read photos and write explanations; they never decide what is dangerous.
+| Task | Model | Guardrail |
+| --- | --- | --- |
+| Read medicine photos | NVIDIA Nemotron vision, then tested free models | Typed output; under 0.75 confidence a person checks |
+| Re-read strength and expiry | NVIDIA `nemotron-ocr-v2` | Only flags a disagreement; never changes a reading |
+| Suggest a brand for a misread | Spelling match + multilingual embeddings | At most three; nothing applies until the family taps one |
+| Look up an unknown brand | Tavily search on Bangladeshi medicine sites + a text model | Must cite a source; always marked unverified |
+| Explain a confirmed finding in Bangla | Local Ollama first, cloud fallback, then fixed templates | Only after a clinician confirms; dose and stop-word filters |
+| The in-app helper's answers | Hybrid keyword + vector search over a written guide | A guard runs first; medical questions go to a person |
+| **Safety findings** | **No model.** Deterministic rules | Pure functions with tests; a clinician confirms every one |
+| **Photo quality, risk score, eGFR, check-in calls** | **No model** | Fixed, tested code |
 
-1. **Rules make every finding.** Safety flags come only from the deterministic engine in [`backend/app/rules.py`](backend/app/rules.py). Language models never create, remove or change the severity of a flag.
-2. **A clinician confirms before the family sees anything.** Flags start as `pending_review`. The family view of the API returns only `confirmed` flags, enforced in the API, not just the UI, and covered by a test.
-3. **No instruction to stop or change a medicine.** No text tells a patient to stop, start or change a medicine or dose. Explanations are checked for doses and stop-words and end with a fixed safety sentence.
-4. **Uncertain readings are marked.** Extractions under 0.75 confidence and web-found brand matches are always shown as needing human confirmation.
-5. **Names stay out of models.** Only medicine photos and medicine names are sent to a model, never patient names or phone numbers.
-6. **Photos are not kept.** Full uploaded photos (strips, boxes and prescriptions, including any prescription header with the patient's name) are processed in memory and discarded after extraction; nothing is stored on the server. For visual strip verification only, a photo of strips or boxes gets a small downscaled thumbnail, returned once and kept only in the family's browser. A photo with a prescription in it gets no thumbnail.
-
-These rules live in [`AGENTS.md`](AGENTS.md) and bind every coding agent that works on this repository.
-
-The public deployment is locked down as well. Each real household opens only with its private family link (a random key, checked in the API; anything else is "not found", so ids cannot be guessed). Photo reading is rate-limited per visitor and per day, because it spends AI credits. Only a signed-in reviewer can change which AI model everyone uses.
+When one provider runs out of credit or rate-limits, the next in the chain answers. The full table, the
+fallback chain and the prompt versions are in [docs/AI.md](docs/AI.md).
 
 ## Architecture
 
-```mermaid
-flowchart TB
-    UI["Next.js 15 frontend<br/>family app (Bangla) · reviewer dashboard · admin · passport · /docs · /demo"]
-    API["FastAPI backend<br/>family view returns confirmed flags only"]
-    AG["Shelf agent<br/>Pydantic-AI, typed output"]
-    R["LLM router<br/>cache + fall-through"]
-    P0["NVIDIA API<br/>(Nemotron vision + text, first)"]
-    P1["OpenRouter<br/>(free models, tested before use)"]
-    P2["NARAROUTER → EXPLAB → AGENTROUTER<br/>(OpenAI-compatible fallbacks)"]
-    P3["Ollama qwen2.5:3b<br/>(local, Bangla explanations first)"]
-    OCR["OCR second reader<br/>NVIDIA nemotron-ocr-v2"]
-    BM["Brand matcher + suggestions<br/>exact → fuzzy · embeddings"]
-    WL["Tavily<br/>unknown-brand lookup"]
-    RE["Rules engine<br/>deterministic, no AI"]
-    KG["Medicine knowledge graph<br/>NetworkX · Why? · Graph RAG"]
-    SA["Sathi<br/>guard → hybrid RAG (RapidFuzz + pgvector)"]
-    CI["Daily check-ins<br/>call (IVR) · WhatsApp Cloud API"]
-    DB[("Postgres (Supabase) + pgvector, or SQLite<br/>households · items · flags · reviews · check-ins · graph snapshot")]
-    N8N["n8n automations<br/>weekly report · doctor alert · refill reminder"]
-    MCP["MCP server<br/>4 read-only tools"]
-
-    UI -->|HTTPS, JSON| API
-    API --> AG --> R
-    R --> P0 & P1 & P2 & P3
-    AG --> OCR
-    API --> BM --> WL
-    API --> RE
-    API --> KG
-    API --> SA
-    API --> CI
-    API --> DB
-    API -->|red flag / emergency webhook| N8N
-    N8N -->|GET report| API
-    MCP -.->|calls the same modules| BM & RE & KG
-```
-
-Locally the API uses a SQLite file. Hosted, it uses a free Supabase Postgres in a private schema (`DATABASE_URL`), so data survives restarts of the free Render instance; the same SQL runs on both ([`backend/app/store.py`](backend/app/store.py), [`docs/DEPLOY.md`](docs/DEPLOY.md)).
-
-## AI approach
-
-| Task | Model / provider | Why | Guardrail |
-| --- | --- | --- | --- |
-| Read photos of strips, boxes, prescriptions | NVIDIA API `nemotron-3.5-super-vl` first; then free OpenRouter vision models, auto-picked (price 0, image input, largest context) and each **tested with a one-token call before use**; up to three, then `openrouter/free`, then NARAROUTER → EXPLAB → AGENTROUTER | Cut strips, glare and Bangla text need a vision model; free models keep it affordable | Typed Pydantic output, one retry, then needs-review; confidence < 0.75 always shown for a human check |
-| Unknown brand → generic | Tavily search restricted to medex.com.bd, arogga.com, medeasy.health + a text model. The Perplexity Agent API (`effort: fast`, paid credits only) is an optional fallback, off unless `WEB_LOOKUP=tavily,perplexity` | Bangladesh has tens of thousands of brands; a seed table cannot hold them all | Must cite a numbered search result; stored as `web_unverified` with the source URL; failures are never cached |
-| Bangla explanation of a confirmed finding | Ollama `qwen2.5:3b` locally first, cloud fallback, then fixed templates | Private and free when run locally | Only for confirmed flags; dose and stop-word filter; Bangla well-formedness check (a broken vowel sign sends it back to the template); fixed safety sentence |
-| Sathi: app-guide answers and next-step wording | Ollama first (private), then the cloud chain; 8-second budget, else the guide's own answer | Warm, simple Bangla without a person writing every reply | Guard before and after every model call: emergency and injection words, medical intent (unsure counts as medical), output check for doses, stop/start wording, unknown medicine names and diagnoses; answers only from [`docs/help`](docs/help) |
-| Sathi app-guide retrieval (contextual hybrid RAG) | Keyword (RapidFuzz) + vector (NVIDIA `nemotron-3.5-embed-1b`, 1024-d) fused by reciprocal rank fusion; vectors in Supabase Postgres with **pgvector** (HNSW, cosine), or in SQLite locally. Each guide entry gets a fixed context header (section, screen, questions in both languages) before embedding | Families ask in Bangla, Banglish and English; word matching alone misses paraphrases | guard.py runs first, so medical and emergency questions never reach retrieval; names are removed before embedding; without a key it is keyword-only. Measured on 79 questions ([`run_retrieval_eval.py`](eval/run_retrieval_eval.py)): recall@1 keyword 90%, vector 94%, hybrid 95% (95% CI 88-98%); 78 of the questions were drafted by the build agent and still need the team's review |
-| Case summary for the reviewer (Graph RAG) | Text chain (NVIDIA first). v2 gets ONLY numbered facts from the medicine knowledge graph and the rule findings, and must cite one in every sentence; v1 is the fallback | Saves the pharmacist time on long lists | Facts only; any prescriber or medicine not in the record, advice, doses or diagnoses drop it; labelled "check the evidence", collapsed after 10 reviews; v2 also deletes any sentence without a valid fact id. On the demo household ([`run_case_summary_eval.py`](eval/run_case_summary_eval.py), 10 uncached runs each, free models): passed every check v1 8/10 (49%-94%), v2 8/10 (49%-94%), median 18 s vs 42 s. This measures safety-check pass rate and grounding, not usefulness, which needs pharmacists |
-| Medicine knowledge graph | **No model.** NetworkX graph built only from the reference tables ([`medgraph.py`](backend/app/medgraph.py)): brand, generic, class, triple-whammy group, interaction, Beers, kidney, anticholinergic and AWaRe nodes, every edge carrying its source; snapshot in `kg_nodes` / `kg_edges` (Postgres or SQLite) | Shows the reviewer *why* a finding fired ("Why?" on each flag) and feeds the Graph RAG summary | Explains only: rules.py never imports it, and a test checks run_rules gives identical flags with it loaded. No graph database: about 160 nodes rebuild from the CSVs in well under a second, and free hosting has no room for Neo4j |
-| Second reading of strength and expiry | NVIDIA `nemotron-ocr-v2` (PaddleOCR fallback), hosted ([`ocr_check.py`](backend/app/ocr_check.py)) | Misread strengths and expiry dates are the most likely real errors | Only compares: strengths and month-year dates in the OCR text against the vision reading; a disagreement marks the item "please check" with what it saw, never changes the reading or creates a finding; raw OCR text is not stored or logged; off without a key or when private vision excludes NVIDIA; [`run_eval.py`](eval/run_eval.py) reports its catch rate and false alarms once labelled photos exist |
-| "Is it one of these?" for unrecognised brands | RapidFuzz whole-string spelling + NVIDIA `nemotron-3.5-embed-1b` embeddings, fused by reciprocal rank ([`brand_suggest.py`](backend/app/brand_suggest.py)) | Typos, cut-off names and other scripts defeat exact matching | Suggests at most three table brands; nothing is applied until the family taps one, which then goes through normal matching; the pharmacist still reviews; spelling-only without a key |
-| Photo-quality warning before upload | **No model.** Image statistics in the browser: variance of the Laplacian (blur), near-white share (glare), mean (dark), short side (small) ([`photoQuality.ts`](frontend/src/lib/photoQuality.ts)) | A retake costs a second now, a misread costs a pharmacist's time later | The photo does not leave the phone for this; it only warns and never blocks; cautious thresholds still to be checked against the labelled eval photos |
-| Read a blood-pressure monitor photo | Vision chain | Families type numbers wrong | Impossible values rejected; under 0.8 confidence the family confirms; the photo is not stored |
-| Safety findings | **No model.** Deterministic rules | Judgement must be repeatable and auditable | Pure functions with tests; a clinician confirms every flag |
-| Reviewer queue order, BP trend | **No model.** Explainable risk score; least-squares trend with a 95% CI | Reviewers see the riskiest household first; numbers, not opinions | Orders the queue only, never changes a flag; trend shown to reviewers only |
-| Bangla voice input for Sathi | OpenAI Whisper large-v3 hosted by NVIDIA (Riva gRPC, offline mode); the browser's own speech recognition as fallback | Older users and families speak more easily than they type Bangla | Audio in memory only, never stored or logged; 30 s / 2 MB; the transcript lands in the text box to read and edit and is never sent automatically, so guard.py and name redaction run as for typed text; one-time privacy notice |
-| Sathi intent classifier (escalate-only) | NVIDIA `nemotron-3.5-embed-1b` embeddings + logistic regression (coefficients only); BanglaBERT as an offline research comparison | Catches medical questions that slip past the word lists (Banglish, typos) | Runs after guard.py and can only move a question towards medical or emergency, never to app; off until 200+ human-written held-out examples pass [`run_intent_eval.py`](eval/run_intent_eval.py); [model card](eval/intent_model_card.md) |
-| Missed-dose risk model | Gradient boosting on household-week features from the family's ticks | Helps a pharmacist decide whom to follow up first | Refuses to train without 30 real households and 300 household-weeks, never on demo data; AUROC with bootstrap CI and calibration; only a reviewer-only ordering hint, never a finding; [model card](eval/adherence_model_card.md) |
-| Kidney function (eGFR) | **No model.** 2021 CKD-EPI creatinine equation | Several medicines need care when kidney function is low | Only creatinine is stored; every threshold row carries its source; findings are confirmed by a clinician |
-| Daily Bangla check-in call (IVR) | **No model.** Fixed pre-recorded Bangla prompts and a small state machine ([`voice_calls/`](backend/app/voice_calls)) behind a provider interface (`place_call`, `parse_webhook`, `verify_signature`). Today only the **simulator** runs: [`/call-demo`](https://oushodhsathi.vercel.app/call-demo) plays the call in the browser with keys 1 / 2 / 9; no phone provider is connected yet | Many older patients have a basic phone, not a smartphone | Needs the family's recorded consent; the number is encrypted at rest and goes only to the call provider, never to a model; no calls 21:00-08:00, one retry after 15 minutes, a daily cap; answers become dose ticks marked `source=call`; 9 plays the fixed 999 message and alerts the family contact; the script never tells anyone to stop, start or change a medicine; draft Bangla audio is generated once by [`make_call_audio.py`](backend/scripts/make_call_audio.py) (digits spoken as words; Meta MMS-TTS, non-commercial licence, until an Azure bn-BD voice or a recording replaces it) and still needs a native speaker's check |
-| Daily WhatsApp check-in message | **No model.** WhatsApp Cloud API ([`whatsapp_checkin/`](backend/app/whatsapp_checkin)): one approved utility template a day ("সব খেয়েছি / কিছু বাদ গেছে / জরুরি সমস্যা"), then free follow-ups inside WhatsApp's 24-hour customer-service window asking about each approved slot. Without WhatsApp keys a browser chat simulator runs the same conversation | Many families already use WhatsApp, and receiving the message costs them nothing | Same consent, time, quiet hours and stop switch as the call; the number is encrypted and goes only to WhatsApp (Meta); replies are matched to the message they answer, each delivery handled once, webhooks signature-checked; typed text is never stored or sent to a model, only emergency words get the fixed 999 reply; answers become dose ticks marked `source=whatsapp`. Needs a verified Meta business number and an approved template before real use |
-
-**When a provider runs out, the next one answers.** Every request walks a chain: the user's chosen model first (if any), then NVIDIA's API (`nemotron-3.5-super-vl` for photos, `nemotron-3-ultra` for lookups and Bangla), then the tested free OpenRouter models, then the other configured routers, then Ollama on the machine. Rate limits (429), exhausted credit (402), withdrawn models, server errors and timeouts all fall through to the next link; nothing has to be switched by hand. Web lookup uses Tavily; Perplexity can be added after it with `WEB_LOOKUP=tavily,perplexity`.
-
-**The models in use are visible, and the user can choose.** The **AI models** page (`/models`) shows each task's chain in order, which model answered last, and a picker to put a preferred model first; the rest stay as backups. The family's confirm screen says which model read the photos, and the reviewer sees the model and prompt version for every item.
-
-Prompts are versioned files: [`extract_strip.v1`](backend/app/prompts/extract_strip.v1.md), [`brand_lookup.v1`](backend/app/prompts/brand_lookup.v1.md), [`explain_bn.v1`](backend/app/prompts/explain_bn.v1.md), [`sathi_bn.v1`](backend/app/prompts/sathi_bn.v1.md), [`sathi_intent.v1`](backend/app/prompts/sathi_intent.v1.md), [`sathi_nextstep.v1`](backend/app/prompts/sathi_nextstep.v1.md), [`case_summary.v1`](backend/app/prompts/case_summary.v1.md), [`case_summary.v2`](backend/app/prompts/case_summary.v2.md) (Graph RAG), [`read_bp.v1`](backend/app/prompts/read_bp.v1.md). Changing a prompt means a new version file and a new eval run.
-
-## Evaluation
-
-**Two kinds of numbers, never mixed.** *Real-photo* results come from labelled photos of real medicines (`eval/labels.csv`, `eval/bp_labels.csv`) and are the only accuracy figures this project claims; below 25 photos they show only "evaluation in progress". The *synthetic benchmark* runs the same evals on 30 computer-drawn medicine images and 20 BP screens in [`eval/synthetic/`](eval/synthetic) (`sh eval/run_synthetic.sh`) to test the pipeline and compare providers. Its results carry `"kind": "synthetic"`, are written only inside `eval/synthetic/`, and appear on `/docs` in their own card labelled "Synthetic benchmark (computer-drawn images) — not real-photo accuracy". A synthetic run refuses to overwrite real results, and synthetic rows never count towards the 25-photo minimum.
-
-- **Extraction accuracy: evaluation in progress (n = 0 labelled photos).** Photos are labelled in the browser with [`backend/scripts/label_photos.py`](backend/scripts/label_photos.py) (a privacy checklist must be ticked for each photo). [`eval/run_eval.py`](eval/run_eval.py) then reports brand, strength and expiry accuracy and the needs-check rate, each with a 95% Wilson interval, a reliability table (stated confidence vs observed accuracy, to check the 0.75 cut-off), results per photo condition (cut strip, glare, Bangla print, handwritten), and with `--per-provider` each vision provider alone. Below 25 photos the results file, `/docs` and this README show only "evaluation in progress"; no accuracy number is claimed until then. See [`eval/README.md`](eval/README.md).
-- **Sathi safety eval: 83 cases, no leaks.** [`eval/run_sathi_eval.py`](eval/run_sathi_eval.py) with the guard and guide retrieval alone (no model, as in CI): app questions answered from the right guide entry **34/35 (97%)**; medical questions sent to the pharmacist **33/33** (including Ramadan fasting questions); emergencies escalated **10/10**; rule-breaking attempts refused **5/5**. The one miss went to the pharmacist, the safe direction. The run fails CI if any medical or emergency question gets an app answer. The cases were written by the team and still need native-speaker review.
-- **Review time: measured from the first decision.** Every finding records the time from a reviewer opening it to deciding it; `/docs` shows the median. This is the unit cost of a paid review.
-- **Blood-pressure photos: not measured yet.** [`eval/run_bp_eval.py`](eval/run_bp_eval.py) is ready for labelled monitor photos; no accuracy is claimed until they exist.
-- **Pilot: not started.** Each consenting household becomes one row in [`eval/pilot.csv`](eval/pilot.csv); the `/docs` page reports proportions with 95% Wilson confidence intervals from that file only. Demo data is never counted.
-- **Tests: 399 passing** (`pytest` in `backend/`), covering the rules engine (including combination medicines and the hypertension and diabetes interactions), the same-medicine price comparison, Ramadan plans, the demo reset, the family-view safety gate, Sathi's guard and state machine, the case-summary checks, approved schedules and set-aside medicines, the emergency page, FHIR export, private household links, rate limits, blood-pressure validation, the database layer on SQLite and Postgres, router fallback and free-model probing, model choice, the explanation and Bangla-quality guards, the statistics, hybrid retrieval, the knowledge graph and Graph RAG citations, the OCR second reader, brand suggestions, both check-in channels (consent, quiet hours, retries, signatures, repeated webhook deliveries, export and delete), the eval scoring, and that the generated docs match the code. CI runs them on every push, with the frontend lint and build.
-
-## Tech stack
+A **Next.js 15** frontend (family app, reviewer dashboard, admin, landing page) talks only to a **FastAPI**
+backend that owns every rule, model call and record, stored in **Postgres** (Supabase) or SQLite locally.
+Hosted on Vercel and Render. Diagrams, the data model and the life of one scan: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 | Layer | Tools |
 | --- | --- |
-| Frontend | Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 4, next-intl (Bangla + English), motion, Recharts, lucide-react |
-| Backend | Python 3.12+, FastAPI, Pydantic 2, Pydantic-AI, RapidFuzz, NetworkX (knowledge graph), httpx, cryptography (encrypted phone numbers), SQLite / Postgres (psycopg 3) with pgvector |
-| AI | NVIDIA API (Nemotron vision and text, `nemotron-3.5-embed-1b` embeddings, `nemotron-ocr-v2`, Whisper large-v3 via Riva), OpenRouter (free models), OpenAI-compatible fallback routers, Ollama (`qwen2.5:3b`), Tavily, Perplexity Agent API; scikit-learn for the gated models; Meta MMS-TTS / Azure Speech for the call prompts (generated once) |
-| Messaging | WhatsApp Cloud API (daily check-in), Resend (email), a provider-agnostic call (IVR) interface with a browser simulator |
-| Automation | n8n workflows (JSON in [`automations/`](automations)) |
-| Agent interface | MCP server on the official `mcp` Python SDK |
-| Testing and CI | pytest, ESLint, GitHub Actions |
-| Hosting | Render (API, free plan), Supabase (Postgres, free) and Vercel (frontend), see [`docs/DEPLOY.md`](docs/DEPLOY.md) |
+| Frontend | Next.js 15, React 19, TypeScript, Tailwind CSS 4, next-intl (Bangla + English), motion |
+| Backend | Python 3.12+, FastAPI, Pydantic 2, Pydantic-AI, RapidFuzz, NetworkX, Postgres / SQLite with pgvector |
+| AI | NVIDIA API (Nemotron vision and text, embeddings, OCR, Whisper), OpenRouter free models, Ollama, Tavily |
+| Messaging | WhatsApp Cloud API, Resend email, a provider-agnostic phone-call (IVR) interface |
+| Quality | pytest (444 tests), ESLint, GitHub Actions; Lighthouse accessibility 100 on the landing page |
 
 ## Quick start
 
-You need Python 3.12+, Node.js 20+ and git. The commands are for macOS / Linux; on Windows use `.venv\Scripts\` instead of `.venv/bin/`.
+You need Python 3.12+, Node.js 20+ and git. Commands are for macOS / Linux; on Windows use `.venv\Scripts\` instead of `.venv/bin/`.
 
 ```bash
 git clone https://github.com/ProttoyDip/OushodhSathi-.git
@@ -239,15 +233,12 @@ npm ci
 npm run dev                                    # http://localhost:3000
 ```
 
-Open <http://localhost:3000> for the landing page, `/p/1` for the family app (the seed prints the demo household's id), `/review` for the reviewer dashboard (token `demo-reviewer`), `/models` for the AI models in use, `/demo` for the keyboard-paced walkthrough and `/call-demo` for the check-in simulator. The API's interactive reference is at <http://localhost:8000/docs>; the written one is [`docs/API.md`](docs/API.md).
+Open <http://localhost:3000>. The family app is at `/p/1`, the reviewer dashboard at `/review` (token
+`demo-reviewer`), the walkthrough at `/demo` and the check-in simulator at `/call-demo`.
 
-With `DEMO_MODE=true` (the default) everything works without API keys: fixed templates replace model wording, keyword search replaces vectors, and the check-ins run as simulators. To read real photos, add your own keys to `backend/.env` (an OpenRouter key is enough). Every setting is listed in [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md). **Never commit `.env`.**
-
-Optional, for private Bangla explanations on your own machine:
-
-```bash
-ollama pull qwen2.5:3b
-```
+With `DEMO_MODE=true` (the default) everything works **without API keys**: fixed templates replace model wording
+and the check-ins run as simulators. To read real photos, add an OpenRouter or NVIDIA key to `backend/.env`.
+Every setting: [docs/CONFIGURATION.md](docs/CONFIGURATION.md). **Never commit `.env`.**
 
 Run the checks the CI runs:
 
@@ -256,109 +247,46 @@ cd backend && .venv/bin/python -m pytest
 cd frontend && npm run lint && npm run build
 ```
 
-## Project structure
-
-```text
-backend/
-  app/
-    main.py              the FastAPI app: every endpoint (reference: docs/API.md)
-    rules.py             the deterministic rules engine: the only place findings are made
-    agent.py             photo reading (Pydantic-AI agent) · ocr_check.py  the OCR second reader
-    brands.py            brand → generic matching · brand_suggest.py  "Is it one of these?"
-    medgraph.py          the medicine knowledge graph ("Why?", Graph RAG facts)
-    clinical.py          the reviewer's case summary (v1, Graph RAG v2) and BP-photo reading
-    sathi.py, guard.py   Sathi and its guard · help_index.py, help_vectors.py, embeddings.py  hybrid RAG
-    voice_calls/         daily check-in call: script, state machine, provider interface, simulator
-    whatsapp_checkin/    daily WhatsApp check-in: flow, Cloud API client, service
-    kidney.py, triage.py, stats.py, llm_router.py, store.py (SQLite / Postgres), prompts/ (versioned)
-  data/                  reference tables (brands, interactions, Beers, ACB, AWaRe, kidney rules, ...)
-  scripts/               seed_demo, index_help, label_photos, make_call_audio, create_whatsapp_template,
-                         gen_docs, import_brands, import_ddinter, import_aware
-  tests/                 pytest suite (399 tests)
-frontend/                Next.js app: family app, reviewer dashboard, admin, passport, /docs, /demo
-  public/audio/call/     the check-in call's Bangla prompts
-mcp/                     read-only MCP server for Claude Desktop and other MCP clients
-automations/             n8n workflows: weekly report, doctor alert, refill reminder
-eval/                    evaluations and their results (strip reading, Sathi, retrieval, case summary, ...)
-docs/                    FEATURES, API, CONFIGURATION, CHECKINS, DEPLOY; brand assets, screenshots, video
-video/                   1920×1080 scenes and the recording script for the demo video
-.github/workflows/       CI, keep-alive, weekly email, check-in cron
-```
-
 ## Documentation
 
-| Document | What is in it |
+| Read | For |
 | --- | --- |
-| [`docs/FEATURES.md`](docs/FEATURES.md) | Every feature, by who uses it, with where it lives in the app and the code, and whether it is live, a simulator, or ready but off |
-| [`docs/API.md`](docs/API.md) | All 95 API endpoints with who may call each one (generated from the code) |
-| [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) | Every setting, its default and what it does (generated from `backend/.env.example`) |
-| [`docs/CHECKINS.md`](docs/CHECKINS.md) | How the daily phone call and WhatsApp message work, and how to switch each on for real |
-| [`docs/DEPLOY.md`](docs/DEPLOY.md) | Hosting on Render, Supabase and Vercel |
-| [`eval/README.md`](eval/README.md) | Running the evaluations and adding labelled photos |
-| [`mcp/README.md`](mcp/README.md) | The MCP server and its tools |
-| [`AGENTS.md`](AGENTS.md), [`DESIGN.md`](DESIGN.md), [`PRODUCT.md`](PRODUCT.md) | The safety rules every change follows, the design system, the product brief |
-| [`SUBMISSION_UPDATES.md`](SUBMISSION_UPDATES.md) | The submission form's text, kept true to the code |
+| [Glossary](docs/GLOSSARY.md) | Bangla words, the Bangladeshi medicine market, clinical and technical terms |
+| [Safety and privacy](docs/SAFETY.md) | The six rules, where each is enforced, and its test |
+| [Evaluation](docs/EVALUATION.md) | Every result with its confidence interval, and what is not measured yet |
+| [Features](docs/FEATURES.md) | Every feature, where it lives, and whether it is live |
+| [AI approach](docs/AI.md) | Each AI task, its model, and its guardrail |
+| [Architecture](docs/ARCHITECTURE.md) | System, deployment, data model, code map |
+| [Data and licences](docs/DATA.md) | The reference tables, the national brand list, every licence |
+| [API](docs/API.md) · [Configuration](docs/CONFIGURATION.md) | All 96 endpoints and every setting (generated from the code) |
+| [Deployment](docs/DEPLOY.md) · [Check-ins](docs/CHECKINS.md) | Hosting; connecting the phone and WhatsApp check-ins |
+| [`AGENTS.md`](AGENTS.md) · [`DESIGN.md`](DESIGN.md) · [`PRODUCT.md`](PRODUCT.md) | Rules for every change, the design system, the product brief |
 
-`docs/API.md` and `docs/CONFIGURATION.md` are generated by `python backend/scripts/gen_docs.py`, and a test fails if they fall behind the code.
+The full index is in [docs/README.md](docs/README.md).
 
-## MCP server
+## Limitations
 
-[`mcp/server.py`](mcp/server.py) is a stdio [Model Context Protocol](https://modelcontextprotocol.io) server that lets an MCP client use the product's medicine logic. All four tools are read-only; they can never write a flag.
+What is not built or not measured yet, so nothing here is read as more than it is:
 
-| Tool | What it does |
-| --- | --- |
-| `match_brand(brand)` | Maps a Bangladeshi brand to its generic and class (exact, then strict fuzzy). "Napa Extra" is never forced onto "Napa". |
-| `lookup_unknown_brand(brand, strength)` | Searches Bangladeshi medicine sites (Tavily; Perplexity only if `WEB_LOOKUP` lists it), must cite a source, always marked `web_unverified`. Needs a key in `backend/.env`. |
-| `check_medicines(items, age)` | Runs the deterministic rules on a list and returns findings marked "pending clinician review". |
-| `explain_flag_path(generics)` | Numbered facts from the medicine knowledge graph around the given generics (class, triple-whammy group, interactions, Beers, kidney, anticholinergic, AWaRe), each with its source table. Explains links; never creates findings. |
-
-Claude Desktop config (Settings → Developer → Edit config), with your own absolute paths:
-
-```json
-{
-  "mcpServers": {
-    "oushodhsathi": {
-      "command": "/path/to/OushodhSathi-/backend/.venv/bin/python",
-      "args": ["/path/to/OushodhSathi-/mcp/server.py"],
-      "env": { "PYTHONIOENCODING": "utf-8" }
-    }
-  }
-}
-```
-
-More in [`mcp/README.md`](mcp/README.md).
-
-## Demo video
-
-[![OushodhSathi demo video on YouTube](https://img.youtube.com/vi/a3wnCDDxxm0/maxresdefault.jpg)](https://youtu.be/a3wnCDDxxm0)
-
-Watch it on YouTube: <https://youtu.be/a3wnCDDxxm0>
-
-The 2:58 video is planned second by second in [`docs/video/SHOTLIST.md`](docs/video/SHOTLIST.md), with the voiceover and captions in Bangla and English ([`captions.bn.srt`](docs/video/captions.bn.srt), [`captions.en.srt`](docs/video/captions.en.srt)). Seven 1920×1080 scenes live in [`video/scenes`](video/scenes) (stills in [`docs/video/stills`](docs/video/stills)), and the product footage comes from the keyboard-paced [`/demo`](https://oushodhsathi.vercel.app/demo) walkthrough. `cd video && npm install && node record.mjs` re-records every clip and stitches a silent draft cut for the voiceover.
-
-## Limits
-
-What is not built or not measured yet, so nothing on this page is read as more than it is:
-
-- **Daily check-in calls run only as a browser simulator** ([`/call-demo`](https://oushodhsathi.vercel.app/call-demo)). No phone provider is connected. The Bangla audio prompts are a generated draft (Meta MMS-TTS, licensed for non-commercial use only) that a native speaker has not yet checked.
-- **The daily WhatsApp message also runs only as a simulator.** No WhatsApp Business number is connected and the check-in template has not been submitted to Meta for approval ([`create_whatsapp_template.py`](backend/scripts/create_whatsapp_template.py) is ready).
-- **Strip-reading accuracy is not measured.** The labelling tool and the eval are ready; no labelled photos exist yet, so no accuracy figure is claimed.
-- **No pilot results.** [`eval/pilot.csv`](eval/pilot.csv) has no real households yet; every household on the demo site is invented.
-- **Small reference tables.** About 30 brands, 6 interactions, 5 Beers entries and 2 kidney-dose rules, seeded for the demo and to be extended with a pharmacist. DDInter data is non-commercial only and is not imported.
-- **Evaluation sets need human review.** 78 of the 79 retrieval questions and the Sathi cases were drafted by the build agent; a native speaker still needs to check them.
-- **The case-summary eval measures safety, not usefulness.** It counts how often a summary passes every check; whether it saves a pharmacist time needs pharmacists. On free models the Graph RAG summary takes about 40 seconds.
-- **Two models are switched off by design** until real data exists: the escalate-only intent classifier (needs 200+ human-written examples) and the missed-dose model (needs 30 real households).
-- **Free hosting.** The API sleeps when idle, so the first request can take up to a minute.
+- **No pilot with real families yet.** Every household on the demo site is invented.
+- **Packs printed only in Bangla** are read correctly 1 time in 4; stylised Bangla logos are the weak spot.
+- **The evaluation set is small** (40 photos), and its labels were checked with AI assistance, not yet by a person.
+- **Reference tables are seeds.** The 13,622 dataset brands are not pharmacist-verified; interactions (6 rows),
+  Beers (5) and kidney-dose rules (2) are a starting point to extend with a pharmacist.
+- **Daily check-ins run as simulators.** No phone provider or WhatsApp Business number is connected yet, and the
+  Bangla call audio is a generated draft awaiting a native speaker's check.
+- **Two models are switched off by design** until real data exists: an intent classifier that can only make the
+  helper more cautious, and a missed-dose risk model.
+- **Free hosting.** The API sleeps when idle.
 
 ## Roadmap
 
-1. A pharmacist-verified brand table, replacing the demo seed with a licensed Bangladeshi drug database.
-2. Full DDInter 2.0 interaction import, reviewed for medicines common in Bangladesh.
-3. Partner pharmacies as scan points for families without a smartphone.
-4. Connect the daily check-ins to a real phone provider and a WhatsApp Business number (both built and running as simulators; see [`docs/CHECKINS.md`](docs/CHECKINS.md)), with native-speaker-checked audio.
-5. A pilot with families, with results published only once they are real.
-6. Authenticity checks through DGDA or manufacturer verification codes. The app itself will never judge whether a pack is genuine.
-7. STOPP/START v3 engine ready; criteria to be entered and verified by our pharmacist (O'Mahony et al., Eur Geriatr Med 2023, doi:10.1007/s41999-023-00777-y).
+1. A pilot with consenting families and two pharmacists, with results published only once they are real.
+2. Better reading of Bangla-only packs: more labelled examples and matching against Bangla brand spellings.
+3. Pharmacist review of the brand classes, interactions and Beers tables; a licensed interaction source for commercial use.
+4. Connect the check-ins to a real phone provider and a WhatsApp Business number, with native-speaker audio.
+5. Partner pharmacies as scan points for families without a smartphone.
+6. Authenticity checks through DGDA (Bangladesh's drug regulator) or manufacturer verification codes. The app itself will never judge whether a pack is genuine.
 
 ## Team
 
@@ -371,23 +299,23 @@ What is not built or not measured yet, so nothing on this page is read as more t
 ## Data and licences
 
 - **Code:** MIT, see [`LICENSE`](LICENSE).
-- **DDInter 2.0** drug–drug interaction database, [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/). Used for non-commercial prototype purposes with attribution; [`backend/scripts/import_ddinter.py`](backend/scripts/import_ddinter.py) imports its downloads. The repository ships only a small curated interaction seed.
-- **AGS Beers Criteria** (American Geriatrics Society) as the clinical reference for the 65+ rules in [`backend/data/beers_seed.csv`](backend/data/beers_seed.csv).
-- **"Medicinal Products in Bangladesh — A Dataset of Generic and Brand Names, Dosage Strengths, and Manufacturers"**, Md Mahmudur Rahman and Md M Khan, University of Dhaka, Mendeley Data, v1, 2024, [doi:10.17632/zhtvkny53n.1](https://data.mendeley.com/datasets/zhtvkny53n/1). Licence [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). [`backend/data/brands_full.csv`](backend/data/brands_full.csv) (13,622 brands) is derived from it by [`backend/scripts/import_brands.py`](backend/scripts/import_brands.py): one row per brand (the tablet or capsule row where a brand has several forms), brand, generic and manufacturer only. When it loads, a dataset generic such as "azithromycin dihydrate" is reduced to the base name the rules use (`backend/app/generic_names.py`, only when that base is a generic the app already knows), and takes the seed's drug class when the base is exactly a seed generic, so a seed brand and a dataset brand of the same medicine are flagged as a double dose. Its rows are not pharmacist-verified, and the curated seed (`brands_seed.csv`) always takes priority, so the safety rules keep their curated drug classes. The original download is never committed (`backend/data/raw/` is git-ignored).
-- **Handwritten prescription photos** in the strip-reading eval: Badhon D.R. et al., "Image-to-Text Bilingual Dataset from Medical Prescriptions", Mendeley Data, V2, 2026, [doi:10.17632/tg2hm7n2bs.2](https://doi.org/10.17632/tg2hm7n2bs.2), licence [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Only prescriptions we selected are used, with patient and doctor details blacked out before they are copied into `eval/photos/` (`rx_mendeley_*.jpg`, rows marked `source=mendeley:tg2hm7n2bs`); the full dataset is never committed. Results are reported per source, and `/docs` credits the dataset wherever its photos count.
-- **Brand seed** [`backend/data/brands_seed.csv`](backend/data/brands_seed.csv): demo data, **not pharmacist-verified**.
-- **WHO AWaRe classification 2025** ([B09489](https://www.who.int/publications/i/item/B09489)) for antibiotic groups in [`backend/data/aware_2025.csv`](backend/data/aware_2025.csv): **CC BY-NC-SA 3.0 IGO, non-commercial.** The shipped file is a seed to verify; [`scripts/import_aware.py`](backend/scripts/import_aware.py) converts the official spreadsheet. A commercial service needs WHO's permission or another source.
-- **Anticholinergic Cognitive Burden scale** (2012 update, Aging Brain Care) in [`backend/data/acb_seed.csv`](backend/data/acb_seed.csv): the scale's owners ask users to request permission; to be requested before commercial use.
-- **STOPP/START version 3**: O'Mahony D et al., Eur Geriatr Med 2023;14(4):625-632, [doi:10.1007/s41999-023-00777-y](https://doi.org/10.1007/s41999-023-00777-y). Cited; criteria are entered and verified by our pharmacist, none are shipped.
-- **Kidney rules**: 2021 CKD-EPI equation (National Kidney Foundation, NIDDK); metformin thresholds from the FDA Drug Safety Communication of 8 April 2016; triple whammy from Medsafe NZ (2013), Lapi et al. (BMJ 2013) and Harezlak et al. (Adv Ther 2022). Sources are in the code and in each data row.
-- **Fonts:** Schibsted Grotesk, Anek Bangla, Instrument Sans and Hind Siliguri, all under the SIL Open Font License.
+- **Brand list:** *Medicinal Products in Bangladesh*, Md Mahmudur Rahman and Md M Khan, University of Dhaka,
+  Mendeley Data v1, 2024, [doi:10.17632/zhtvkny53n.1](https://data.mendeley.com/datasets/zhtvkny53n/1), CC BY 4.0.
+- **Clinical references:** AGS Beers Criteria 2023; Anticholinergic Cognitive Burden scale (2012); WHO AWaRe 2025
+  (CC BY-NC-SA 3.0 IGO, non-commercial); 2021 CKD-EPI equation; FDA Drug Safety Communication (2016); Medsafe NZ
+  (2013); STOPP/START v3 (2023). DDInter 2.0 (CC BY-NC-SA 4.0) can be imported but is not shipped.
+- **Fonts:** Schibsted Grotesk, Anek Bangla, Instrument Sans and Hind Siliguri (SIL Open Font License).
+
+Every source, its licence and how it is used: [docs/DATA.md](docs/DATA.md).
 
 ## Medical disclaimer
 
-OushodhSathi is a pilot service, not a medical device. It does not give medical advice. Every finding is confirmed by a registered pharmacist or doctor before a family sees it. The demo household is invented.
+OushodhSathi is a pilot service, not a medical device, and it does not give medical advice. Every finding is
+confirmed by a registered pharmacist or doctor before a family sees it. The demo household is invented.
 
 ## Acknowledgements
 
-Built for the **International AI Builders Congress 2026** (HealthSphere AI → ChronicCare AI), with thanks to **CloudCamp Bangladesh** and **Daffodil International University**.
+Built for the **International AI Builders Congress 2026** (HealthSphere AI → ChronicCare AI), with thanks to
+**CloudCamp Bangladesh** and **Daffodil International University**.
 
-See also [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`SECURITY.md`](SECURITY.md).
+More: the [MCP server](mcp/README.md) · [contributing](CONTRIBUTING.md) · [security](SECURITY.md) · [the demo video's shot list](docs/video/SHOTLIST.md).

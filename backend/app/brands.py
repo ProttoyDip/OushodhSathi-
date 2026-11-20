@@ -110,7 +110,10 @@ def _index() -> dict[str, BrandRow]:
     """Normalised brand name -> row, so "Seclo 20 Cap" in a dataset indexes as "seclo"."""
     index: dict[str, BrandRow] = {}
     for row in load_brands().values():
-        index[normalise(row.brand)] = row  # later rows (brands_full.csv) override the seed
+        key = normalise(row.brand)
+        if key in index and index[key].source_file == "brands_seed.csv":
+            continue  # the curated seed row wins over any dataset spelling ("Seclo 20 Cap")
+        index[key] = row
     return index
 
 

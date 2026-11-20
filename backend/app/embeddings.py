@@ -38,6 +38,8 @@ RETRY_STATUS = {408, 425, 429} | set(range(500, 600))
 
 Kind = Literal["query", "passage"]
 _cache: dict[str, list[float]] = {}
+OUTAGE_PAUSE_S = 300.0  # after a failed call, skip embeddings for this long (keyword search covers it)
+_down_until = 0.0
 
 
 class EmbeddingsUnavailable(RuntimeError):
@@ -86,18 +88,29 @@ def _post(texts: list[str], kind: Kind, client: httpx.Client) -> list[list[float
                 time.sleep(0.5 * (attempt + 1))
                 continue
             break
+    if isinstance(last, httpx.HTTPStatusError):
+        raise EmbeddingsUnavailable(f"HTTP {last.response.status_code}")
     raise EmbeddingsUnavailable(type(last).__name__ if last else "unknown")
 
 
 def embed(texts: list[str], kind: Kind, client: httpx.Client | None = None) -> list[list[float]]:
     """Unit vectors of length DIM, in input order. Raises EmbeddingsUnavailable."""
+    global _down_until
     if not configured():
         raise EmbeddingsUnavailable("not configured")
+    if time.monotonic() < _down_until:
+        raise EmbeddingsUnavailable("paused after a recent failure")
     missing = list(dict.fromkeys(t for t in texts if cache_key(t, kind) not in _cache))
     if missing:
         c = client or httpx.Client(timeout=TIMEOUT_S)
         for i in range(0, len(missing), BATCH):
             batch = missing[i:i + BATCH]
-            for t, v in zip(batch, _post(batch, kind, c)):
+            try:
+                vectors = _post(batch, kind, c)
+            except EmbeddingsUnavailable as e:
+                _down_until = time.monotonic() + OUTAGE_PAUSE_S
+                log.warning("embeddings unavailable (%s); keyword search only for %ds", e, int(OUTAGE_PAUSE_S))
+                raise
+            for t, v in zip(batch, vectors):
                 _cache[cache_key(t, kind)] = v
     return [_cache[cache_key(t, kind)] for t in texts]

@@ -23,3 +23,6 @@ eval/.intent_embed_cache.json
 
 # Raw datasets for local selection only (Prompt 14C): never committed
 eval/raw/
+
+# Third-party raw datasets (never committed; see README Data sources)
+backend/data/raw/

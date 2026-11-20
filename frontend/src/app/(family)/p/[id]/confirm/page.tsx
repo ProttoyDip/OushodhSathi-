@@ -9,7 +9,7 @@ import { buttonStyles, FamilyHeader, familyWidth } from "@/components/Chrome";
 import { ErrorState, Skeleton } from "@/components/States";
 import { BrandSuggestions } from "@/components/BrandSuggestions";
 import { StripCard } from "@/components/StripCard";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { cx } from "@/lib/format";
 import { clearThumbs, loadThumbs } from "@/lib/thumbs";
 import type { MedicineItem, PrescriberKind, Slot } from "@/lib/types";
@@ -89,7 +89,12 @@ function Confirm() {
     try {
       replace(await api.patchItem(pid, item.id, fields));
       return true;
-    } catch {
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 404) {
+        // removed meanwhile (another tap or device): drop it rather than bring it back
+        items.setData(list.filter((i) => i.id !== item.id));
+        return false;
+      }
       replace(item);
       setError(tc("errorGeneric"));
       return false;
@@ -324,6 +329,8 @@ function EditForm({ pid, item, onCancel, onSaved, onRemoved }: {
         setBusy(true);
         try {
           onSaved(await api.patchItem(pid, item.id, { brand: brand.trim(), strength: strength.trim() || null, confirmed: true }));
+        } catch (err) {
+          if (err instanceof ApiError && err.status === 404) onRemoved();
         } finally {
           setBusy(false);
         }

@@ -328,7 +328,7 @@ export default async function Landing() {
             <h2 id="team-h" className={sectionTitle}>{t("team.title")}</h2>
             <p className="max-w-[52ch] text-lg text-ink-soft">{t("team.body")}</p>
           </div>
-          <ul className="mt-12 grid gap-6 sm:grid-cols-3">
+          <ul className="mt-12 grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-5">
             {TEAM.map((m) => (
               <li key={m.github} className="min-w-0">
                 <Image src={m.photo} alt={m.name} width={480} height={600} sizes="(min-width: 640px) 33vw, 100vw"

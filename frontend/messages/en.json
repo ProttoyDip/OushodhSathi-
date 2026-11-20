@@ -421,7 +421,9 @@
       "roles": {
         "lead": "Team lead · Backend and AI",
         "design": "Design and presentation",
-        "frontend": "Frontend"
+        "frontend": "Frontend",
+        "research": "Research and testing",
+        "data": "Data and evaluation"
       }
     },
     "footer": {
@@ -687,7 +689,9 @@
       "roles": {
         "lead": "Team lead · Backend and AI",
         "design": "Design and presentation",
-        "frontend": "Frontend"
+        "frontend": "Frontend",
+        "research": "Research and testing",
+        "data": "Data and evaluation"
       }
     },
     "footer": {

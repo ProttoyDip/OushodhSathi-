@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { MotionProvider } from "@/components/Motion";
 import { RevealController } from "@/components/Reveal";
+import { motionArmScript } from "@/lib/motionPref";
 import { revealArmScript } from "@/lib/reveal";
 import { SITE_URL } from "@/lib/site";
 import "./globals.css";
@@ -74,6 +75,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <script dangerouslySetInnerHTML={{ __html: revealArmScript }} />
+        <script dangerouslySetInnerHTML={{ __html: motionArmScript }} />
       </head>
       <body>
         <NextIntlClientProvider locale={locale} messages={messages}>

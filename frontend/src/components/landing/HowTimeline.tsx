@@ -1,6 +1,5 @@
 import { ListChecks, ScanText, Stethoscope, Users } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
-import { reveal } from "@/lib/reveal";
 
 type Actor = "family" | "ai" | "rules" | "human";
 
@@ -27,12 +26,12 @@ export async function HowTimeline() {
 
   return (
     <ol className="relative mt-10">
-      <span aria-hidden className="stitch-y stitch-draw absolute bottom-8 left-[19px] top-8" />
+      <span aria-hidden className="stitch-y absolute bottom-8 left-[19px] top-8" />
       {STEPS.map(({ key, actor }, i) => {
         const Icon = ACTOR_ICON[actor];
         const human = actor === "human";
         return (
-          <li key={key} {...reveal(i * 60)} className="relative grid grid-cols-[40px_minmax(0,1fr)] gap-x-5 py-4">
+          <li key={key} className="relative grid grid-cols-[40px_minmax(0,1fr)] gap-x-5 py-4">
             <span aria-hidden
               className={`relative grid h-10 w-10 place-items-center rounded-full border-2 font-display text-lg tabular ${
                 human ? "border-neel bg-neel text-on-neel" : "border-stitch bg-paper-raised text-ink"}`}>

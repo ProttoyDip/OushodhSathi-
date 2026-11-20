@@ -18,7 +18,9 @@
     "safety": "Do not stop or change any medicine without talking to the doctor.",
     "years": "{age} years",
     "cancel": "Cancel",
-    "errorTooMany": "Too many tries from here just now. Please wait a little and try again."
+    "errorTooMany": "Too many tries from here just now. Please wait a little and try again.",
+    "motionPause": "Pause motion",
+    "motionPlay": "Play motion"
   },
   "severity": {
     "red": "Doctor review",

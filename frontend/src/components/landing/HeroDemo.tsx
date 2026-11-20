@@ -10,6 +10,7 @@ import { DuplicateConnector } from "@/components/DuplicateConnector";
 import { SPRING_TRAVEL } from "@/components/Motion";
 import { StripCard } from "@/components/StripCard";
 import { DEMO_ITEMS } from "@/lib/demoData";
+import { motionAllowed } from "@/lib/motionPref";
 
 const comet = { ...DEMO_ITEMS.camlodin, id: 9, brand: "Comet", strength: "500 mg", generic: "metformin", drug_class: "biguanide", expiry: "2027-05" };
 
@@ -33,12 +34,13 @@ function Travel({ id, i = 0, enter = false, children }: { id: number; i?: number
  * travel together under "দুটোই প্যারাসিটামল". Real components, invented household.
  */
 export function HeroDemo({ replayLabel }: { replayLabel: string }) {
-  const [phase, setPhase] = useState<0 | 1>(0);
+  // Static first: the server renders the finished shelf (phase 1). The sequence plays only on replay,
+  // and only when motion is allowed (not reduced, not paused site-wide).
+  const [phase, setPhase] = useState<0 | 1>(1);
   const [run, setRun] = useState(0);
 
   useEffect(() => {
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) {
+    if (run === 0 || !motionAllowed()) {
       setPhase(1);
       return;
     }
@@ -57,7 +59,7 @@ export function HeroDemo({ replayLabel }: { replayLabel: string }) {
               type="button"
               onClick={() => setRun((r) => r + 1)}
               aria-label={replayLabel}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-rule text-ink-soft hover:text-ink"
+              className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-rule text-ink-soft hover:text-ink"
             >
               <RotateCcw aria-hidden size={17} />
             </button>
@@ -73,7 +75,7 @@ export function HeroDemo({ replayLabel }: { replayLabel: string }) {
                   ))
                 ) : (
                   <motion.div key="pair" layout className="grid gap-3">
-                    <DuplicateConnector label="দুটোই প্যারাসিটামল" snap={false} delay={250}>
+                    <DuplicateConnector label="দুটোই প্যারাসিটামল" animate={run > 0} snap={false} delay={250}>
                       <Travel id={DEMO_ITEMS.napa.id}><StripCard item={DEMO_ITEMS.napa} density="compact" highlight="red" /></Travel>
                       <Travel id={DEMO_ITEMS.ace.id}><StripCard item={DEMO_ITEMS.ace} density="compact" highlight="red" /></Travel>
                     </DuplicateConnector>

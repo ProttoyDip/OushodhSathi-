@@ -47,6 +47,48 @@
   --radius-chip: 999px;
 }
 
+/* The landing page is light unless the reader explicitly chose dark (system dark keeps it light). */
+:root:not([data-theme="dark"]) .landing-light {
+  color-scheme: light;
+  --paper: #f3f5f9;
+  --paper-raised: #ffffff;
+  --paper-sunk: #e7ebf3;
+  --ink: #0e1530;
+  --ink-soft: #3a4466;
+  --ink-faint: #5b6584;
+  --rule: #dfe3ec;
+  --rule-strong: #c4cbdb;
+
+  --foil: #c8cdd6;
+  --foil-hi: #f1f3f7;
+  --foil-lo: #9ea6b4;
+  --foil-ink: #586274;
+
+  --neel: #2a3b91;
+  --neel-hover: #1f2d78;
+  --neel-tint: #e4e9f8;
+  --on-neel: #ffffff;
+  --stitch: #8f9bd6;
+  --dye: #1f2c6e;
+  --dye-deep: #172259;
+  --dye-stitch: rgb(255 255 255 / 0.38);
+
+  --red: #b42318;
+  --red-tint: #fce9e7;
+  --red-line: #f0b9b2;
+  --amber: #b54708;
+  --amber-tint: #fdefe0;
+  --amber-line: #f1c79c;
+  --green: #067647;
+  --green-tint: #e2f3ea;
+  --green-line: #a9d9bf;
+
+  --shadow-soft: 0 1px 2px rgb(14 21 48 / 0.05), 0 10px 28px -14px rgb(14 21 48 / 0.22);
+  --shadow-lift: 0 2px 4px rgb(14 21 48 / 0.06), 0 24px 48px -20px rgb(14 21 48 / 0.35);
+  --radius-card: 10px;
+  --radius-chip: 999px;
+}
+
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
@@ -508,48 +550,51 @@ html.reveal-armed:not(.reveal-live) [data-reveal]:not([data-shown]) {
   .demo-fit-sm { zoom: 0.86; }
 }
 
-/* ---------- landing: marquee, headline rise, stitches that sew in ----------
-   All motion lives under no-preference, so reduced-motion users get the static layout
-   (the global reduce rule would otherwise spin an infinite loop at 1ms). */
-.marquee {
+/* ---------- landing (v3) ----------
+   Nothing on the landing page starts hidden. Motion runs only under html.motion-ok, which the head script
+   sets when the reader has not asked for reduced motion and has not paused motion (WCAG 2.2.2). */
+.landing-light { background: var(--paper); color: var(--ink); }
+.landing {
+  --section-y: clamp(64px, 9vw, 112px);   /* section rhythm */
+  --section-y-tight: clamp(48px, 6vw, 72px);
+}
+/* the one deep-indigo dyed band of the page, with a kantha hem top and bottom */
+.dyed-band {
+  position: relative;
+  background-color: var(--dye-deep);
+  color: #f3f5f9;
+}
+.dyed-band::before, .dyed-band::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  height: 2px;
+  background: repeating-linear-gradient(90deg, var(--dye-stitch) 0 9px, transparent 9px 15px);
+}
+.dyed-band::before { top: 12px; }
+.dyed-band::after { bottom: 12px; }
+/* a foil-edged chip: a piece of medicine strip */
+.foil-chip {
+  display: inline-flex;
+  align-items: center;
   overflow: hidden;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-card, 12px);
+  background: var(--paper-raised);
+}
+
+.marquee {
+  overflow-x: auto;   /* without motion the rows are a scrollable list */
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
 }
 .marquee-toggle { display: none; }
 @keyframes marquee { to { transform: translateX(-50%); } }
-@keyframes line-rise {
-  from { opacity: 0; transform: translateY(0.35em); }
-  to { opacity: 1; transform: none; }
-}
-@keyframes draw-y {
-  from { clip-path: inset(0 0 100% 0); }
-  to { clip-path: inset(0); }
-}
-@media (prefers-reduced-motion: no-preference) {
-  .marquee-toggle { display: inline-flex; }
-  .marquee-track { animation: marquee 70s linear infinite; }
-  .marquee-track[data-dir="rev"] { animation-direction: reverse; animation-duration: 85s; }
-  .marquee:hover .marquee-track,
-  .marquee:focus-within .marquee-track,
-  .marquee[data-paused] .marquee-track { animation-play-state: paused; }
+html.motion-ok .marquee { overflow: hidden; }
+html.motion-ok .marquee-toggle { display: inline-flex; }
+html.motion-ok .marquee-track { animation: marquee 70s linear infinite; }
+html.motion-ok .marquee-track[data-dir="rev"] { animation-direction: reverse; animation-duration: 85s; }
+html.motion-ok .marquee:hover .marquee-track,
+html.motion-ok .marquee:focus-within .marquee-track,
+html.motion-ok .marquee[data-paused] .marquee-track { animation-play-state: paused; }
 
-  .line-rise { display: inline-block; animation: line-rise 760ms var(--ease-out-quint) both; }
-
-  /* a stitch inside a reveal block sews itself in, left to right, just after the block lands */
-  [data-reveal] .stitch-x { transition: clip-path 900ms var(--ease-out-quint) calc(var(--reveal-delay, 0ms) + 220ms); }
-  html.reveal-armed [data-reveal]:not([data-shown]) .stitch-x { clip-path: inset(0 100% 0 0); }
-
-  /* evidence rules draw across as each figure enters */
-  .rule-draw { background: linear-gradient(var(--neel), var(--neel)) top left / 100% 2px no-repeat; transition: background-size 900ms var(--ease-out-quint) calc(var(--reveal-delay, 0ms) + 120ms); }
-  html.reveal-armed .rule-draw[data-reveal]:not([data-shown]) { background-size: 0 2px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .marquee { overflow-x: auto; }
-}
-/* the how-it-works stitch follows the reader down the six steps */
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .stitch-draw { animation: draw-y linear both; animation-timeline: view(); animation-range: entry 20% cover 65%; }
-  }
-}

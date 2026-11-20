@@ -13,12 +13,12 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { Analytics } from "@vercel/analytics/next";
 import { Wordmark } from "@/components/BrandMark";
 import { LangToggle, ThemeToggle } from "@/components/Chrome";
+import { MotionToggle } from "@/components/MotionToggle";
 import { WarmUp } from "@/components/JudgeBar";
 import { BrandMarquee } from "@/components/landing/BrandMarquee";
 import { HowTimeline } from "@/components/landing/HowTimeline";
 import { ProductFrames, ReviewScreenshot } from "@/components/landing/ProductFrames";
 import { stickyBar } from "@/lib/layout";
-import { reveal } from "@/lib/reveal";
 import { demoHref, GITHUB_URL, VIDEO_URL } from "@/lib/site";
 import { TEAM } from "@/lib/team";
 
@@ -50,7 +50,7 @@ export default async function Landing() {
   const demo = demoHref("/p/1");
 
   return (
-    <div className="min-h-dvh overflow-x-clip">
+    <div className="landing landing-light min-h-dvh overflow-x-clip">
       <WarmUp />
       <Analytics />
       <div className={stickyBar}>
@@ -64,6 +64,7 @@ export default async function Landing() {
             <Link href="/review" className="hidden h-11 items-center gap-1.5 whitespace-nowrap rounded-chip border border-rule px-4 text-[15px] font-medium text-ink hover:border-rule-strong sm:inline-flex">
               <Stethoscope aria-hidden size={16} /> {t("nav.reviewer")}
             </Link>
+            <MotionToggle className="h-11" />
             <ThemeToggle className="h-11 w-11" />
             <LangToggle className="h-11" />
           </div>
@@ -73,10 +74,10 @@ export default async function Landing() {
       {/* hero: the claim on one side, the product proving it on the other */}
       <header className="mx-auto max-w-[1200px] px-5 pb-14 pt-10 sm:px-8 lg:pb-20 lg:pt-16">
         <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-16">
-          <div {...reveal(0)} className="min-w-0">
+          <div className="min-w-0">
             <h1 className="font-display text-[clamp(42px,5.6vw,76px)] leading-[1.05] text-ink [overflow-wrap:anywhere]">
-              <span className="line-rise">{t("hero.title1")}</span> <br className="hidden sm:block" />
-              <span className="line-rise [animation-delay:110ms]">{t("hero.title2")}</span>
+              <span>{t("hero.title1")}</span> <br className="hidden sm:block" />
+              <span>{t("hero.title2")}</span>
             </h1>
             <p lang={accentLang} className={`mt-4 text-[clamp(20px,2.1vw,26px)] leading-snug text-neel ${accent}`}>
               {t("hero.accent")}
@@ -98,7 +99,7 @@ export default async function Landing() {
               ))}
             </ul>
           </div>
-          <div {...reveal(140)} className="min-w-0">
+          <div className="min-w-0">
             <ProductFrames replayLabel={t("hero.replay")} phoneLabel={t("hero.framePhone")} />
           </div>
         </div>
@@ -109,13 +110,13 @@ export default async function Landing() {
       {/* how it works: the pharmacist's screen on the left, the six steps on the right */}
       <section id="how" aria-labelledby="how-h" className="scroll-mt-20 border-y border-rule bg-paper-raised">
         <div className="mx-auto grid max-w-[1200px] gap-12 px-5 py-20 sm:px-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-16 lg:py-28">
-          <div {...reveal(80)} className="order-2 min-w-0 lg:order-1 lg:sticky lg:top-28 lg:self-start">
+          <div className="order-2 min-w-0 lg:order-1 lg:sticky lg:top-28 lg:self-start">
             <ReviewScreenshot label={t("hero.frameReview")} />
           </div>
           <div className="order-1 min-w-0 lg:order-2">
-            <h2 {...reveal(0)} id="how-h" className={sectionTitle}>{t("how.title")}</h2>
+            <h2 id="how-h" className={sectionTitle}>{t("how.title")}</h2>
             <p lang={accentLang} className={`mt-3 text-[22px] text-neel ${accent}`}>{t("how.accent")}</p>
-            <p {...reveal(60)} className="mt-5 max-w-[56ch] text-lg text-ink-soft">{t("how.body")}</p>
+            <p className="mt-5 max-w-[56ch] text-lg text-ink-soft">{t("how.body")}</p>
             <HowTimeline />
           </div>
         </div>
@@ -124,7 +125,7 @@ export default async function Landing() {
       {/* why it's safe: the promise everything rests on, then the rules that keep it */}
       <section id="safe" aria-labelledby="safe-h" className="mx-auto max-w-[1200px] scroll-mt-20 px-5 py-24 sm:px-8 lg:py-32">
         <div className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-20">
-          <div {...reveal(0)} className="min-w-0">
+          <div className="min-w-0">
             <h2 id="safe-h" className={sectionTitle}>{t("safe.title")}</h2>
             <p lang={accentLang} className={`mt-3 text-[22px] text-neel ${accent}`}>{t("safe.accent")}</p>
             <p className="mt-6 max-w-[52ch] text-lg text-ink-soft">{t("safe.body")}</p>
@@ -144,8 +145,8 @@ export default async function Landing() {
 
           <div className="min-w-0 lg:pt-3">
             <ul className="divide-y divide-rule border-y border-rule">
-              {RULES.map((k, i) => (
-                <li key={k} {...reveal(80 + i * 50)} className="py-6">
+              {RULES.map((k) => (
+                <li key={k} className="py-6">
                   <h3 className="text-[21px] font-semibold leading-snug text-ink">{t(`safe.${k}.title`)}</h3>
                   <p className="mt-2 max-w-[58ch] text-[17px] leading-relaxed text-ink-soft">{t(`safe.${k}.body`)}</p>
                 </li>
@@ -164,12 +165,12 @@ export default async function Landing() {
       {/* evidence: the one full-width break in the diptych rhythm. Public numbers, each with its source */}
       <section aria-labelledby="ev-h" className="border-y border-rule bg-paper-raised">
         <div className="mx-auto max-w-[1200px] px-5 py-20 sm:px-8 lg:py-24">
-          <h2 {...reveal(0)} id="ev-h" className="max-w-[22ch] font-display text-[clamp(32px,3.8vw,48px)] leading-[1.08] text-ink [overflow-wrap:anywhere]">
+          <h2 id="ev-h" className="max-w-[22ch] font-display text-[clamp(32px,3.8vw,48px)] leading-[1.08] text-ink [overflow-wrap:anywhere]">
             {t("evidence.title")}
           </h2>
           <div className="mt-14 grid gap-12 md:grid-cols-3 md:gap-10">
-            {EVIDENCE.map((e, i) => (
-              <figure key={e.key} {...reveal(i * 90)} className="rule-draw min-w-0 pt-6">
+            {EVIDENCE.map((e) => (
+              <figure key={e.key} className="min-w-0 border-t-2 border-neel pt-6">
                 <p className="flex flex-wrap items-baseline gap-x-3">
                   <span className="tabular font-display text-[clamp(56px,5.4vw,80px)] leading-none text-neel">{t(`evidence.${e.key}.figure`)}</span>
                   {t(`evidence.${e.key}.unit`) && <span className="text-lg font-semibold text-ink">{t(`evidence.${e.key}.unit`)}</span>}
@@ -183,21 +184,21 @@ export default async function Landing() {
               </figure>
             ))}
           </div>
-          <p {...reveal(200)} className="mt-14 max-w-[70ch] text-[15px] text-ink-faint">{t("evidence.pilot")}</p>
+          <p className="mt-14 max-w-[70ch] text-[15px] text-ink-faint">{t("evidence.pilot")}</p>
         </div>
       </section>
 
       {/* questions families ask */}
       <section id="faq" aria-labelledby="faq-h" className="mx-auto max-w-[1200px] scroll-mt-20 px-5 py-20 sm:px-8 lg:py-24">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
-          <div {...reveal(0)} className="min-w-0">
+          <div className="min-w-0">
             <h2 id="faq-h" className={sectionTitle}>{t("faq.title")}</h2>
             <p lang={accentLang} className={`mt-3 text-[22px] text-neel ${accent}`}>{t("faq.accent")}</p>
             <span aria-hidden className="stitch-x mt-6 block w-24" />
           </div>
           <div className="min-w-0 divide-y divide-rule border-y border-rule">
-            {FAQ.map((k, i) => (
-              <details key={k} className="faq group" {...reveal(i * 50)}>
+            {FAQ.map((k) => (
+              <details key={k} className="faq group" >
                 <summary className="flex min-h-16 cursor-pointer items-center justify-between gap-4 py-4 text-left text-[19px] font-semibold text-ink">
                   {t(`faq.${k}.q`)}
                   <Plus aria-hidden size={22} className="faq-icon shrink-0 text-neel transition-transform duration-200" />
@@ -212,13 +213,13 @@ export default async function Landing() {
       {/* the people who built it */}
       <section id="team" aria-labelledby="team-h" className="scroll-mt-20 border-t border-rule bg-paper-raised">
         <div className="mx-auto max-w-[1200px] px-5 py-20 sm:px-8 lg:py-24">
-          <div {...reveal(0)} className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-end">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-end">
             <h2 id="team-h" className={sectionTitle}>{t("team.title")}</h2>
             <p className="max-w-[52ch] text-lg text-ink-soft">{t("team.body")}</p>
           </div>
           <ul className="mt-12 grid gap-6 sm:grid-cols-3">
-            {TEAM.map((m, i) => (
-              <li key={m.github} {...reveal(i * 80)} className="min-w-0">
+            {TEAM.map((m) => (
+              <li key={m.github} className="min-w-0">
                 <Image src={m.photo} alt={m.name} width={480} height={600} sizes="(min-width: 640px) 33vw, 100vw"
                   className="aspect-[4/5] w-full rounded-card border border-rule object-cover" />
                 <p className="mt-4 text-xl font-semibold text-ink">{m.name}</p>
@@ -235,7 +236,7 @@ export default async function Landing() {
 
       {/* one closing call to action */}
       <section aria-labelledby="cta-h" className="border-t border-rule">
-        <div {...reveal(0)} className="mx-auto grid max-w-[1200px] gap-8 px-5 py-20 sm:px-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:items-center lg:py-24">
+        <div className="mx-auto grid max-w-[1200px] gap-8 px-5 py-20 sm:px-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:items-center lg:py-24">
           <div className="min-w-0">
             <h2 id="cta-h" className={sectionTitle}>{t("cta.title")}</h2>
             <p className="mt-4 max-w-[56ch] text-lg text-ink-soft">{t("cta.body")}</p>

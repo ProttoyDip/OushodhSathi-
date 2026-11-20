@@ -38,3 +38,13 @@ def test_the_curated_seed_still_wins(full_list):
 def test_a_misread_suggests_the_real_brand_and_nothing_unrelated(full_list):
     out = [s["brand"] for s in brand_suggest.suggest("Rupain")]
     assert "Rupadin" in out and "Tryptin" not in out
+
+
+def test_every_dataset_row_is_unverified_and_names_a_generic():
+    import csv
+
+    with FULL.open(encoding="utf-8", newline="") as f:
+        rows = list(csv.DictReader(line for line in f if not line.lstrip().startswith("#")))
+    assert len(rows) > 10_000
+    assert all(r["verified"].strip().lower() not in ("yes", "true", "1") for r in rows)
+    assert all(r["generic"].strip() for r in rows)

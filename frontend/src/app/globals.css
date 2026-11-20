@@ -583,6 +583,30 @@ html.reveal-armed:not(.reveal-live) [data-reveal]:not([data-shown]) {
   background: var(--paper-raised);
 }
 
+/* Hero moment (HeroDemo.tsx). The server renders the finished frame; these start-state rules exist only when
+   motion is allowed and the visitor has not seen it this session (or pressed replay). Transforms and colours only. */
+.hero-ace { transition: transform 620ms cubic-bezier(0.22, 1.25, 0.36, 1); }
+.hero-pair > svg { transform-origin: 50% 50%; transition: transform 480ms var(--ease-out-quint), opacity 200ms; }
+.hero-pair > span { transition: background-color 280ms, color 280ms, border-color 280ms; }
+.hero-wait { display: none; }
+:is(html.motion-ok:not(.hero-seen) .hero-demo, html.motion-ok .hero-demo[data-replay])[data-step="0"] .hero-ace {
+  transform: translate(16px, 6px) rotate(-1.5deg);   /* a strip laid down askew, then it settles beside Napa */
+}
+:is(html.motion-ok:not(.hero-seen) .hero-demo, html.motion-ok .hero-demo[data-replay]):is([data-step="0"], [data-step="1"]) .hero-pair > svg {
+  transform: scaleY(0);
+  opacity: 0;   /* the bracket is decoration; its stroke does not scale, so it also fades */
+}
+:is(html.motion-ok:not(.hero-seen) .hero-demo, html.motion-ok .hero-demo[data-replay]):is([data-step="0"], [data-step="1"], [data-step="2"]) .hero-pair > span {
+  background-color: var(--paper-raised);
+  border-color: var(--rule-strong);
+  color: var(--ink);
+}
+:is(html.motion-ok:not(.hero-seen) .hero-demo, html.motion-ok .hero-demo[data-replay]):is([data-step="0"], [data-step="1"], [data-step="2"]) .hero-pair > span::after {
+  content: "?";
+}
+:is(html.motion-ok:not(.hero-seen) .hero-demo, html.motion-ok .hero-demo[data-replay]):not([data-step="4"]) .hero-wait { display: inline-flex; }
+:is(html.motion-ok:not(.hero-seen) .hero-demo, html.motion-ok .hero-demo[data-replay]):not([data-step="4"]) .hero-done { display: none; }
+
 .marquee {
   overflow-x: auto;   /* without motion the rows are a scrollable list */
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
@@ -592,8 +616,17 @@ html.reveal-armed:not(.reveal-live) [data-reveal]:not([data-shown]) {
 @keyframes marquee { to { transform: translateX(-50%); } }
 html.motion-ok .marquee { overflow: hidden; }
 html.motion-ok .marquee-toggle { display: inline-flex; }
-html.motion-ok .marquee-track { animation: marquee 70s linear infinite; }
-html.motion-ok .marquee-track[data-dir="rev"] { animation-direction: reverse; animation-duration: 85s; }
+html.motion-ok .marquee-track { animation: marquee 60s linear infinite; }
+html.motion-ok .marquee-track[data-dir="rev"] { animation-direction: reverse; animation-duration: 75s; }
+/* a hovered chip lights its partner: the same medicine under the other name */
+.brand-chip { transition: border-color 160ms, box-shadow 160ms; }
+.marquee:has([data-pair="para"]:hover) [data-pair="para"],
+.marquee:has([data-pair="amlo"]:hover) [data-pair="amlo"],
+.marquee:has([data-pair="eso"]:hover) [data-pair="eso"],
+.marquee:has([data-pair="losa"]:hover) [data-pair="losa"] {
+  border-color: var(--neel);
+  box-shadow: inset 0 -3px 0 var(--stitch);
+}
 html.motion-ok .marquee:hover .marquee-track,
 html.motion-ok .marquee:focus-within .marquee-track,
 html.motion-ok .marquee[data-paused] .marquee-track { animation-play-state: paused; }

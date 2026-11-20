@@ -479,9 +479,11 @@
       "demo": "See the demo first"
     },
     "names": {
-      "title": "One medicine, many names. A few rows from our brand table.",
+      "title": "One medicine, many names",
       "pause": "Pause",
-      "play": "Play"
+      "play": "Play",
+      "caption": "Our checked brand table: {brands, number} names, {generics, number} generics, and {shared, number} of those generics are sold under more than one name. Matching also covers {dataset, number} brand names from a public dataset (not pharmacist-verified).",
+      "sr": "For example: Napa and Ace are both paracetamol; Camlodin and Amdocal are both amlodipine; Maxpro and Sergel are both esomeprazole; Angilock and Osartil are both losartan."
     }
   },
   "docs": {

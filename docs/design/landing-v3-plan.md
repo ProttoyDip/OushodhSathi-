@@ -177,8 +177,8 @@ change is `transform` or a colour change: no layout shift.
 
 | Time | Frame |
 | --- | --- |
-| 0.0 s | First paint, start state (only with `motion-ok`): Napa and Ace both fully visible, Ace 28 px lower; the pair label reads in neutral ink "দুটোই প্যারাসিটামল?"; status row reads "ফার্মাসিস্টের অপেক্ষায়". |
-| 0.3–0.9 s | Ace slides up to Napa (`SPRING_TRAVEL`); Camlodin keeps its place (it was already in its final position). |
+| 0.0 s | First paint, start state (only with `motion-ok`): Napa and Ace both fully visible, Ace laid down askew (16 px right, 6 px lower, tilted 1.5°; built first as 28 px lower, which overlapped Camlodin); the pair label reads in neutral ink "দুটোই প্যারাসিটামল?"; status row reads "ফার্মাসিস্টের অপেক্ষায়". |
+| 0.3–0.9 s | Ace settles beside Napa (a CSS spring-like curve, so the hero ships no motion library); Camlodin keeps its place (it was already in its final position). |
 | 0.9–1.4 s | The red kantha bracket draws in from the middle outwards (the existing `reveal-y` keyframe in `DuplicateConnector`). |
 | 1.4–1.7 s | The label becomes the red SeverityBadge: icon + "দুটোই প্যারাসিটামল" (the question mark goes). |
 | 1.7–2.4 s | The status row's waiting dot becomes a green check and the words change to "ফার্মাসিস্ট নিশ্চিত করেছেন". |

@@ -16,6 +16,7 @@ import { LangToggle, ThemeToggle } from "@/components/Chrome";
 import { MotionToggle } from "@/components/MotionToggle";
 import { WarmUp } from "@/components/JudgeBar";
 import { BrandMarquee } from "@/components/landing/BrandMarquee";
+import facts from "@/data/brandFacts.json";
 import { HowTimeline } from "@/components/landing/HowTimeline";
 import { ProductFrames, ReviewScreenshot } from "@/components/landing/ProductFrames";
 import { stickyBar } from "@/lib/layout";
@@ -73,8 +74,9 @@ export default async function Landing() {
 
       {/* hero: the claim on one side, the product proving it on the other */}
       <header className="mx-auto max-w-[1200px] px-5 pb-14 pt-10 sm:px-8 lg:pb-20 lg:pt-16">
-        <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-16">
-          <div className="min-w-0">
+        {/* phones: claim, then the product, then the rest; desktop: claim and rest left, product right */}
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:grid-rows-[auto_1fr] lg:gap-x-16 lg:gap-y-0">
+          <div className="min-w-0 lg:col-start-1 lg:row-start-1">
             <h1 className="font-display text-[clamp(42px,5.6vw,76px)] leading-[1.05] text-ink [overflow-wrap:anywhere]">
               <span>{t("hero.title1")}</span> <br className="hidden sm:block" />
               <span>{t("hero.title2")}</span>
@@ -82,8 +84,13 @@ export default async function Landing() {
             <p lang={accentLang} className={`mt-4 text-[clamp(20px,2.1vw,26px)] leading-snug text-neel ${accent}`}>
               {t("hero.accent")}
             </p>
-            <span aria-hidden className="stitch-x mt-7 block w-24" />
-            <p className="mt-7 max-w-[56ch] text-lg leading-relaxed text-ink-soft">{t("hero.body")}</p>
+          </div>
+          <div className="min-w-0 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-center">
+            <ProductFrames replayLabel={t("hero.replay")} phoneLabel={t("hero.framePhone")} />
+          </div>
+          <div className="min-w-0 lg:col-start-1 lg:row-start-2">
+            <span aria-hidden className="stitch-x mt-7 block w-24 max-lg:hidden" />
+            <p className="max-w-[56ch] text-lg leading-relaxed text-ink-soft lg:mt-7">{t("hero.body")}</p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link href={demo} className={primaryBtn}>{t("hero.ctaDemo")} <ArrowRight aria-hidden size={20} /></Link>
               <Link href="/start" className={secondaryBtn}>{t("hero.ctaStart")}</Link>
@@ -99,13 +106,11 @@ export default async function Landing() {
               ))}
             </ul>
           </div>
-          <div className="min-w-0">
-            <ProductFrames replayLabel={t("hero.replay")} phoneLabel={t("hero.framePhone")} />
-          </div>
         </div>
       </header>
 
-      <BrandMarquee locale={locale} title={t("names.title")} pause={t("names.pause")} play={t("names.play")} />
+      <BrandMarquee locale={locale} title={t("names.title")} sr={t("names.sr")} pause={t("names.pause")} play={t("names.play")}
+        caption={t("names.caption", { brands: facts.seedBrands, generics: facts.seedGenerics, shared: facts.seedSharedGenerics, dataset: facts.datasetBrands })} />
 
       {/* how it works: the pharmacist's screen on the left, the six steps on the right */}
       <section id="how" aria-labelledby="how-h" className="scroll-mt-20 border-y border-rule bg-paper-raised">

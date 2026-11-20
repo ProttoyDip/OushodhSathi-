@@ -13,7 +13,7 @@ const KEY = "motion";
 const EVENT = "motionpref";
 
 /** Runs before paint (inline in <head>). */
-export const motionArmScript = `(function(){try{var p=localStorage.getItem('${KEY}')==='paused';if(!p&&!matchMedia('(prefers-reduced-motion: reduce)').matches){document.documentElement.classList.add('motion-ok')}}catch(e){}})();`;
+export const motionArmScript = `(function(){try{var p=localStorage.getItem('${KEY}')==='paused';if(!p&&!matchMedia('(prefers-reduced-motion: reduce)').matches){document.documentElement.classList.add('motion-ok')}if(sessionStorage.getItem('heroSeen')){document.documentElement.classList.add('hero-seen')}}catch(e){}})();`;
 
 function readPaused(): boolean {
   try {

@@ -484,6 +484,73 @@
       "play": "Play",
       "caption": "Our checked brand table: {brands, number} names, {generics, number} generics, and {shared, number} of those generics are sold under more than one name. Matching also covers {dataset, number} brand names from a public dataset (not pharmacist-verified).",
       "sr": "For example: Napa and Ace are both paracetamol; Camlodin and Amdocal are both amlodipine; Maxpro and Sergel are both esomeprazole; Angilock and Osartil are both losartan."
+    },
+    "story": {
+      "v1": "Whole strip in the frame",
+      "paracetamol": "paracetamol",
+      "amlodipine": "amlodipine",
+      "v3": "Brand to generic: exact match first, then a strict spelling match. Unknown brands are searched and marked unverified.",
+      "v4title": "Same medicine twice",
+      "v4body": "Napa 500 mg and Ace 500 mg both contain paracetamol.",
+      "v4source": "Source: brand table",
+      "v5note": "Pharmacist's note: show both strips to the doctor at the next visit.",
+      "v5done": "Confirmed by a pharmacist",
+      "v6label": "What the family sees, in Bangla",
+      "v6family": "নাপা আর এস একই ওষুধ, দুটোতেই প্যারাসিটামল। ফার্মাসিস্ট বিষয়টি নিশ্চিত করেছেন। ডাক্তারের সাথে কথা না বলে কোনো ওষুধ বন্ধ বা পরিবর্তন করবেন না।",
+      "v6passport": "Also on the printable medicine passport"
+    },
+    "rules": {
+      "title": "The safety rules that run",
+      "accent": "যে নিরাপত্তা নিয়মগুলো চলে",
+      "body": "Fixed rules, each with its source. A language model never creates, removes or grades a finding.",
+      "sourceLabel": "Source",
+      "promises": "And four promises",
+      "items": {
+        "dup": {
+          "name": "Same medicine twice",
+          "source": "Brand table"
+        },
+        "cls": {
+          "name": "Two medicines, same class",
+          "source": "Class table"
+        },
+        "int": {
+          "name": "Known interactions",
+          "source": "Curated table, pharmacist review pending"
+        },
+        "beers": {
+          "name": "Risky after 65",
+          "source": "AGS Beers Criteria 2023"
+        },
+        "acb": {
+          "name": "Anticholinergic burden",
+          "source": "ACB scale, 2012 update"
+        },
+        "look": {
+          "name": "Look-alike names",
+          "source": "Jaro-Winkler + phonetic key"
+        },
+        "tw": {
+          "name": "Triple whammy for the kidneys",
+          "source": "Medsafe NZ, 2013"
+        },
+        "kid": {
+          "name": "Dose at the latest kidney test",
+          "source": "CKD-EPI 2021; FDA 2016"
+        },
+        "kt": {
+          "name": "Kidney test due",
+          "source": "FDA 2016: eGFR at least yearly"
+        },
+        "abx": {
+          "name": "Antibiotic without a prescription",
+          "source": "WHO AWaRe 2025"
+        },
+        "exp": {
+          "name": "Expired strip",
+          "source": "Printed expiry date"
+        }
+      }
     }
   },
   "docs": {

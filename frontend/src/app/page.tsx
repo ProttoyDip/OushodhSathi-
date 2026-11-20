@@ -4,7 +4,7 @@
  * pre-emit critique: P5 H4 E4 S5 R5 V4
  */
 import {
-  ArrowRight, BookOpen, CirclePlay, CircleCheck, Clock, ExternalLink, ImageOff, Languages, Plus, ShieldCheck, Stethoscope,
+  ArrowRight, BookOpen, CirclePlay, ExternalLink, ImageOff, Languages, Plus, ShieldCheck, Stethoscope,
 } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
@@ -17,8 +17,9 @@ import { MotionToggle } from "@/components/MotionToggle";
 import { WarmUp } from "@/components/JudgeBar";
 import { BrandMarquee } from "@/components/landing/BrandMarquee";
 import facts from "@/data/brandFacts.json";
-import { HowTimeline } from "@/components/landing/HowTimeline";
-import { ProductFrames, ReviewScreenshot } from "@/components/landing/ProductFrames";
+import { HowStory } from "@/components/landing/HowStory";
+import { storyVisuals } from "@/components/landing/StoryVisuals";
+import { ProductFrames } from "@/components/landing/ProductFrames";
 import { stickyBar } from "@/lib/layout";
 import { demoHref, GITHUB_URL, VIDEO_URL } from "@/lib/site";
 import { TEAM } from "@/lib/team";
@@ -34,13 +35,17 @@ const EVIDENCE = [
 ] as const;
 
 const FAQ = ["q1", "q2", "q3", "q4", "q5", "q6"] as const;
-const RULES = ["r1", "r3", "r4", "r5", "r6"] as const;
+const RULE_ITEMS = ["dup", "cls", "int", "beers", "acb", "look", "tw", "kid", "kt", "abx", "exp"] as const;
+const PROMISES = ["r3", "r4", "r5", "r6"] as const;
+const STEPS = [
+  { key: "s1", actor: "family" }, { key: "s2", actor: "ai" }, { key: "s3", actor: "rules" },
+  { key: "s4", actor: "rules" }, { key: "s5", actor: "human" }, { key: "s6", actor: "family" },
+] as const;
 
 const sectionTitle = "font-display text-[clamp(34px,4.2vw,54px)] leading-[1.06] text-ink [overflow-wrap:anywhere]";
 const navLink = "hidden h-11 items-center whitespace-nowrap rounded-chip px-3 text-[15px] font-medium text-ink-soft hover:text-ink";
 const primaryBtn = "press inline-flex min-h-14 items-center justify-center gap-2.5 whitespace-nowrap rounded-card bg-neel px-6 text-[17px] font-semibold text-on-neel shadow-soft transition-colors hover:bg-neel-hover sm:px-7 sm:text-lg";
 const secondaryBtn = "press inline-flex min-h-14 items-center justify-center gap-2 whitespace-nowrap rounded-card border border-rule-strong bg-paper-raised px-6 text-[17px] font-semibold text-ink transition-colors hover:border-ink-faint sm:text-lg";
-const chipLink = "press inline-flex min-h-12 items-center gap-2 whitespace-nowrap rounded-chip border border-rule-strong px-5 text-[16px] font-semibold text-ink transition-colors hover:border-neel hover:text-neel";
 
 export default async function Landing() {
   const t = await getTranslations("landing");
@@ -49,6 +54,7 @@ export default async function Landing() {
   const accentLang = locale === "bn" ? "en" : "bn";
   const accent = locale === "bn" ? "font-display font-medium" : "font-bn-display";
   const demo = demoHref("/p/1");
+  const visuals = await storyVisuals();
 
   return (
     <div className="landing landing-light min-h-dvh overflow-x-clip">
@@ -112,58 +118,58 @@ export default async function Landing() {
       <BrandMarquee locale={locale} title={t("names.title")} sr={t("names.sr")} pause={t("names.pause")} play={t("names.play")}
         caption={t("names.caption", { brands: facts.seedBrands, generics: facts.seedGenerics, shared: facts.seedSharedGenerics, dataset: facts.datasetBrands })} />
 
-      {/* how it works: the pharmacist's screen on the left, the six steps on the right */}
-      <section id="how" aria-labelledby="how-h" className="scroll-mt-20 border-y border-rule bg-paper-raised">
-        <div className="mx-auto grid max-w-[1200px] gap-12 px-5 py-20 sm:px-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-16 lg:py-28">
-          <div className="order-2 min-w-0 lg:order-1 lg:sticky lg:top-28 lg:self-start">
-            <ReviewScreenshot label={t("hero.frameReview")} />
-          </div>
-          <div className="order-1 min-w-0 lg:order-2">
+      {/* how it works: six steps, each shown with the real product; a sticky stage on desktop when motion is on */}
+      <section id="how" aria-labelledby="how-h" className="scroll-mt-20 border-y border-rule bg-paper py-[var(--section-y)]">
+        <div className="mx-auto max-w-[1200px] px-5 sm:px-8">
+          <div className="max-w-[60ch]">
             <h2 id="how-h" className={sectionTitle}>{t("how.title")}</h2>
             <p lang={accentLang} className={`mt-3 text-[22px] text-neel ${accent}`}>{t("how.accent")}</p>
-            <p className="mt-5 max-w-[56ch] text-lg text-ink-soft">{t("how.body")}</p>
-            <HowTimeline />
+            <p className="mt-5 text-lg text-ink-soft">{t("how.body")}</p>
+          </div>
+          <div className="mt-12">
+            <HowStory steps={STEPS.map(({ key, actor }, i) => ({
+              key, actor, title: t(`flow.${key}.title`), alt: t(`flow.${key}.alt`), altLang: accentLang,
+              body: t(`flow.${key}.body`), actorLabel: t(`flow.actor.${actor}`), srStep: t("how.step", { n: i + 1 }),
+            }))} visuals={visuals} num={STEPS.map((_, i) => (i + 1).toLocaleString(locale === "bn" ? "bn-BD" : "en"))} />
           </div>
         </div>
       </section>
 
-      {/* why it's safe: the promise everything rests on, then the rules that keep it */}
-      <section id="safe" aria-labelledby="safe-h" className="mx-auto max-w-[1200px] scroll-mt-20 px-5 py-24 sm:px-8 lg:py-32">
-        <div className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-20">
-          <div className="min-w-0">
-            <h2 id="safe-h" className={sectionTitle}>{t("safe.title")}</h2>
-            <p lang={accentLang} className={`mt-3 text-[22px] text-neel ${accent}`}>{t("safe.accent")}</p>
-            <p className="mt-6 max-w-[52ch] text-lg text-ink-soft">{t("safe.body")}</p>
-
-            <div className="mt-10 rounded-card border border-neel bg-neel-tint p-6 lg:p-8">
-              <h3 className="max-w-[24ch] font-display text-[clamp(26px,2.5vw,32px)] leading-[1.12] text-ink">{t("safe.r2.title")}</h3>
-              <p className="mt-3 max-w-[56ch] text-lg text-ink-soft">{t("safe.r2.body")}</p>
-              <div aria-hidden className="mt-6 flex flex-wrap items-center gap-2 text-[15px] font-semibold">
-                <span className="inline-flex items-center gap-1.5 rounded-chip border border-rule-strong bg-paper px-3 py-1.5 text-ink-soft"><Clock size={15} /> {t("flow.s4.title")}</span>
-                <span className="stitch-x w-8" />
-                <span className="inline-flex items-center gap-1.5 rounded-chip border border-neel bg-paper px-3 py-1.5 text-neel"><Stethoscope size={15} /> {t("flow.s5.title")}</span>
-                <span className="stitch-x w-8" />
-                <span className="inline-flex items-center gap-1.5 rounded-chip border border-rule-strong bg-paper px-3 py-1.5 text-ink"><CircleCheck size={15} /> {t("flow.s6.title")}</span>
-              </div>
+      {/* the one deep-indigo band: every rule that runs, with its source, then the promises that bound the AI */}
+      <section id="safe" aria-labelledby="safe-h" className="dyed-band scroll-mt-20 py-[var(--section-y)]">
+        <div className="mx-auto max-w-[1200px] px-5 sm:px-8">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-end">
+            <div className="min-w-0">
+              <h2 id="safe-h" className="font-display text-[clamp(34px,4.2vw,54px)] leading-[1.06] text-[#f3f5f9] [overflow-wrap:anywhere]">{t("rules.title")}</h2>
+              <p lang={accentLang} className={`mt-3 text-[22px] text-[#c9d0f0] ${accent}`}>{t("rules.accent")}</p>
             </div>
+            <p className="max-w-[52ch] text-lg leading-relaxed text-[#dfe3f5]">{t("rules.body")}</p>
           </div>
-
-          <div className="min-w-0 lg:pt-3">
-            <ul className="divide-y divide-rule border-y border-rule">
-              {RULES.map((k) => (
-                <li key={k} className="py-6">
-                  <h3 className="text-[21px] font-semibold leading-snug text-ink">{t(`safe.${k}.title`)}</h3>
-                  <p className="mt-2 max-w-[58ch] text-[17px] leading-relaxed text-ink-soft">{t(`safe.${k}.body`)}</p>
-                </li>
-              ))}
-            </ul>
-            <div className="mt-8 flex flex-wrap items-center gap-x-4 gap-y-2">
-              <Link href="/docs" className={chipLink}>
-                <BookOpen aria-hidden size={18} /> {t("safe.docsTitle")} <ArrowRight aria-hidden size={17} />
+          <ul className="mt-12 grid gap-px overflow-hidden rounded-card border border-white/15 bg-white/15 sm:grid-cols-2 lg:grid-cols-3">
+            {RULE_ITEMS.map((k) => (
+              <li key={k} className="min-w-0 bg-[var(--dye-deep)] p-5">
+                <h3 className="text-[19px] font-semibold leading-snug text-[#f3f5f9]">{t(`rules.items.${k}.name`)}</h3>
+                <p className="mt-1.5 text-[15px] leading-relaxed text-[#c9d0f0]">
+                  <span className="sr-only">{t("rules.sourceLabel")}: </span>{t(`rules.items.${k}.source`)}
+                </p>
+              </li>
+            ))}
+            <li className="min-w-0 bg-[var(--dye-deep)]">
+              <Link href="/docs" className="flex h-full min-h-24 flex-col justify-center gap-1.5 p-5 text-[#f3f5f9] transition-colors hover:bg-white/5">
+                <span className="inline-flex items-center gap-2 text-[19px] font-semibold"><BookOpen aria-hidden size={19} /> {t("safe.docsTitle")} <ArrowRight aria-hidden size={18} /></span>
+                <span className="text-[15px] leading-relaxed text-[#c9d0f0]">{t("safe.docsBody")}</span>
               </Link>
-              <span className="text-[15px] text-ink-faint">{t("safe.docsBody")}</span>
-            </div>
-          </div>
+            </li>
+          </ul>
+          <h3 className="mt-14 text-[21px] font-semibold text-[#f3f5f9]">{t("rules.promises")}</h3>
+          <ul className="mt-5 grid gap-x-10 gap-y-6 md:grid-cols-2">
+            {PROMISES.map((k) => (
+              <li key={k} className="min-w-0 border-t border-white/20 pt-4">
+                <p className="text-[18px] font-semibold leading-snug text-[#f3f5f9]">{t(`safe.${k}.title`)}</p>
+                <p className="mt-1.5 max-w-[56ch] text-[16px] leading-relaxed text-[#dfe3f5]">{t(`safe.${k}.body`)}</p>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 

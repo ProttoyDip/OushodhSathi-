@@ -614,7 +614,8 @@ html.reveal-armed:not(.reveal-live) [data-reveal]:not([data-shown]) {
 }
 .marquee-toggle { display: none; }
 @keyframes marquee { to { transform: translateX(-50%); } }
-html.motion-ok .marquee { overflow: hidden; }
+html.motion-ok .marquee { overflow: hidden; contain: layout paint; }   /* its animation repaints only itself */
+html.motion-ok .marquee-track { will-change: transform; }
 html.motion-ok .marquee-toggle { display: inline-flex; }
 html.motion-ok .marquee-track { animation: marquee 60s linear infinite; }
 html.motion-ok .marquee-track[data-dir="rev"] { animation-direction: reverse; animation-duration: 75s; }
@@ -631,3 +632,15 @@ html.motion-ok .marquee:hover .marquee-track,
 html.motion-ok .marquee:focus-within .marquee-track,
 html.motion-ok .marquee[data-paused] .marquee-track { animation-play-state: paused; }
 
+
+/* How it works (HowStory.tsx): a plain list with inline visuals everywhere, except on a desktop with motion
+   allowed, where the visuals share one sticky stage that follows the step being read (crossfade only). */
+.story-stage { display: none; }
+.story-layer { position: absolute; inset: 0; opacity: 0; transition: opacity 180ms; }
+.story-stage:not([data-active]) .story-layer[data-i="0"], .story-layer[data-on] { opacity: 1; }
+.story-num { transition: background-color 180ms, color 180ms, border-color 180ms; }
+@media (min-width: 1024px) {
+  html.motion-ok .story-stage { display: block; }
+  html.motion-ok .story-inline { display: none; }
+  html.motion-ok .story-step[data-on] .story-num { background: var(--neel); border-color: var(--neel); color: var(--on-neel); }
+}

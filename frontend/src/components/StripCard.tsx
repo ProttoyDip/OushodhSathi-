@@ -24,6 +24,7 @@ export function StripCard({
   className,
   style,
   highlight,
+  titleAs: Title = "h3",
 }: {
   item: StripItem;
   children?: ReactNode;
@@ -31,6 +32,8 @@ export function StripCard({
   className?: string;
   style?: CSSProperties;
   highlight?: "red" | "amber";
+  /** The brand line is an h3 in the app; illustrations (the landing page) pass "p" to keep the outline clean. */
+  titleAs?: "h2" | "h3" | "p";
 }) {
   const t = useTranslations("strip");
   const locale = useLocale();
@@ -84,12 +87,12 @@ export function StripCard({
             />
           )}
           <div className="min-w-0">
-            <h3 className={cx("flex flex-wrap items-baseline gap-x-2 font-semibold leading-tight", compact ? "text-lg" : "text-[22px]")}>
+            <Title className={cx("flex flex-wrap items-baseline gap-x-2 font-semibold leading-tight", compact ? "text-lg" : "text-[22px]")}>
               <span className="break-words">{item.brand}</span>
               {item.strength && (
                 <span className={cx("tabular font-medium text-ink-soft", compact ? "text-[15px]" : "text-lg")}>{item.strength}</span>
               )}
-            </h3>
+            </Title>
             <div className="mt-2">
               {item.generic ? (
                 <span

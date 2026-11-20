@@ -1,3 +1,5 @@
+import { NextIntlClientProvider } from "next-intl";
+import bn from "../../../messages/bn.json";
 import { HeroDemo } from "@/components/landing/HeroDemo";
 
 /**
@@ -8,7 +10,10 @@ import { HeroDemo } from "@/components/landing/HeroDemo";
 export function ProductFrames({ replayLabel, phoneLabel }: { replayLabel: string; phoneLabel: string }) {
   return (
     <figure className="dyed-cloth px-5 py-8 sm:px-10 sm:py-12">
-      <HeroDemo replayLabel={replayLabel} />
+      {/* the demo household is Bangla in both languages; only the strings its cards need reach the browser */}
+      <NextIntlClientProvider locale="bn" messages={{ strip: bn.strip, common: bn.common }} timeZone="Asia/Dhaka">
+        <HeroDemo replayLabel={replayLabel} />
+      </NextIntlClientProvider>
       <figcaption className="sr-only">{phoneLabel}</figcaption>
     </figure>
   );

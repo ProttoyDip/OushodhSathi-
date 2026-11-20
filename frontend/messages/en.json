@@ -296,7 +296,8 @@
       "docs": "Docs",
       "reviewer": "Reviewer",
       "home": "OushodhSathi home",
-      "faq": "Questions"
+      "faq": "Questions",
+      "pharm": "Pharmacists"
     },
     "hero": {
       "title1": "Napa and Ace are",
@@ -551,6 +552,47 @@
           "source": "Printed expiry date"
         }
       }
+    },
+    "pharm": {
+      "title": "For pharmacists",
+      "accent": "ফার্মাসিস্টদের জন্য",
+      "body": "One queue for every household, red findings first. Each finding shows the strip photos, the brands, the generics, the rule that fired and its source.",
+      "c1": {
+        "title": "Red findings first",
+        "body": "The queue opens on the riskiest finding, and every finding says why it is there."
+      },
+      "c2": {
+        "title": "“Why?”, with sources",
+        "body": "A path through the medicine graph shows how two strips connect, with the table each step came from. It explains; the rules made the finding."
+      },
+      "c3": {
+        "title": "Keyboard only",
+        "body": "J and K to move, C to confirm, D to dismiss, N to add a note."
+      },
+      "cta": "Open the reviewer queue"
+    },
+    "follow": {
+      "title": "A daily check-in",
+      "accent": "প্রতিদিন একটু খোঁজ",
+      "body": "A WhatsApp message or a short phone call asks whether each dose was taken. The answers are saved to the household's record. An emergency answer tells the family to call 999 at once.",
+      "wa": "WhatsApp message",
+      "call": "Phone call, answered on the keypad",
+      "keys": "১ খেয়েছি · ২ খাইনি · ৯ জরুরি",
+      "note": "Shown with the built-in simulator. Connecting a phone provider and a WhatsApp Business number is the next step."
+    },
+    "measured": {
+      "title": "Measured, not promised",
+      "accent": "মেপে দেখা ফল",
+      "photosFigure": "{pct, number}%",
+      "photosClaim": "of brands read correctly on {n, number} real photos of our own medicines ({k, number}/{n, number}; 95% CI {lo, number}–{hi, number}%).",
+      "strength": "Strength read correctly: {k, number}/{n, number} ({pct, number}%). Clear photos: {ck, number}/{cn, number}.",
+      "weak": "Weak spot: packs printed only in Bangla, {k, number} of {n, number}. We are working on it.",
+      "sathiFigure": "{k, number}/{n, number}",
+      "sathiClaim": "medical questions to Sathi passed to a pharmacist, never answered by the model; emergencies sent to 999: {ek, number}/{en, number}.",
+      "retrFigure": "{pct, number}%",
+      "retrClaim": "of app questions find the right help article first (95% CI {lo, number}–{hi, number}%).",
+      "note": "Labels were checked against each photo with AI assistance. A computer-drawn benchmark ({sk, number}/{sn, number} brands) is reported separately on the docs page, never mixed with real photos.",
+      "docs": "See every result"
     }
   },
   "docs": {

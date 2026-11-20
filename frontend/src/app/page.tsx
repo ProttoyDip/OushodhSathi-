@@ -4,7 +4,7 @@
  * pre-emit critique: P5 H4 E4 S5 R5 V4
  */
 import {
-  ArrowRight, BookOpen, CirclePlay, ExternalLink, ImageOff, Languages, Plus, ShieldCheck, Stethoscope,
+  ArrowRight, BookOpen, CirclePlay, Keyboard, ListOrdered, MessageCircle, Phone, Route, ExternalLink, ImageOff, Languages, Plus, ShieldCheck, Stethoscope,
 } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
@@ -17,9 +17,10 @@ import { MotionToggle } from "@/components/MotionToggle";
 import { WarmUp } from "@/components/JudgeBar";
 import { BrandMarquee } from "@/components/landing/BrandMarquee";
 import facts from "@/data/brandFacts.json";
+import ev from "@/data/evidence.json";
 import { HowStory } from "@/components/landing/HowStory";
 import { storyVisuals } from "@/components/landing/StoryVisuals";
-import { ProductFrames } from "@/components/landing/ProductFrames";
+import { ProductFrames, ReviewScreenshot } from "@/components/landing/ProductFrames";
 import { stickyBar } from "@/lib/layout";
 import { demoHref, GITHUB_URL, VIDEO_URL } from "@/lib/site";
 import { TEAM } from "@/lib/team";
@@ -41,6 +42,12 @@ const STEPS = [
   { key: "s1", actor: "family" }, { key: "s2", actor: "ai" }, { key: "s3", actor: "rules" },
   { key: "s4", actor: "rules" }, { key: "s5", actor: "human" }, { key: "s6", actor: "family" },
 ] as const;
+
+// The check-in texts exactly as backend/app/whatsapp_checkin/flow.py and voice_calls/script.py send them.
+const WA_MESSAGE = "আসসালামু আলাইকুম, ওষুধসাথী থেকে বলছি। আজকের ওষুধগুলো কি খাওয়া হয়েছে?";
+const WA_BUTTONS = ["সব খেয়েছি", "কিছু বাদ গেছে", "জরুরি সমস্যা"] as const;
+const CALL_PROMPT = "সকালের ওষুধ খেয়ে থাকলে ১ চাপুন, না খেলে ২ চাপুন।";
+const KEYPAD = ["১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"] as const;
 
 const sectionTitle = "font-display text-[clamp(34px,4.2vw,54px)] leading-[1.06] text-ink [overflow-wrap:anywhere]";
 const navLink = "hidden h-11 items-center whitespace-nowrap rounded-chip px-3 text-[15px] font-medium text-ink-soft hover:text-ink";
@@ -66,6 +73,7 @@ export default async function Landing() {
           <div className="flex items-center gap-1 sm:gap-2">
             <a href="#how" className={`${navLink} lg:inline-flex`}>{t("nav.how")}</a>
             <a href="#safe" className={`${navLink} lg:inline-flex`}>{t("nav.safe")}</a>
+            <a href="#pharmacists" className={`${navLink} 2xl:inline-flex`}>{t("nav.pharm")}</a>
             <a href="#faq" className={`${navLink} lg:inline-flex`}>{t("nav.faq")}</a>
             <Link href="/docs" className={`${navLink} md:inline-flex`}>{t("nav.docs")}</Link>
             <Link href="/review" className="hidden h-11 items-center gap-1.5 whitespace-nowrap rounded-chip border border-rule px-4 text-[15px] font-medium text-ink hover:border-rule-strong sm:inline-flex">
@@ -170,6 +178,96 @@ export default async function Landing() {
               </li>
             ))}
           </ul>
+        </div>
+      </section>
+
+      {/* for pharmacists: the real reviewer screen and three things it does */}
+      <section id="pharmacists" aria-labelledby="pharm-h" className="scroll-mt-20 bg-paper-raised py-[var(--section-y)]">
+        <div className="mx-auto grid max-w-[1200px] gap-12 px-5 sm:px-8 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)] lg:items-center lg:gap-16">
+          <div className="order-2 min-w-0 lg:order-1">
+            <ReviewScreenshot label={t("hero.frameReview")} />
+          </div>
+          <div className="order-1 min-w-0 lg:order-2">
+            <h2 id="pharm-h" className={sectionTitle}>{t("pharm.title")}</h2>
+            <p lang={accentLang} className={`mt-3 text-[22px] text-neel ${accent}`}>{t("pharm.accent")}</p>
+            <p className="mt-5 text-lg text-ink-soft">{t("pharm.body")}</p>
+            <ol className="mt-8 grid gap-6">
+              {([["c1", ListOrdered], ["c2", Route], ["c3", Keyboard]] as const).map(([k, Icon]) => (
+                <li key={k} className="grid grid-cols-[28px_minmax(0,1fr)] gap-x-3">
+                  <Icon aria-hidden size={22} className="mt-0.5 text-neel" />
+                  <div className="min-w-0">
+                    <h3 className="text-[19px] font-semibold leading-snug text-ink">{t(`pharm.${k}.title`)}</h3>
+                    <p className="mt-1 text-[16px] leading-relaxed text-ink-soft">{t(`pharm.${k}.body`)}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+            <Link href="/review" className={`${secondaryBtn} mt-8`}><Stethoscope aria-hidden size={19} /> {t("pharm.cta")}</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* daily follow-up: the WhatsApp message and the keypad call, as the family receives them (Bangla) */}
+      <section aria-labelledby="follow-h" className="border-t border-rule bg-paper py-[var(--section-y)]">
+        <div className="mx-auto max-w-[1200px] px-5 sm:px-8">
+          <div className="max-w-[60ch]">
+            <h2 id="follow-h" className={sectionTitle}>{t("follow.title")}</h2>
+            <p lang={accentLang} className={`mt-3 text-[22px] text-neel ${accent}`}>{t("follow.accent")}</p>
+            <p className="mt-5 text-lg text-ink-soft">{t("follow.body")}</p>
+          </div>
+          <div className="mt-12 grid gap-6 md:grid-cols-2">
+            <figure className="min-w-0 rounded-[20px] border border-rule-strong bg-paper-raised p-5 shadow-soft">
+              <figcaption className="inline-flex items-center gap-2 text-[15px] font-semibold text-ink-soft"><MessageCircle aria-hidden size={17} /> {t("follow.wa")}</figcaption>
+              <div lang="bn" className="mt-4 max-w-[340px] rounded-card rounded-tl-none border border-rule bg-paper p-4 text-[17px] leading-[1.7] text-ink">
+                {WA_MESSAGE}
+              </div>
+              <ul lang="bn" className="mt-2 grid max-w-[340px] gap-2">
+                {WA_BUTTONS.map((b) => (
+                  <li key={b} className="rounded-card border border-rule bg-paper py-2.5 text-center text-[16px] font-semibold text-neel">{b}</li>
+                ))}
+              </ul>
+            </figure>
+            <figure className="min-w-0 rounded-[20px] border border-rule-strong bg-paper-raised p-5 shadow-soft">
+              <figcaption className="inline-flex items-center gap-2 text-[15px] font-semibold text-ink-soft"><Phone aria-hidden size={17} /> {t("follow.call")}</figcaption>
+              <p lang="bn" className="mt-4 text-[17px] leading-[1.7] text-ink">{CALL_PROMPT}</p>
+              <div aria-hidden className="mt-4 grid max-w-[240px] grid-cols-3 gap-2">
+                {KEYPAD.map((d) => (
+                  <span key={d} className={`grid h-12 place-items-center rounded-full border text-[19px] font-semibold ${
+                    d === "১" || d === "২" ? "border-neel text-neel" : d === "৯" ? "border-red text-red" : "border-rule text-ink-faint"}`}>{d}</span>
+                ))}
+              </div>
+              <p lang="bn" className="mt-4 text-[16px] font-semibold text-ink-soft">{t("follow.keys")}</p>
+            </figure>
+          </div>
+          <p className="mt-6 max-w-[70ch] text-[15px] text-ink-faint">{t("follow.note")}</p>
+        </div>
+      </section>
+
+      {/* measured results: real photos first, from the results files in eval/ (frontend/src/data/evidence.json) */}
+      <section aria-labelledby="measured-h" className="border-t border-rule bg-paper-raised py-[var(--section-y)]">
+        <div className="mx-auto max-w-[1200px] px-5 sm:px-8">
+          <h2 id="measured-h" className={sectionTitle}>{t("measured.title")}</h2>
+          <p lang={accentLang} className={`mt-3 text-[22px] text-neel ${accent}`}>{t("measured.accent")}</p>
+          <div className="mt-12 grid gap-12 md:grid-cols-3 md:gap-10">
+            <figure className="min-w-0 border-t-2 border-neel pt-6">
+              <p className="tabular font-display text-[clamp(56px,5.4vw,80px)] leading-none text-neel">{t("measured.photosFigure", { pct: ev.realBrand.pct })}</p>
+              <p className="mt-5 text-lg leading-snug text-ink">{t("measured.photosClaim", ev.realBrand)}</p>
+              <p className="mt-3 text-[16px] text-ink-soft">{t("measured.strength", { ...ev.realStrength, ck: ev.realClear.k, cn: ev.realClear.n })}</p>
+              <p className="mt-3 text-[16px] font-semibold text-amber">{t("measured.weak", ev.realBangla)}</p>
+            </figure>
+            <figure className="min-w-0 border-t-2 border-neel pt-6">
+              <p className="tabular font-display text-[clamp(56px,5.4vw,80px)] leading-none text-neel">{t("measured.sathiFigure", ev.sathiMedical)}</p>
+              <p className="mt-5 text-lg leading-snug text-ink">{t("measured.sathiClaim", { ek: ev.sathiEmergency.k, en: ev.sathiEmergency.n })}</p>
+            </figure>
+            <figure className="min-w-0 border-t-2 border-neel pt-6">
+              <p className="tabular font-display text-[clamp(56px,5.4vw,80px)] leading-none text-neel">{t("measured.retrFigure", ev.retrieval)}</p>
+              <p className="mt-5 text-lg leading-snug text-ink">{t("measured.retrClaim", ev.retrieval)}</p>
+            </figure>
+          </div>
+          <p className="mt-12 max-w-[75ch] text-[15px] text-ink-faint">{t("measured.note", { sk: ev.syntheticBrand.k, sn: ev.syntheticBrand.n })}</p>
+          <Link href="/docs" className="mt-4 inline-flex min-h-12 items-center gap-2 text-[16px] font-semibold text-neel underline-offset-4 hover:underline">
+            {t("measured.docs")} <ArrowRight aria-hidden size={17} />
+          </Link>
         </div>
       </section>
 

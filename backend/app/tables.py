@@ -3,6 +3,7 @@ plain data so that rules.py itself stays free of I/O."""
 from __future__ import annotations
 
 import csv
+import os
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
@@ -94,9 +95,11 @@ def _read_csv(path: Path) -> list[dict[str, str]]:
 
 @lru_cache(maxsize=1)
 def load_brands() -> dict[str, BrandRow]:
-    """Brand name (lowercase) -> row. brands_full.csv, if present, overrides the seed."""
+    """Brand name (lowercase) -> row. brands_full.csv, if present, adds the brands the seed lacks; the
+    seed always wins, because the safety rules key on its curated drug classes."""
     out: dict[str, BrandRow] = {}
-    for name in ("brands_seed.csv", "brands_full.csv"):
+    files = ("brands_seed.csv",) if os.environ.get("OUSHODH_BRANDS") == "seed" else ("brands_full.csv", "brands_seed.csv")
+    for name in files:
         path = DATA_DIR / name
         if not path.exists():
             continue

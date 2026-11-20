@@ -379,7 +379,11 @@ def patch_item(item_id: int, body: MedicineItemPatch, store: Store = Depends(get
         fields["source"] = item.source if "brand" not in fields else "manual"
     if any(k in fields for k in ("brand", "strength", "expiry")):
         fields["second_read"] = None  # the OCR check was about the old reading, not this one
-    return store.update_item(item_id, **fields)
+    updated = store.update_item(item_id, **fields)
+    if updated is None:
+        # removed while the brand lookup above was running (e.g. the family tapped "remove")
+        raise HTTPException(404, "This medicine was removed from the list")
+    return updated
 
 
 @app.get("/brands/suggest", dependencies=[Depends(limit_writes)])

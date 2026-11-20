@@ -30,6 +30,18 @@ entered in the provider's dashboard.
    demo household only when the database is empty.
 4. Check `https://<service>.onrender.com/health` returns `"status": "ok"`.
 
+### Sleeping on the free plan
+
+A free Render service sleeps after about 15 idle minutes and takes up to about 2 minutes to answer again
+(container start, then the start command). Two things cover this:
+
+- [`.github/workflows/keep-awake.yml`](../.github/workflows/keep-awake.yml) pings the site's API every 10 minutes
+  from 06:00 to 24:00 Bangladesh time. Not around the clock, because the free plan's 750 instance-hours a month are
+  shared by every service in the workspace; one service awake all month uses about 720.
+- The frontend never shows an error just because the API is asleep: `lib/api.ts` waits for `/health` and retries
+  once (only if the server really was down, so nothing runs twice), and `components/ServerWaking.tsx` tells the
+  visitor it is starting up. The landing page starts waking the API silently as soon as someone arrives.
+
 ### Database (free Supabase Postgres)
 
 1. Supabase → new project, region **Southeast Asia (Singapore)**.

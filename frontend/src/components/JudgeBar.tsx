@@ -4,7 +4,7 @@ import { FlaskConical, Loader2, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { api, wakeServer } from "@/lib/api";
 import { cx } from "@/lib/format";
 
 /** A calm strip for judges on the demo household: jump between the views, or start over. */
@@ -51,9 +51,10 @@ export function JudgeBar({ pid = 1, className }: { pid?: number; className?: str
 }
 
 /** Wakes the free Render instance as soon as someone lands, so the demo is quick. */
+/** Starts waking the API as soon as someone lands, silently, so the demo or /start is ready by the time they click. */
 export function WarmUp() {
   useEffect(() => {
-    api.health().catch(() => {});
+    void wakeServer({ silent: true });
   }, []);
   return null;
 }

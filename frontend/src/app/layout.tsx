@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { MotionProvider } from "@/components/Motion";
 import { RevealController } from "@/components/Reveal";
+import { ServerWaking } from "@/components/ServerWaking";
 import { motionArmScript } from "@/lib/motionPref";
 import { revealArmScript } from "@/lib/reveal";
 import { SITE_URL } from "@/lib/site";
@@ -88,6 +89,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <NextIntlClientProvider locale={locale} messages={messages}>
           <MotionProvider>{children}</MotionProvider>
           <RevealController />
+          <ServerWaking />
         </NextIntlClientProvider>
       </body>
     </html>

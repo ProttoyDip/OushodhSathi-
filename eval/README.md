@@ -40,6 +40,12 @@ printed in both scripts may be labelled with both spellings, `Nasovap|ন্য�
 script counts. `label_photos.py --drafts FILE` pre-fills suggested labels, but every photo is still checked
 and saved by hand.
 
+**How the 40 `own_*.jpg` labels were made (20 Nov 2026).** A vision model drafted them; at the team's request
+an AI coding assistant (Claude) then checked every draft against its photo and changed one (`own_07`: glare
+hides the last letter, so `glare`, not `clear`). Expiry was left empty wherever it was not clearly printed, so
+those rows are not scored. The labels have not yet been re-checked by a person; anyone can do that with
+`label_photos.py`, and the results should be re-run after any change.
+
 ## Real handwritten prescriptions from a public dataset
 
 Handwritten prescriptions are hard to collect with consent, so the eval can also use a public dataset:

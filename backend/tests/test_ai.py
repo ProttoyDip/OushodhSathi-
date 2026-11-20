@@ -269,3 +269,29 @@ def test_nvidia_leads_with_its_own_vision_model(two_providers, monkeypatch):
     assert vision[0] == ("nvidia", "nvidia/vl-model") and text[0] == ("nvidia", "nvidia/text-model")
     assert llm_router.configured_providers("text")[0].base_url == llm_router.NVIDIA_BASE
     assert llm_router.provider_names("vision")[0] == "nvidia"
+
+
+def test_web_lookup_is_tavily_only_unless_perplexity_is_listed(monkeypatch):
+    from app import research
+
+    monkeypatch.setenv("TAVILY_API_KEY", "t")
+    monkeypatch.setenv("PERPLEXITY_API_KEY", "p")
+    monkeypatch.delenv("WEB_LOOKUP", raising=False)
+    assert research.lookup_providers() == ["tavily"]
+    monkeypatch.setenv("WEB_LOOKUP", "tavily,perplexity")
+    assert research.lookup_providers() == ["tavily", "perplexity"]
+    monkeypatch.delenv("TAVILY_API_KEY")
+    assert research.lookup_providers() == ["perplexity"]  # a listed provider without a key is skipped
+
+
+def test_perplexity_is_not_called_by_default(monkeypatch):
+    from app import research
+
+    monkeypatch.setenv("TAVILY_API_KEY", "t")
+    monkeypatch.setenv("PERPLEXITY_API_KEY", "p")
+    monkeypatch.delenv("WEB_LOOKUP", raising=False)
+    monkeypatch.setattr(research, "_tavily", lambda q, c: [])
+    called = []
+    monkeypatch.setattr(research, "_perplexity", lambda *a: called.append(1))
+    assert research.lookup_unknown_brand("Nosuchbrand", "10 mg") is None
+    assert called == []

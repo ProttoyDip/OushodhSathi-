@@ -47,7 +47,7 @@ flowchart TD
     B --> Q["OCR second reader<br/>checks strength and expiry<br/>(disagree → please check)"]
     Q --> C{"Brand known?"}
     C -- "yes" --> D["Brand → generic<br/>(exact, then strict fuzzy)"]
-    C -- "no" --> W["Web lookup on Bangladeshi<br/>medicine sites (Tavily / Perplexity)<br/>must cite a source → unverified"]
+    C -- "no" --> W["Web lookup on Bangladeshi<br/>medicine sites (Tavily)<br/>must cite a source → unverified"]
     W --> D
     D --> E["Rules engine<br/>duplicates · same class · interactions<br/>Beers 65+ · expiry<br/><b>no AI</b>"]
     E --> F["Pharmacist / doctor review<br/>confirm or dismiss, with a note"]
@@ -133,7 +133,7 @@ flowchart TB
     P3["Ollama qwen2.5:3b<br/>(local, Bangla explanations first)"]
     OCR["OCR second reader<br/>NVIDIA nemotron-ocr-v2"]
     BM["Brand matcher + suggestions<br/>exact → fuzzy · embeddings"]
-    WL["Tavily / Perplexity<br/>unknown-brand lookup"]
+    WL["Tavily<br/>unknown-brand lookup"]
     RE["Rules engine<br/>deterministic, no AI"]
     KG["Medicine knowledge graph<br/>NetworkX · Why? · Graph RAG"]
     SA["Sathi<br/>guard → hybrid RAG (RapidFuzz + pgvector)"]
@@ -164,7 +164,7 @@ Locally the API uses a SQLite file. Hosted, it uses a free Supabase Postgres in 
 | Task | Model / provider | Why | Guardrail |
 | --- | --- | --- | --- |
 | Read photos of strips, boxes, prescriptions | NVIDIA API `nemotron-3.5-super-vl` first; then free OpenRouter vision models, auto-picked (price 0, image input, largest context) and each **tested with a one-token call before use**; up to three, then `openrouter/free`, then NARAROUTER → EXPLAB → AGENTROUTER | Cut strips, glare and Bangla text need a vision model; free models keep it affordable | Typed Pydantic output, one retry, then needs-review; confidence < 0.75 always shown for a human check |
-| Unknown brand → generic | Tavily search restricted to medex.com.bd, arogga.com, medeasy.health + a text model; Perplexity Agent API (`effort: fast`) as fallback | Bangladesh has tens of thousands of brands; a seed table cannot hold them all | Must cite a numbered search result; stored as `web_unverified` with the source URL; failures are never cached |
+| Unknown brand → generic | Tavily search restricted to medex.com.bd, arogga.com, medeasy.health + a text model. The Perplexity Agent API (`effort: fast`, paid credits only) is an optional fallback, off unless `WEB_LOOKUP=tavily,perplexity` | Bangladesh has tens of thousands of brands; a seed table cannot hold them all | Must cite a numbered search result; stored as `web_unverified` with the source URL; failures are never cached |
 | Bangla explanation of a confirmed finding | Ollama `qwen2.5:3b` locally first, cloud fallback, then fixed templates | Private and free when run locally | Only for confirmed flags; dose and stop-word filter; Bangla well-formedness check (a broken vowel sign sends it back to the template); fixed safety sentence |
 | Sathi: app-guide answers and next-step wording | Ollama first (private), then the cloud chain; 8-second budget, else the guide's own answer | Warm, simple Bangla without a person writing every reply | Guard before and after every model call: emergency and injection words, medical intent (unsure counts as medical), output check for doses, stop/start wording, unknown medicine names and diagnoses; answers only from [`docs/help`](docs/help) |
 | Sathi app-guide retrieval (contextual hybrid RAG) | Keyword (RapidFuzz) + vector (NVIDIA `nemotron-3.5-embed-1b`, 1024-d) fused by reciprocal rank fusion; vectors in Supabase Postgres with **pgvector** (HNSW, cosine), or in SQLite locally. Each guide entry gets a fixed context header (section, screen, questions in both languages) before embedding | Families ask in Bangla, Banglish and English; word matching alone misses paraphrases | guard.py runs first, so medical and emergency questions never reach retrieval; names are removed before embedding; without a key it is keyword-only. Measured on 79 questions ([`run_retrieval_eval.py`](eval/run_retrieval_eval.py)): recall@1 keyword 90%, vector 94%, hybrid 95% (95% CI 88-98%); 78 of the questions were drafted by the build agent and still need the team's review |
@@ -183,7 +183,7 @@ Locally the API uses a SQLite file. Hosted, it uses a free Supabase Postgres in 
 | Daily Bangla check-in call (IVR) | **No model.** Fixed pre-recorded Bangla prompts and a small state machine ([`voice_calls/`](backend/app/voice_calls)) behind a provider interface (`place_call`, `parse_webhook`, `verify_signature`). Today only the **simulator** runs: [`/call-demo`](https://oushodhsathi.vercel.app/call-demo) plays the call in the browser with keys 1 / 2 / 9; no phone provider is connected yet | Many older patients have a basic phone, not a smartphone | Needs the family's recorded consent; the number is encrypted at rest and goes only to the call provider, never to a model; no calls 21:00-08:00, one retry after 15 minutes, a daily cap; answers become dose ticks marked `source=call`; 9 plays the fixed 999 message and alerts the family contact; the script never tells anyone to stop, start or change a medicine; draft Bangla audio is generated once by [`make_call_audio.py`](backend/scripts/make_call_audio.py) (digits spoken as words; Meta MMS-TTS, non-commercial licence, until an Azure bn-BD voice or a recording replaces it) and still needs a native speaker's check |
 | Daily WhatsApp check-in message | **No model.** WhatsApp Cloud API ([`whatsapp_checkin/`](backend/app/whatsapp_checkin)): one approved utility template a day ("সব খেয়েছি / কিছু বাদ গেছে / জরুরি সমস্যা"), then free follow-ups inside WhatsApp's 24-hour customer-service window asking about each approved slot. Without WhatsApp keys a browser chat simulator runs the same conversation | Many families already use WhatsApp, and receiving the message costs them nothing | Same consent, time, quiet hours and stop switch as the call; the number is encrypted and goes only to WhatsApp (Meta); replies are matched to the message they answer, each delivery handled once, webhooks signature-checked; typed text is never stored or sent to a model, only emergency words get the fixed 999 reply; answers become dose ticks marked `source=whatsapp`. Needs a verified Meta business number and an approved template before real use |
 
-**When a provider runs out, the next one answers.** Every request walks a chain: the user's chosen model first (if any), then NVIDIA's API (`nemotron-3.5-super-vl` for photos, `nemotron-3-ultra` for lookups and Bangla), then the tested free OpenRouter models, then the other configured routers, then Ollama on the machine. Rate limits (429), exhausted credit (402), withdrawn models, server errors and timeouts all fall through to the next link; nothing has to be switched by hand. Web lookup does the same with Tavily, then Perplexity.
+**When a provider runs out, the next one answers.** Every request walks a chain: the user's chosen model first (if any), then NVIDIA's API (`nemotron-3.5-super-vl` for photos, `nemotron-3-ultra` for lookups and Bangla), then the tested free OpenRouter models, then the other configured routers, then Ollama on the machine. Rate limits (429), exhausted credit (402), withdrawn models, server errors and timeouts all fall through to the next link; nothing has to be switched by hand. Web lookup uses Tavily; Perplexity can be added after it with `WEB_LOOKUP=tavily,perplexity`.
 
 **The models in use are visible, and the user can choose.** The **AI models** page (`/models`) shows each task's chain in order, which model answered last, and a picker to put a preferred model first; the rest stay as backups. The family's confirm screen says which model read the photos, and the reviewer sees the model and prompt version for every item.
 
@@ -308,7 +308,7 @@ video/                   1920×1080 scenes and the recording script for the demo
 | Tool | What it does |
 | --- | --- |
 | `match_brand(brand)` | Maps a Bangladeshi brand to its generic and class (exact, then strict fuzzy). "Napa Extra" is never forced onto "Napa". |
-| `lookup_unknown_brand(brand, strength)` | Searches Bangladeshi medicine sites (Tavily, then Perplexity), must cite a source, always marked `web_unverified`. Needs a key in `backend/.env`. |
+| `lookup_unknown_brand(brand, strength)` | Searches Bangladeshi medicine sites (Tavily; Perplexity only if `WEB_LOOKUP` lists it), must cite a source, always marked `web_unverified`. Needs a key in `backend/.env`. |
 | `check_medicines(items, age)` | Runs the deterministic rules on a list and returns findings marked "pending clinician review". |
 | `explain_flag_path(generics)` | Numbered facts from the medicine knowledge graph around the given generics (class, triple-whammy group, interactions, Beers, kidney, anticholinergic, AWaRe), each with its source table. Explains links; never creates findings. |
 

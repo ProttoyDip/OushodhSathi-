@@ -507,3 +507,49 @@ html.reveal-armed:not(.reveal-live) [data-reveal]:not([data-shown]) {
 @media (min-width: 1024px) and (max-height: 800px) {
   .demo-fit-sm { zoom: 0.86; }
 }
+
+/* ---------- landing: marquee, headline rise, stitches that sew in ----------
+   All motion lives under no-preference, so reduced-motion users get the static layout
+   (the global reduce rule would otherwise spin an infinite loop at 1ms). */
+.marquee {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+}
+.marquee-toggle { display: none; }
+@keyframes marquee { to { transform: translateX(-50%); } }
+@keyframes line-rise {
+  from { opacity: 0; transform: translateY(0.35em); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes draw-y {
+  from { clip-path: inset(0 0 100% 0); }
+  to { clip-path: inset(0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .marquee-toggle { display: inline-flex; }
+  .marquee-track { animation: marquee 70s linear infinite; }
+  .marquee-track[data-dir="rev"] { animation-direction: reverse; animation-duration: 85s; }
+  .marquee:hover .marquee-track,
+  .marquee:focus-within .marquee-track,
+  .marquee[data-paused] .marquee-track { animation-play-state: paused; }
+
+  .line-rise { display: inline-block; animation: line-rise 760ms var(--ease-out-quint) both; }
+
+  /* a stitch inside a reveal block sews itself in, left to right, just after the block lands */
+  [data-reveal] .stitch-x { transition: clip-path 900ms var(--ease-out-quint) calc(var(--reveal-delay, 0ms) + 220ms); }
+  html.reveal-armed [data-reveal]:not([data-shown]) .stitch-x { clip-path: inset(0 100% 0 0); }
+
+  /* evidence rules draw across as each figure enters */
+  .rule-draw { background: linear-gradient(var(--neel), var(--neel)) top left / 100% 2px no-repeat; transition: background-size 900ms var(--ease-out-quint) calc(var(--reveal-delay, 0ms) + 120ms); }
+  html.reveal-armed .rule-draw[data-reveal]:not([data-shown]) { background-size: 0 2px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee { overflow-x: auto; }
+}
+/* the how-it-works stitch follows the reader down the six steps */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .stitch-draw { animation: draw-y linear both; animation-timeline: view(); animation-range: entry 20% cover 65%; }
+  }
+}

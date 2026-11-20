@@ -27,7 +27,7 @@ export async function HowTimeline() {
 
   return (
     <ol className="relative mt-10">
-      <span aria-hidden className="stitch-y absolute bottom-8 left-[19px] top-8" />
+      <span aria-hidden className="stitch-y stitch-draw absolute bottom-8 left-[19px] top-8" />
       {STEPS.map(({ key, actor }, i) => {
         const Icon = ACTOR_ICON[actor];
         const human = actor === "human";

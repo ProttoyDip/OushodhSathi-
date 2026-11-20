@@ -14,6 +14,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { Wordmark } from "@/components/BrandMark";
 import { LangToggle, ThemeToggle } from "@/components/Chrome";
 import { WarmUp } from "@/components/JudgeBar";
+import { BrandMarquee } from "@/components/landing/BrandMarquee";
 import { HowTimeline } from "@/components/landing/HowTimeline";
 import { ProductFrames, ReviewScreenshot } from "@/components/landing/ProductFrames";
 import { stickyBar } from "@/lib/layout";
@@ -70,11 +71,12 @@ export default async function Landing() {
       </div>
 
       {/* hero: the claim on one side, the product proving it on the other */}
-      <header className="mx-auto max-w-[1200px] px-5 pb-20 pt-10 sm:px-8 lg:pb-28 lg:pt-16">
+      <header className="mx-auto max-w-[1200px] px-5 pb-14 pt-10 sm:px-8 lg:pb-20 lg:pt-16">
         <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-16">
           <div {...reveal(0)} className="min-w-0">
             <h1 className="font-display text-[clamp(42px,5.6vw,76px)] leading-[1.05] text-ink [overflow-wrap:anywhere]">
-              {t("hero.title1")} <br className="hidden sm:block" />{t("hero.title2")}
+              <span className="line-rise">{t("hero.title1")}</span> <br className="hidden sm:block" />
+              <span className="line-rise [animation-delay:110ms]">{t("hero.title2")}</span>
             </h1>
             <p lang={accentLang} className={`mt-4 text-[clamp(20px,2.1vw,26px)] leading-snug text-neel ${accent}`}>
               {t("hero.accent")}
@@ -101,6 +103,8 @@ export default async function Landing() {
           </div>
         </div>
       </header>
+
+      <BrandMarquee locale={locale} title={t("names.title")} pause={t("names.pause")} play={t("names.play")} />
 
       {/* how it works: the pharmacist's screen on the left, the six steps on the right */}
       <section id="how" aria-labelledby="how-h" className="scroll-mt-20 border-y border-rule bg-paper-raised">
@@ -165,7 +169,7 @@ export default async function Landing() {
           </h2>
           <div className="mt-14 grid gap-12 md:grid-cols-3 md:gap-10">
             {EVIDENCE.map((e, i) => (
-              <figure key={e.key} {...reveal(i * 90)} className="min-w-0 border-t-2 border-neel pt-6">
+              <figure key={e.key} {...reveal(i * 90)} className="rule-draw min-w-0 pt-6">
                 <p className="flex flex-wrap items-baseline gap-x-3">
                   <span className="tabular font-display text-[clamp(56px,5.4vw,80px)] leading-none text-neel">{t(`evidence.${e.key}.figure`)}</span>
                   {t(`evidence.${e.key}.unit`) && <span className="text-lg font-semibold text-ink">{t(`evidence.${e.key}.unit`)}</span>}

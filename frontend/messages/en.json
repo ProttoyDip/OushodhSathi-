@@ -475,6 +475,11 @@
       "body": "Photograph every medicine in the house. A pharmacist checks the list, and the family gets a plain-Bangla answer and a passport for the next doctor visit.",
       "start": "Start for your family",
       "demo": "See the demo first"
+    },
+    "names": {
+      "title": "One medicine, many names. A few rows from our brand table.",
+      "pause": "Pause",
+      "play": "Play"
     }
   },
   "docs": {

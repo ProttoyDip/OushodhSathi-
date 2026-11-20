@@ -1,9 +1,7 @@
 "use client";
 
 import { Check, RotateCcw } from "lucide-react";
-import { NextIntlClientProvider } from "next-intl";
 import { useEffect, useRef, useState } from "react";
-import bn from "../../../messages/bn.json";
 import { DemoTag } from "@/components/Chrome";
 import { DuplicateConnector } from "@/components/DuplicateConnector";
 import { StripCard } from "@/components/StripCard";
@@ -20,7 +18,8 @@ const SEEN = "heroSeen";
  * and the visitor has not seen it this session (html.hero-seen) do the start-state rules in globals.css
  * apply, so the moment plays once, data-step 0 to 4: Ace slides up to Napa, the bracket draws, the label
  * turns red, the pharmacist confirms. Every change is a transform or a colour; no text is ever hidden.
- * Real components, invented household.
+ * Real components, invented household. Its Bangla strings come from ProductFrames (server), which passes
+ * only the two namespaces the cards use instead of the whole messages file.
  */
 export function HeroDemo({ replayLabel }: { replayLabel: string }) {
   // Rendered as step 0, but the start state only exists under html.motion-ok (set before paint) and not
@@ -48,43 +47,41 @@ export function HeroDemo({ replayLabel }: { replayLabel: string }) {
   }, [replay]);
 
   return (
-    <NextIntlClientProvider locale="bn" messages={bn} timeZone="Asia/Dhaka">
-      <div lang="bn" className="hero-demo relative mx-auto w-full min-w-0 max-w-[440px]" data-step={step}
-        data-replay={replay > 0 ? "" : undefined}>
-        <div className="rounded-[20px] border border-rule-strong bg-paper p-4 shadow-lift sm:p-5">
-          <div className="mb-4 flex items-center justify-between gap-2">
-            <p className="font-bn-display text-[22px] leading-none text-ink">রহিমা বেগমের তাক</p>
-            <button
-              type="button"
-              onClick={() => setReplay((r) => r + 1)}
-              aria-label={replayLabel}
-              title={replayLabel}
-              className="hero-replay inline-flex h-12 w-12 items-center justify-center rounded-full border border-rule text-ink-soft hover:text-ink"
-            >
-              <RotateCcw aria-hidden size={17} />
-            </button>
-          </div>
-          <div className="grid gap-3 text-[18px]">
-            <DuplicateConnector label="দুটোই প্যারাসিটামল" animate={false} className="hero-pair">
-              <StripCard item={DEMO_ITEMS.napa} density="compact" titleAs="p" highlight="red" />
-              <div className="hero-ace"><StripCard item={DEMO_ITEMS.ace} density="compact" titleAs="p" highlight="red" /></div>
-            </DuplicateConnector>
-            <StripCard item={DEMO_ITEMS.camlodin} density="compact" titleAs="p" />
-          </div>
-          <p className="hero-status mt-4 flex min-h-8 items-center text-[16px] font-semibold">
-            <span className="hero-done inline-flex items-center gap-2 text-green">
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green text-paper-raised">
-                <Check aria-hidden size={15} strokeWidth={3} />
-              </span>
-              ফার্মাসিস্ট নিশ্চিত করেছেন
-            </span>
-            <span aria-hidden className="hero-wait items-center gap-2 text-ink-soft">
-              <span className="h-2.5 w-2.5 rounded-full bg-amber" /> ফার্মাসিস্টের অপেক্ষায়
-            </span>
-          </p>
+    <div lang="bn" className="hero-demo relative mx-auto w-full min-w-0 max-w-[440px]" data-step={step}
+      data-replay={replay > 0 ? "" : undefined}>
+      <div className="rounded-[20px] border border-rule-strong bg-paper p-4 shadow-lift sm:p-5">
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <p className="font-bn-display text-[22px] leading-none text-ink">রহিমা বেগমের তাক</p>
+          <button
+            type="button"
+            onClick={() => setReplay((r) => r + 1)}
+            aria-label={replayLabel}
+            title={replayLabel}
+            className="hero-replay inline-flex h-12 w-12 items-center justify-center rounded-full border border-rule text-ink-soft hover:text-ink"
+          >
+            <RotateCcw aria-hidden size={17} />
+          </button>
         </div>
-        <DemoTag className="mt-4 border-solid border-paper bg-paper text-ink" />
+        <div className="grid gap-3 text-[18px]">
+          <DuplicateConnector label="দুটোই প্যারাসিটামল" animate={false} className="hero-pair">
+            <StripCard item={DEMO_ITEMS.napa} density="compact" titleAs="p" highlight="red" />
+            <div className="hero-ace"><StripCard item={DEMO_ITEMS.ace} density="compact" titleAs="p" highlight="red" /></div>
+          </DuplicateConnector>
+          <StripCard item={DEMO_ITEMS.camlodin} density="compact" titleAs="p" />
+        </div>
+        <p className="hero-status mt-4 flex min-h-8 items-center text-[16px] font-semibold">
+          <span className="hero-done inline-flex items-center gap-2 text-green">
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green text-paper-raised">
+              <Check aria-hidden size={15} strokeWidth={3} />
+            </span>
+            ফার্মাসিস্ট নিশ্চিত করেছেন
+          </span>
+          <span aria-hidden className="hero-wait items-center gap-2 text-ink-soft">
+            <span className="h-2.5 w-2.5 rounded-full bg-amber" /> ফার্মাসিস্টের অপেক্ষায়
+          </span>
+        </p>
       </div>
-    </NextIntlClientProvider>
+      <DemoTag className="mt-4 border-solid border-paper bg-paper text-ink" />
+    </div>
   );
 }

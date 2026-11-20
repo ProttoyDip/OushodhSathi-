@@ -6,7 +6,7 @@ const DEMO_SITE = (process.env.NEXT_PUBLIC_DEMO_SITE_URL || "").replace(/\/$/, "
 export const GITHUB_URL = "https://github.com/ProttoyDip/OushodhSathi-";
 
 /** The demo video (YouTube). */
-export const VIDEO_URL = "https://youtu.be/a3wnCDDxxm0";
+export const VIDEO_URL = "https://youtu.be/4otfEkUm2-I";
 
 /** This site's public address: canonical links, the sitemap and social previews. */
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://oushodhsathi.vercel.app").replace(/\/$/, "");

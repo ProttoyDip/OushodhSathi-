@@ -18,12 +18,60 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init: RequestInit & { token?: string; pid?: number; admin?: string } = {}): Promise<T> {
+/*
+ * The hosted API sleeps after ~15 idle minutes (free Render plan) and takes up to ~2 minutes to wake. While
+ * it wakes, requests fail with a network error (the gateway's reply has no CORS headers) or a 502/503/504.
+ * Instead of showing an error, every request waits for /health to answer, then retries once.
+ * "api:waking" / "api:awake" events drive the visible notice (components/ServerWaking.tsx).
+ */
+const WAKE_LIMIT_MS = 150_000;
+let waking: Promise<boolean> | null = null;
+
+function emit(name: "api:waking" | "api:awake") {
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(name));
+}
+
+async function healthOk(timeoutMs: number): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/health`, { cache: "no-store", signal: AbortSignal.timeout(timeoutMs) });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Resolves true once the API answers /health (false after ~2.5 minutes). Shared by every caller. */
+export function wakeServer({ silent = false }: { silent?: boolean } = {}): Promise<boolean> {
+  if (!waking) {
+    waking = (async () => {
+      const started = Date.now();
+      if (await healthOk(4000)) return true;
+      if (!silent) emit("api:waking");
+      while (Date.now() - started < WAKE_LIMIT_MS) {
+        if (await healthOk(20_000)) {
+          emit("api:awake");
+          return true;
+        }
+        await new Promise((r) => setTimeout(r, 3000));
+      }
+      emit("api:awake");
+      return false;
+    })().finally(() => {
+      waking = null;
+    });
+  } else if (!silent) {
+    emit("api:waking");
+  }
+  return waking;
+}
+
+const SLEEPING = new Set([0, 502, 503, 504]);
+
+async function send(path: string, init: RequestInit & { token?: string; pid?: number; admin?: string }): Promise<Response> {
   const { token, pid, admin, headers, ...rest } = init;
   const key = pid !== undefined ? familyKey(pid) : null;
-  let res: Response;
   try {
-    res = await fetch(`${API_URL}${path}`, {
+    return await fetch(`${API_URL}${path}`, {
       ...rest,
       headers: {
         ...(rest.body && !(rest.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
@@ -36,6 +84,21 @@ async function request<T>(path: string, init: RequestInit & { token?: string; pi
     });
   } catch {
     throw new ApiError(0, "offline");
+  }
+}
+
+async function request<T>(path: string, init: RequestInit & { token?: string; pid?: number; admin?: string } = {}): Promise<T> {
+  let res: Response;
+  try {
+    res = await send(path, init);
+    if (SLEEPING.has(res.status)) throw new ApiError(res.status, res.statusText);
+  } catch (err) {
+    // Retry only if the server really was asleep: a sleeping server never ran the request. If it is up, the
+    // failure was real (or a dropped upload that may have run), so it is reported, never sent twice.
+    if (!(err instanceof ApiError) || !SLEEPING.has(err.status)) throw err;
+    if (await healthOk(4000)) throw err;
+    if (!(await wakeServer())) throw err;
+    res = await send(path, init);
   }
   if (!res.ok) {
     let detail = res.statusText;

@@ -20,7 +20,9 @@
     "cancel": "Cancel",
     "errorTooMany": "Too many tries from here just now. Please wait a little and try again.",
     "motionPause": "Pause motion",
-    "motionPlay": "Play motion"
+    "motionPlay": "Play motion",
+    "waking": "Starting the server…",
+    "wakingBody": "After a quiet spell the first visit can take up to a minute or two. Please keep this page open; it will continue by itself."
   },
   "severity": {
     "red": "Doctor review",

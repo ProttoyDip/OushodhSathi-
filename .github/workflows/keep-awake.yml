@@ -1,0 +1,23 @@
+# The site's API (Render free plan) sleeps after ~15 idle minutes and then takes up to ~2 minutes to answer,
+# so visitors saw /start and the demo fail. This pings it every 10 minutes from 06:00 to 24:00 Bangladesh time
+# (00:00-18:00 UTC, which also covers European working hours).
+#
+# Not 24 hours: Render's free plan has 750 instance-hours a month for the whole workspace. One service awake
+# all month uses ~720, which would leave nothing for oushodhsathi-demo-api. 18 hours a day is ~560.
+# Outside these hours the app still works: lib/api.ts waits for the server to wake and shows a notice.
+# GitHub may delay scheduled runs by a few minutes; an external monitor (e.g. UptimeRobot, 5-minute checks)
+# on the same URL is a more punctual alternative.
+name: keep-awake
+
+on:
+  schedule:
+    - cron: "*/10 0-17 * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping the site's API
+        run: curl -fsS -m 150 --retry 2 --retry-delay 10 https://oushodhsathi-api.onrender.com/health > /dev/null && echo awake
